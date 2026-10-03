@@ -19,16 +19,15 @@ import 'package:just_audio/just_audio.dart';
 //
 // 1. LOCAL MACOS TERMINAL (~/.zshrc):
 //    Add to your ~/.zshrc file:
-// both key simple and quick and free to get
-//      export API_BIBLE_KEY="redacted"
-//      export APTABASE_KEY="redacted"
+//      export API_BIBLE_KEY="YOUR_API_BIBLE_KEY"
+//      export APTABASE_KEY="YOUR_APTABASE_KEY"
 //    Then reload terminal (`source ~/.zshrc`) and run:
 //      flutter run -d chrome --dart-define=API_BIBLE_KEY=$API_BIBLE_KEY --dart-define=APTABASE_KEY=$APTABASE_KEY
 //
 // 2. CODEMAGIC CI/CD (codemagic.yaml or Environment Variables UI):
 //    In Codemagic Web Console -> Environment Variables:
-//      API_BIBLE_KEY = redacted
-//      APTABASE_KEY  = redacted
+//      API_BIBLE_KEY = YOUR_API_BIBLE_KEY
+//      APTABASE_KEY  = YOUR_APTABASE_KEY
 //    In codemagic.yaml build script:
 //      scripts:
 //        - name: Build Web App
@@ -48,10 +47,12 @@ import 'package:just_audio/just_audio.dart';
 //            --dart-define=API_BIBLE_KEY=${{ secrets.API_BIBLE_KEY }} \
 //            --dart-define=APTABASE_KEY=${{ secrets.APTABASE_KEY }}
 // =============================================================================
+
 const String kApiBibleBaseUrl = 'https://rest.api.bible/v1';
+const String kApiBibleKey = String.fromEnvironment('API_BIBLE_KEY', defaultValue: 'REDACTED');
+const String kAptabaseAppKey = String.fromEnvironment('APTABASE_KEY', defaultValue: 'REDACTED');
+
 // Standard WEB Bible IDs on API.Bible
-const String kApiBibleKey = String.fromEnvironment('API_BIBLE_KEY', defaultValue: 'redacted');
-const String kAptabaseAppKey = String.fromEnvironment('APTABASE_KEY', defaultValue: 'redacted');
 const String kWebAudioBibleId = '01b29f4b3420b57e-01'; // WEB Audio Bible ID
 const String kWebTextBibleId = '986526432f426da3-01'; // WEB Text Bible ID
 
@@ -78,7 +79,7 @@ final List<ChapterInfo> kFeaturedChapters = [
     bookCode: 'JHN',
     bookName: 'John',
     chapterNumber: 1,
-    audioStreamUrl: 'https://ia800203.us.archive.org/11/items/WEB_Audio_Bible/Jhn001.mp3',
+    audioStreamUrl: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=ambient-piano-10781.mp3',
     textContent: 'In the beginning was the Word, and the Word was with God, and the Word was God. The same was in the beginning with God. All things were made through him. Without him was not anything made that has been made. In him was life, and the life was the light of men...',
   ),
   const ChapterInfo(
@@ -117,7 +118,7 @@ class AptabaseAnalyticsProvider implements AnalyticsService {
     try {
       await Aptabase.init(appKey);
       debugPrint(
-        '⚡ [APTABASE]: Analytics initialized successfully with key prefix ${appKey.substring(0, 7)}',
+        '⚡ [APTABASE]: Analytics initialized successfully with key prefix ${appKey.length >= 7 ? appKey.substring(0, 7) : appKey}',
       );
     } catch (e) {
       debugPrint('🔴 [APTABASE INIT ERROR]: $e');
@@ -156,13 +157,21 @@ class AptabaseAnalyticsProvider implements AnalyticsService {
 
 class AppLogger {
   static AnalyticsService? _analytics;
+  static final List<String> _inMemoryLogs = [];
 
   static void init(AnalyticsService analytics) {
     _analytics = analytics;
+    info('AppLogger initialized');
   }
 
+  static List<String> get logs => List.unmodifiable(_inMemoryLogs);
+
   static void info(String message, [Map<String, dynamic>? properties]) {
-    debugPrint('ℹ️ [SELAH INFO]: $message ${properties ?? ""}');
+    final logLine =
+        'ℹ️ [SELAH INFO] ${DateTime.now().toIso8601String().substring(11, 19)}: $message ${properties ?? ""}';
+    debugPrint(logLine);
+    _inMemoryLogs.insert(0, logLine);
+    if (_inMemoryLogs.length > 50) _inMemoryLogs.removeLast();
   }
 
   static void error(
@@ -171,8 +180,13 @@ class AppLogger {
     StackTrace? stackTrace,
     Map<String, dynamic>? properties,
   }) {
-    debugPrint('🔴 [SELAH ERROR]: $message | Details: $error');
+    final logLine =
+        '🔴 [SELAH ERROR] ${DateTime.now().toIso8601String().substring(11, 19)}: $message | Details: $error';
+    debugPrint(logLine);
     if (stackTrace != null) debugPrint(stackTrace.toString());
+
+    _inMemoryLogs.insert(0, logLine);
+    if (_inMemoryLogs.length > 50) _inMemoryLogs.removeLast();
 
     final errorProps = <String, dynamic>{'message': message, ...?properties};
 
@@ -193,6 +207,7 @@ class AppLogger {
   }
 
   static void logEvent(String eventName, [Map<String, dynamic>? properties]) {
+    info('EVENT: $eventName', properties);
     _analytics?.logEvent(eventName, properties);
   }
 }
@@ -209,6 +224,8 @@ class ChapterPlayerState {
   final int pauseGapSeconds; // 0, 3, 5, 10
   final bool karaokeEnabled;
   final String activeTranslation;
+  final String? lastError;
+  final String processingStateName;
 
   const ChapterPlayerState({
     required this.currentChapter,
@@ -222,6 +239,8 @@ class ChapterPlayerState {
     this.pauseGapSeconds = 4,
     this.karaokeEnabled = false,
     this.activeTranslation = 'WEB',
+    this.lastError,
+    this.processingStateName = 'idle',
   });
 
   ChapterPlayerState copyWith({
@@ -236,6 +255,8 @@ class ChapterPlayerState {
     int? pauseGapSeconds,
     bool? karaokeEnabled,
     String? activeTranslation,
+    String? lastError,
+    String? processingStateName,
   }) => ChapterPlayerState(
     currentChapter: currentChapter ?? this.currentChapter,
     isLoading: isLoading ?? this.isLoading,
@@ -248,6 +269,8 @@ class ChapterPlayerState {
     pauseGapSeconds: pauseGapSeconds ?? this.pauseGapSeconds,
     karaokeEnabled: karaokeEnabled ?? this.karaokeEnabled,
     activeTranslation: activeTranslation ?? this.activeTranslation,
+    lastError: lastError,
+    processingStateName: processingStateName ?? this.processingStateName,
   );
 }
 
@@ -262,6 +285,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   StreamSubscription? _posSub;
   StreamSubscription? _durSub;
   StreamSubscription? _stateSub;
+  StreamSubscription? _eventSub;
 
   @override
   ChapterPlayerState build() {
@@ -270,7 +294,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       BaseOptions(
         baseUrl: kApiBibleBaseUrl,
         headers: {'api-key': kApiBibleKey, 'Accept': 'application/json'},
-        connectTimeout: const Duration(seconds: 10),
+        connectTimeout: const Duration(seconds: 12),
+        receiveTimeout: const Duration(seconds: 12),
       ),
     );
 
@@ -280,6 +305,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       _posSub?.cancel();
       _durSub?.cancel();
       _stateSub?.cancel();
+      _eventSub?.cancel();
       _gapTimer?.cancel();
       _audioPlayer.dispose();
     });
@@ -293,14 +319,37 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     });
 
     _durSub = _audioPlayer.durationStream.listen((dur) {
-      if (dur != null) state = state.copyWith(duration: dur);
+      if (dur != null) {
+        AppLogger.info('Audio duration resolved: ${dur.inSeconds} seconds');
+        state = state.copyWith(duration: dur);
+      }
     });
 
     _stateSub = _audioPlayer.playerStateStream.listen((playerState) {
+      final pStateStr = playerState.processingState.toString().split('.').last;
+      AppLogger.info(
+        'Audio Player State Changed -> Playing: ${playerState.playing}, ProcessingState: $pStateStr',
+      );
+
+      state = state.copyWith(isPlaying: playerState.playing, processingStateName: pStateStr);
+
       if (playerState.processingState == ProcessingState.completed && state.isPlaying) {
+        AppLogger.info('Chapter completed playback iteration ${state.currentIteration}');
         _handleChapterPlaybackComplete();
       }
     });
+
+    _eventSub = _audioPlayer.playbackEventStream.listen(
+      (event) {
+        AppLogger.info(
+          'PlaybackEvent: updateTime=${event.updateTime}, bufferedPosition=${event.bufferedPosition}',
+        );
+      },
+      onError: (Object e, StackTrace stack) {
+        AppLogger.error('PlaybackEventStream Error encountered', error: e, stackTrace: stack);
+        state = state.copyWith(isLoading: false, isPlaying: false, lastError: 'Playback error: $e');
+      },
+    );
   }
 
   Future<void> fetchAndPlayApiBibleChapter({
@@ -308,17 +357,32 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     required int chapterNumber,
     required String bookName,
   }) async {
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(isLoading: true, lastError: null);
     final chapterId = '$bookCode.$chapterNumber';
 
+    AppLogger.info(
+      'Fetching live chapter from API.Bible -> Chapter ID: $chapterId, Bible ID: $kWebAudioBibleId',
+    );
+
     try {
-      final response = await _dio.get('/audio-bibles/$kWebAudioBibleId/chapters/$chapterId');
+      final url = '/audio-bibles/$kWebAudioBibleId/chapters/$chapterId';
+      AppLogger.info('Sending GET request to API.Bible endpoint: $url');
+
+      final response = await _dio.get(url);
+      AppLogger.info('API.Bible HTTP Response Status: ${response.statusCode}');
 
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'];
+        AppLogger.info('API.Bible JSON Response received: $data');
+
         final String? streamUrl = data['resourceUrl'];
+        final String? expiresAt = data['expiresAt'];
 
         if (streamUrl != null && streamUrl.isNotEmpty) {
+          AppLogger.info(
+            'Successfully retrieved audio stream URL: $streamUrl (Expires: $expiresAt)',
+          );
+
           final dynamicChapter = ChapterInfo(
             bookCode: bookCode,
             bookName: bookName,
@@ -330,20 +394,29 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
           return;
         }
       }
-      throw Exception('Audio stream URL not returned by API.Bible');
+      throw Exception('API.Bible response did not include a valid resourceUrl.');
     } catch (e, stack) {
       AppLogger.error(
-        'API.Bible chapter fetch failed, falling back to local WEB audio',
+        'API.Bible chapter fetch failed. Triggering local fallback audio.',
         error: e,
         stackTrace: stack,
       );
+      state = state.copyWith(lastError: 'API.Bible fetch failed ($e). Loaded fallback chapter.');
       await loadChapter(kFeaturedChapters[0]);
     }
   }
 
   Future<void> loadChapter(ChapterInfo chapter) async {
     _gapTimer?.cancel();
-    await _audioPlayer.stop();
+    AppLogger.info(
+      'Loading chapter audio: ${chapter.reference} from URL: ${chapter.audioStreamUrl}',
+    );
+
+    try {
+      await _audioPlayer.stop();
+    } catch (e) {
+      AppLogger.info('Audio player stop notice: $e');
+    }
 
     state = state.copyWith(
       currentChapter: chapter,
@@ -352,26 +425,52 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       isPausedInGap: false,
       currentIteration: 1,
       position: Duration.zero,
+      duration: Duration.zero,
+      lastError: null,
     );
 
     AppLogger.logEvent('play_chapter', {
       'translation': state.activeTranslation,
       'book': chapter.bookCode,
       'chapter': chapter.chapterNumber,
-      'api_key_configured': kApiBibleKey.isNotEmpty,
-      'aptabase_key_configured': kAptabaseAppKey.isNotEmpty,
+      'audio_url': chapter.audioStreamUrl,
     });
 
     try {
-      await _audioPlayer.setUrl(chapter.audioStreamUrl);
-      state = state.copyWith(isLoading: false);
+      AppLogger.info('Calling _audioPlayer.setUrl()...');
+      final dur = await _audioPlayer.setUrl(chapter.audioStreamUrl);
+      AppLogger.info('setUrl() finished successfully. Duration: $dur');
+
+      state = state.copyWith(isLoading: false, duration: dur ?? Duration.zero);
     } catch (e, stack) {
-      state = state.copyWith(isLoading: false);
-      AppLogger.error('Failed to load chapter audio stream', error: e, stackTrace: stack);
+      AppLogger.error(
+        'Failed to set audio source URL in just_audio player',
+        error: e,
+        stackTrace: stack,
+      );
+
+      // Attempt CORS fallback audio track if primary URL failed on Web
+      if (chapter.audioStreamUrl != kFeaturedChapters[0].audioStreamUrl) {
+        AppLogger.info('Attempting emergency fallback audio stream...');
+        try {
+          final fallbackDur = await _audioPlayer.setUrl(kFeaturedChapters[0].audioStreamUrl);
+          state = state.copyWith(
+            isLoading: false,
+            duration: fallbackDur ?? Duration.zero,
+            lastError: 'Primary URL audio error ($e). Loaded CORS-friendly fallback.',
+          );
+          return;
+        } catch (fallbackError) {
+          AppLogger.error('Fallback audio stream also failed', error: fallbackError);
+        }
+      }
+
+      state = state.copyWith(isLoading: false, lastError: 'Audio load failed: $e');
     }
   }
 
   void togglePlayPause() {
+    AppLogger.info('User toggled play/pause. Current isPlaying: ${state.isPlaying}');
     if (state.isPlaying) {
       pause();
     } else {
@@ -380,6 +479,10 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   Future<void> play() async {
+    AppLogger.info(
+      'Play requested. Position: ${state.position}, Duration: ${state.duration}, IsPausedInGap: ${state.isPausedInGap}',
+    );
+
     if (state.isPausedInGap) {
       _gapTimer?.cancel();
       state = state.copyWith(isPausedInGap: false, isPlaying: true);
@@ -388,20 +491,30 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
 
     if (state.position >= state.duration && state.duration > Duration.zero) {
+      AppLogger.info('Position at end of duration. Seeking to start before playback.');
       await _audioPlayer.seek(Duration.zero);
     }
 
-    state = state.copyWith(isPlaying: true);
-    await _audioPlayer.play();
+    try {
+      state = state.copyWith(isPlaying: true, lastError: null);
+      AppLogger.info('Executing _audioPlayer.play()...');
+      await _audioPlayer.play();
+      AppLogger.info('_audioPlayer.play() call finished.');
+    } catch (e, stack) {
+      AppLogger.error('Error while starting audio playback', error: e, stackTrace: stack);
+      state = state.copyWith(isPlaying: false, lastError: 'Playback trigger failed: $e');
+    }
   }
 
   Future<void> pause() async {
+    AppLogger.info('Pause requested.');
     _gapTimer?.cancel();
     await _audioPlayer.pause();
     state = state.copyWith(isPlaying: false, isPausedInGap: false);
   }
 
   void seek(Duration pos) {
+    AppLogger.info('Seeking to position: ${pos.inSeconds}s');
     _audioPlayer.seek(pos);
   }
 
@@ -435,12 +548,16 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
   void _handleChapterPlaybackComplete() {
     if (state.repetitions != -1 && state.currentIteration >= state.repetitions) {
+      AppLogger.info('Completed all ${state.repetitions} repetitions.');
       state = state.copyWith(isPlaying: false, currentIteration: 1);
       _audioPlayer.seek(Duration.zero);
       return;
     }
 
     state = state.copyWith(isPausedInGap: true);
+    AppLogger.info(
+      'Entering silent gap interval of ${state.pauseGapSeconds} seconds before iteration ${state.currentIteration + 1}...',
+    );
 
     if (state.pauseGapSeconds == 0) {
       _startNextIteration();
@@ -454,6 +571,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   Future<void> _startNextIteration() async {
+    AppLogger.info('Starting iteration ${state.currentIteration + 1}');
     state = state.copyWith(
       currentIteration: state.currentIteration + 1,
       isPausedInGap: false,
@@ -467,13 +585,16 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Aptabase provider with configured key
   final analytics = AptabaseAnalyticsProvider(appKey: kAptabaseAppKey);
   await analytics.init();
   AppLogger.init(analytics);
 
+  AppLogger.info('Selah Web Audio Player Started.');
   AppLogger.info(
-    'Selah initialized with Aptabase AppKey: ${kAptabaseAppKey.substring(0, 7)}... and API.Bible REST endpoint',
+    'Configured API.Bible Key prefix: ${kApiBibleKey.length >= 6 ? kApiBibleKey.substring(0, 6) : "empty"}...',
+  );
+  AppLogger.info(
+    'Configured Aptabase Key prefix: ${kAptabaseAppKey.length >= 6 ? kAptabaseAppKey.substring(0, 6) : "empty"}...',
   );
 
   runApp(const ProviderScope(child: SelahApp()));
@@ -513,6 +634,7 @@ class ChapterPlayerScreen extends ConsumerStatefulWidget {
 
 class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
   late final TextEditingController _searchController;
+  bool _showDebugLogs = false;
 
   @override
   void initState() {
@@ -574,7 +696,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
           ],
         ),
         content: Text(
-          'Specific verse selection ("$userQuery") and synchronized Karaoke text highlighting are coming in v0.3!\n\nFor v0.2, Selah streams clean, complete WEB chapters via API.Bible REST API.',
+          'Specific verse selection ("$userQuery") and synchronized Karaoke text highlighting are coming in v0.3!\n\nFor v0.2, Selah streams clean WEB chapters via API.Bible REST API.',
           style: const TextStyle(fontSize: 13, color: Colors.white70, height: 1.4),
         ),
         actions: [
@@ -635,6 +757,18 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
         ),
         actions: [
           IconButton(
+            icon: Icon(
+              _showDebugLogs ? Icons.bug_report : Icons.bug_report_outlined,
+              color: _showDebugLogs ? Colors.greenAccent : Colors.white70,
+            ),
+            onPressed: () {
+              setState(() {
+                _showDebugLogs = !_showDebugLogs;
+              });
+            },
+            tooltip: 'Toggle Debug Console',
+          ),
+          IconButton(
             icon: const Icon(Icons.settings_outlined, color: Color(0xFFFBBF24)),
             onPressed: _openSettingsModal,
           ),
@@ -646,6 +780,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              /* Search Input Bar */
               Row(
                 children: [
                   Expanded(
@@ -705,8 +840,34 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                   },
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
+              /* Error Banner */
+              if (playerState.lastError != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          playerState.lastError!,
+                          style: const TextStyle(fontSize: 12, color: Colors.redAccent),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              /* Main Player Card */
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
@@ -822,8 +983,8 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                                 playerState.isPausedInGap
                                     ? 'Silent Gap (${playerState.pauseGapSeconds}s)...'
                                     : (playerState.isPlaying
-                                          ? 'Meditating — Playback'
-                                          : 'Ready to Listen'),
+                                          ? 'Meditating — Playback (${playerState.processingStateName})'
+                                          : 'Ready (${playerState.processingStateName})'),
                                 style: const TextStyle(fontSize: 12, color: Colors.white70),
                               ),
                             ],
@@ -878,6 +1039,67 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                   ],
                 ),
               ),
+
+              /* On-Screen Diagnostic Console */
+              if (_showDebugLogs) ...[
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF09081A),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.indigo.withOpacity(0.4)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.terminal, color: Colors.greenAccent, size: 18),
+                          SizedBox(width: 8),
+                          Text(
+                            'Diagnostic Log Console',
+                            style: TextStyle(
+                              color: Colors.greenAccent,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Divider(color: Colors.white12),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Active Audio URL: ${playerState.currentChapter.audioStreamUrl}',
+                        style: const TextStyle(fontSize: 10, color: Colors.white54),
+                      ),
+                      Text(
+                        'State: playing=${playerState.isPlaying}, processing=${playerState.processingStateName}, pos=${playerState.position.inSeconds}s/${playerState.duration.inSeconds}s',
+                        style: const TextStyle(fontSize: 10, color: Colors.white54),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 160,
+                        child: ListView.builder(
+                          itemCount: AppLogger.logs.length,
+                          itemBuilder: (ctx, idx) {
+                            final log = AppLogger.logs[idx];
+                            final isErr = log.contains('🔴');
+                            return Text(
+                              log,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontFamily: 'monospace',
+                                color: isErr ? Colors.redAccent : Colors.white70,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),
