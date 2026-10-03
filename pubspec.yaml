@@ -38,6 +38,8 @@ dependencies:
   flutter_tts: ^4.2.5
   dio: ^5.11.1
   google_fonts: ^8.2.1
+  just_audio: ^0.10.6
+  aptabase_flutter: ^0.5.0
 
 dev_dependencies:
   flutter_test:
