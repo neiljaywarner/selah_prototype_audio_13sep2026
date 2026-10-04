@@ -1,3 +1,4 @@
+import '../domain/audio_mode.dart';
 import '../domain/chapter_info.dart';
 
 class ChapterPlayerState {
@@ -12,7 +13,11 @@ class ChapterPlayerState {
   final int pauseGapSeconds;
   final bool karaokeEnabled;
   final String activeTranslation;
+  final AudioMode audioMode;
+  final int highlightStart;
+  final int highlightEnd;
   final String? lastError;
+  final String? infoNotice;
   final String processingStateName;
 
   const ChapterPlayerState({
@@ -25,9 +30,13 @@ class ChapterPlayerState {
     this.repetitions = 3,
     this.currentIteration = 1,
     this.pauseGapSeconds = 4,
-    this.karaokeEnabled = false,
+    this.karaokeEnabled = true,
     this.activeTranslation = 'BSB',
+    this.audioMode = AudioMode.narrator,
+    this.highlightStart = 0,
+    this.highlightEnd = 0,
     this.lastError,
+    this.infoNotice,
     this.processingStateName = 'idle',
   });
 
@@ -43,7 +52,13 @@ class ChapterPlayerState {
     int? pauseGapSeconds,
     bool? karaokeEnabled,
     String? activeTranslation,
+    AudioMode? audioMode,
+    int? highlightStart,
+    int? highlightEnd,
     String? lastError,
+    String? infoNotice,
+    bool clearLastError = false,
+    bool clearInfoNotice = false,
     String? processingStateName,
   }) => ChapterPlayerState(
     currentChapter: currentChapter ?? this.currentChapter,
@@ -57,7 +72,11 @@ class ChapterPlayerState {
     pauseGapSeconds: pauseGapSeconds ?? this.pauseGapSeconds,
     karaokeEnabled: karaokeEnabled ?? this.karaokeEnabled,
     activeTranslation: activeTranslation ?? this.activeTranslation,
-    lastError: lastError,
+    audioMode: audioMode ?? this.audioMode,
+    highlightStart: highlightStart ?? this.highlightStart,
+    highlightEnd: highlightEnd ?? this.highlightEnd,
+    lastError: clearLastError ? null : (lastError ?? this.lastError),
+    infoNotice: clearInfoNotice ? null : (infoNotice ?? this.infoNotice),
     processingStateName: processingStateName ?? this.processingStateName,
   );
 }
