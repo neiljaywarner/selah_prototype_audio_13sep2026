@@ -5,7 +5,6 @@ import 'package:selah_prototype_audio_13sep2026/src/app.dart';
 
 void main() {
   testWidgets('SelahApp v0.2 UI smoke test renders all essential components', (WidgetTester tester) async {
-    // Set a large enough surface size so widgets don't overflow
     tester.view.physicalSize = const Size(1080, 1920);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -26,10 +25,16 @@ void main() {
     expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
     expect(find.byIcon(Icons.menu_book_rounded), findsOneWidget);
 
-    // Verify Topic Tabs
-    expect(find.textContaining('Hope'), findsOneWidget);
-    expect(find.textContaining('Faith'), findsOneWidget);
-    expect(find.textContaining('Peace'), findsOneWidget);
+    // Verify Search Bar and Autocomplete
+    final searchField = find.byType(TextField);
+    expect(searchField, findsOneWidget);
+
+    await tester.enterText(searchField, 'Jn');
+    await tester.pump();
+
+    // Autocomplete chips for John and Jonah should appear (may have >1 text widget per chip)
+    expect(find.text('John 1'), findsWidgets);
+    expect(find.text('Jonah 1'), findsWidgets);
 
     // Verify Audio Mode Pill
     expect(find.textContaining('Human Narrator'), findsOneWidget);

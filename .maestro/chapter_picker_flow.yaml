@@ -1,0 +1,16 @@
+appId: com.example.selah_prototype_audio_13sep2026
+---
+- launchApp
+
+# 1. Verify title
+- assertVisible: "SELAH"
+
+# 2. Tap on the search field and type John
+- tapOn: "Search chapters..."
+- inputText: "John"
+- waitForAnimationToEnd
+
+# 3. John 1 chip should appear - tap it
+- assertVisible: "John 1"
+- tapOn: "John 1"
+- waitForAnimationToEnd

@@ -44,13 +44,20 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
 
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
+  # Lints
   flutter_lints: ^6.0.0
+
+  # Mocking
+  mocktail: ^1.0.4
+
+  # Integration testing with screenshots + video
+  patrol: ^3.15.3
+
+  # BDD .feature files
+  bdd_widget_test: ^1.7.2
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
