@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -35,6 +36,14 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         headers: {'api-key': kApiBibleKey, 'Accept': 'application/json'},
         connectTimeout: const Duration(seconds: 12),
         receiveTimeout: const Duration(seconds: 12),
+      ),
+    );
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onError: (DioException e, handler) {
+          AppLogger.info('Dio network notice: ${e.message}');
+          return handler.next(e);
+        },
       ),
     );
 
@@ -84,7 +93,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       onError: (Object e, StackTrace stack) {
         if (state.audioMode == AudioMode.narrator) {
           AppLogger.error('Audio stream error', error: e, stackTrace: stack);
-          _switchToTtsFallback('Audio stream blocked or unavailable. Falling back to TTS narration.');
+          _switchToTtsFallback(
+            'Audio stream blocked or unavailable. Falling back to TTS narration.',
+          );
         }
       },
     );
@@ -140,7 +151,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         'Routing: WEB Old Testament ($bookCode $chapterNumber) -> Using standard TTS engine.',
       );
 
-      final chapterText = await _fetchChapterText(bookCode, chapterNumber) ??
+      final chapterText =
+          await _fetchChapterText(bookCode, chapterNumber) ??
           '${BibleCanon.findBook(bookCode)?.name ?? bookName} Chapter $chapterNumber.\n\n"The Lord is my shepherd; I shall not want. He makes me lie down in green pastures; He leads me beside quiet waters. He restores my soul."';
 
       final dynamicChapter = ChapterInfo(
@@ -166,9 +178,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     final chapterId = '${bookCode.toUpperCase()}.$chapterNumber';
     final url = '/audio-bibles/$bibleId/chapters/$chapterId';
 
-    AppLogger.info(
-      'Fetching narrator stream for $chapterId ($bibleId) from API.Bible...',
-    );
+    AppLogger.info('Fetching narrator stream for $chapterId ($bibleId) from API.Bible...');
 
     try {
       final response = await _dio.get(url);
@@ -178,7 +188,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         final String? streamUrl = data['resourceUrl'];
 
         if (streamUrl != null && streamUrl.isNotEmpty) {
-          final fetchedText = await _fetchChapterText(bookCode, chapterNumber) ??
+          final fetchedText =
+              await _fetchChapterText(bookCode, chapterNumber) ??
               '${state.activeTranslation} — Live REST Audio Stream from API.Bible ($chapterId).';
 
           final dynamicChapter = ChapterInfo(
@@ -189,10 +200,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
             textContent: fetchedText,
           );
 
-          state = state.copyWith(
-            audioMode: AudioMode.narrator,
-            clearInfoNotice: true,
-          );
+          state = state.copyWith(audioMode: AudioMode.narrator, clearInfoNotice: true);
 
           await loadChapter(dynamicChapter);
           return;
@@ -200,8 +208,14 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       }
       throw Exception('Resource URL empty for $chapterId');
     } catch (e, stack) {
-      AppLogger.error('API.Bible narrator fetch failed for $chapterId', error: e, stackTrace: stack);
-      _switchToTtsFallback('Audio stream not available for $bookName $chapterNumber. Switched to TTS.');
+      AppLogger.error(
+        'API.Bible narrator fetch failed for $chapterId',
+        error: e,
+        stackTrace: stack,
+      );
+      _switchToTtsFallback(
+        'Audio stream not available for $bookName $chapterNumber. Switched to TTS.',
+      );
     }
   }
 
@@ -249,7 +263,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
         state = state.copyWith(
           currentChapter: verseChapter,
-          infoNotice: 'Single verse loaded — narrating with word-synchronized karaoke highlighting.',
+          infoNotice:
+              'Single verse loaded — narrating with word-synchronized karaoke highlighting.',
         );
 
         await _playTts(verseStr);
@@ -291,11 +306,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   void _switchToTtsFallback(String notice) {
-    state = state.copyWith(
-      isLoading: false,
-      audioMode: AudioMode.tts,
-      infoNotice: notice,
-    );
+    state = state.copyWith(isLoading: false, audioMode: AudioMode.tts, infoNotice: notice);
     _playTts(state.currentChapter.textContent);
   }
 
@@ -430,7 +441,12 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   void _handleChapterPlaybackComplete() {
     if (state.repetitions != -1 && state.currentIteration >= state.repetitions) {
       AppLogger.info('Completed all ${state.repetitions} repetitions.');
-      state = state.copyWith(isPlaying: false, currentIteration: 1, highlightStart: 0, highlightEnd: 0);
+      state = state.copyWith(
+        isPlaying: false,
+        currentIteration: 1,
+        highlightStart: 0,
+        highlightEnd: 0,
+      );
       _audioPlayer.seek(Duration.zero);
       return;
     }

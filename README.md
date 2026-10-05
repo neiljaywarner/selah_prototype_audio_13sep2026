@@ -112,6 +112,11 @@ All 12 core unit tests verify:
 
 ---
 
+## ⚠️ Git & Workflow Rules
+- **NEVER push or merge directly into `main`**. All development, fixes, and features must be conducted on feature branches (e.g. `feat/...`) and merged only via reviewed Pull Requests.
+
+---
+
 ## 📄 License & Credits
 - **Audio & Scripture**: [API.Bible](https://api.bible) (BSB & WEB translations).
 - **Text-to-Speech**: `flutter_tts` engine with custom peaceful pacing.
