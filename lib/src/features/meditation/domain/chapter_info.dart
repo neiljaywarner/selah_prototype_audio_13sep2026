@@ -52,4 +52,11 @@ final List<ChapterInfo> kFeaturedChapters = [
     audioStreamUrl: 'https://ia800203.us.archive.org/11/items/WEB_Audio_Bible/Mrk005.mp3',
     textContent: 'They came to the other side of the sea, into the country of the Gerasenes. When he had come out of the boat, immediately a man with an unclean spirit met him...',
   ),
+  const ChapterInfo(
+    bookCode: '1CO',
+    bookName: '1 Corinthians',
+    chapterNumber: 13,
+    audioStreamUrl: 'https://ia800203.us.archive.org/11/items/WEB_Audio_Bible/1Cor013.mp3',
+    textContent: 'Love is patient, love is kind. Love does not envy. Love does not brag, is not proud, does not behave itself inappropriately, does not seek its own way...',
+  ),
 ];

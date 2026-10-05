@@ -75,7 +75,9 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     final parsedList = BibleReferenceParser.getSuggestions(raw);
     if (parsedList.isNotEmpty) {
       final match = parsedList.first;
-      ref.read(chapterPlayerProvider.notifier).routeAndPlayChapter(
+      ref
+          .read(chapterPlayerProvider.notifier)
+          .routeAndPlayChapter(
             bookCode: match.book.code,
             chapterNumber: match.chapter,
             bookName: match.book.name,
@@ -93,7 +95,8 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     if (parts.length >= 2) chapterNum = int.tryParse(parts[1]) ?? 1;
 
     final book = BibleCanon.findBook(bookQuery);
-    final bookCode = book?.code ?? (bookQuery.length >= 3 ? bookQuery.substring(0, 3).toUpperCase() : 'COL');
+    final bookCode =
+        book?.code ?? (bookQuery.length >= 3 ? bookQuery.substring(0, 3).toUpperCase() : 'COL');
     final bookName = book?.name ?? bookCode;
 
     if (!BibleCanon.isValidChapter(bookCode, chapterNum)) {
@@ -107,11 +110,9 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
       return;
     }
 
-    ref.read(chapterPlayerProvider.notifier).routeAndPlayChapter(
-          bookCode: bookCode,
-          chapterNumber: chapterNum,
-          bookName: bookName,
-        );
+    ref
+        .read(chapterPlayerProvider.notifier)
+        .routeAndPlayChapter(bookCode: bookCode, chapterNumber: chapterNum, bookName: bookName);
   }
 
   void _openChapterPicker() {
@@ -121,11 +122,9 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
         onChapterSelected: (code, chapter, name) {
           _searchController.text = '$name $chapter';
           setState(() => _searchSuggestions = []);
-          ref.read(chapterPlayerProvider.notifier).routeAndPlayChapter(
-                bookCode: code,
-                chapterNumber: chapter,
-                bookName: name,
-              );
+          ref
+              .read(chapterPlayerProvider.notifier)
+              .routeAndPlayChapter(bookCode: code, chapterNumber: chapter, bookName: name);
         },
       ),
     );
@@ -279,7 +278,11 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                         side: const BorderSide(color: Color(0xFF6366F1)),
                         label: Text(
                           suggestion.displayName,
-                          style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         onPressed: () {
                           _searchController.text = suggestion.displayName;
@@ -465,9 +468,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                         color: const Color(0xFF0F0E26).withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: SingleChildScrollView(
-                        child: _buildKaraokeText(playerState),
-                      ),
+                      child: SingleChildScrollView(child: _buildKaraokeText(playerState)),
                     ),
                     const SizedBox(height: 18),
 
