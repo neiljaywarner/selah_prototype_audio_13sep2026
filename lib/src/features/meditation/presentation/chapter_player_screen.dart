@@ -308,29 +308,24 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                   },
                 )
               else
-                SizedBox(
-                  height: 38,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: kFeaturedChapters.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 8),
-                    itemBuilder: (context, index) {
-                      final chapter = kFeaturedChapters[index];
-                      final isSelected = playerState.currentChapter.reference == chapter.reference;
-                      return ChoiceChip(
-                        label: Text(chapter.reference),
-                        selected: isSelected,
-                        selectedColor: const Color(0xFF6366F1),
-                        backgroundColor: const Color(0xFF1E1B4B),
-                        labelStyle: TextStyle(
-                          color: isSelected ? Colors.white : Colors.white70,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          fontSize: 12,
-                        ),
-                        onSelected: (_) => notifier.loadChapter(chapter),
-                      );
-                    },
-                  ),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: kFeaturedChapters.map((chapter) {
+                    final isSelected = playerState.currentChapter.reference == chapter.reference;
+                    return ChoiceChip(
+                      label: Text(chapter.reference),
+                      selected: isSelected,
+                      selectedColor: const Color(0xFF6366F1),
+                      backgroundColor: const Color(0xFF1E1B4B),
+                      labelStyle: TextStyle(
+                        color: isSelected ? Colors.white : Colors.white70,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 12,
+                      ),
+                      onSelected: (_) => notifier.loadChapter(chapter),
+                    );
+                  }).toList(),
                 ),
               const SizedBox(height: 16),
 
