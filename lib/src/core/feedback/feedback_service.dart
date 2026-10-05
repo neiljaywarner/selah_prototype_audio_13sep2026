@@ -45,7 +45,7 @@ class FeedbackService {
       id: 'ambient_soundscapes',
       title: 'Layered Ambient Soundscapes',
       description:
-          'Calming background nature audio (gentle rain, temple pads, morning birds) layered softly beneath scripture narration.',
+          'Background nature audio (gentle rain, temple pads, morning birds) layered softly beneath scripture narration.',
       targetVersion: 'v0.4',
       votes: 29,
     ),

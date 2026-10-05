@@ -5,13 +5,17 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/bible_canon.dart';
 import '../../../core/logging/app_logger.dart';
+import '../../../core/picker/bible_reference_parser.dart';
 import '../application/chapter_player_notifier.dart';
 import '../domain/audio_mode.dart';
+import '../domain/chapter_info.dart';
 import '../domain/scripture_topic.dart';
 import 'widgets/chapter_picker_dialog.dart';
 import 'widgets/feature_voting_sheet.dart';
 import 'widgets/settings_bottom_sheet.dart';
 import 'widgets/topic_tab_bar.dart';
+
+const bool kEnableTopicTabs = bool.fromEnvironment('ENABLE_TOPIC_TABS', defaultValue: false);
 
 class ChapterPlayerScreen extends ConsumerStatefulWidget {
   const ChapterPlayerScreen({super.key});
@@ -24,26 +28,58 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
   late final TextEditingController _searchController;
   bool _showDebugLogs = false;
   ScriptureTopic _selectedTopic = kDefaultMeditationTopics[0];
+  List<ParsedBibleReference> _searchSuggestions = [];
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController(text: 'COL.1');
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged() {
+    final text = _searchController.text.trim();
+    if (text.length >= 2 && !text.contains(':')) {
+      final suggestions = BibleReferenceParser.getSuggestions(text);
+      setState(() {
+        _searchSuggestions = suggestions.take(4).toList();
+      });
+    } else {
+      if (_searchSuggestions.isNotEmpty) {
+        setState(() {
+          _searchSuggestions = [];
+        });
+      }
+    }
   }
 
   void _handleSearchSubmit(String query) {
     final raw = query.trim();
     if (raw.isEmpty) return;
 
+    setState(() => _searchSuggestions = []);
+
     if (raw.contains(':')) {
       AppLogger.logEvent('request_single_verse', {'query': raw});
       ref.read(chapterPlayerProvider.notifier).fetchAndPlaySingleVerse(raw);
+      return;
+    }
+
+    final parsedList = BibleReferenceParser.getSuggestions(raw);
+    if (parsedList.isNotEmpty) {
+      final match = parsedList.first;
+      ref.read(chapterPlayerProvider.notifier).routeAndPlayChapter(
+            bookCode: match.book.code,
+            chapterNumber: match.chapter,
+            bookName: match.book.name,
+          );
       return;
     }
 
@@ -53,12 +89,8 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     String bookQuery = 'COL';
     int chapterNum = 1;
 
-    if (parts.isNotEmpty) {
-      bookQuery = parts[0];
-    }
-    if (parts.length >= 2) {
-      chapterNum = int.tryParse(parts[1]) ?? 1;
-    }
+    if (parts.isNotEmpty) bookQuery = parts[0];
+    if (parts.length >= 2) chapterNum = int.tryParse(parts[1]) ?? 1;
 
     final book = BibleCanon.findBook(bookQuery);
     final bookCode = book?.code ?? (bookQuery.length >= 3 ? bookQuery.substring(0, 3).toUpperCase() : 'COL');
@@ -88,6 +120,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
       builder: (ctx) => ChapterPickerDialog(
         onChapterSelected: (code, chapter, name) {
           _searchController.text = '$code.$chapter';
+          setState(() => _searchSuggestions = []);
           ref.read(chapterPlayerProvider.notifier).routeAndPlayChapter(
                 bookCode: code,
                 chapterNumber: chapter,
@@ -191,7 +224,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                       style: const TextStyle(fontSize: 14),
                       onSubmitted: _handleSearchSubmit,
                       decoration: InputDecoration(
-                        hintText: 'Search Chapter or Verse (e.g. COL.1, Psalm 23, John 14:27)',
+                        hintText: 'Search Book & Chapter (e.g. Jn, Col 3, Ps 23)',
                         filled: true,
                         fillColor: const Color(0xFF1E1B4B),
                         prefixIcon: const Icon(Icons.search, size: 20, color: Colors.indigo),
@@ -226,22 +259,79 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                   ),
                 ],
               ),
+
+              /* Live Autocomplete Suggestions */
+              if (_searchSuggestions.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E1B4B),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.indigo.withValues(alpha: 0.3)),
+                  ),
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: _searchSuggestions.map((suggestion) {
+                      return ActionChip(
+                        backgroundColor: const Color(0xFF0F0E26),
+                        side: const BorderSide(color: Color(0xFF6366F1)),
+                        label: Text(
+                          suggestion.displayName,
+                          style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: () {
+                          _searchController.text = suggestion.displayName;
+                          _handleSearchSubmit(suggestion.displayName);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
               const SizedBox(height: 16),
 
-              /* Topic Tabs Bar (Hope, Faith, Peace, Comfort, Strength) */
-              TopicTabBar(
-                topics: kDefaultMeditationTopics,
-                selectedTopic: _selectedTopic,
-                activeReference: playerState.currentChapter.reference,
-                onTopicSelected: (topic) => setState(() => _selectedTopic = topic),
-                onChapterSelected: (chapter) {
-                  _searchController.text = '${chapter.bookCode}.${chapter.chapterNumber}';
-                  notifier.loadChapter(chapter);
-                },
-              ),
+              /* Featured Presets (or Topic Tabs if enabled) */
+              if (kEnableTopicTabs)
+                TopicTabBar(
+                  topics: kDefaultMeditationTopics,
+                  selectedTopic: _selectedTopic,
+                  activeReference: playerState.currentChapter.reference,
+                  onTopicSelected: (topic) => setState(() => _selectedTopic = topic),
+                  onChapterSelected: (chapter) {
+                    _searchController.text = '${chapter.bookCode}.${chapter.chapterNumber}';
+                    notifier.loadChapter(chapter);
+                  },
+                )
+              else
+                SizedBox(
+                  height: 38,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: kFeaturedChapters.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final chapter = kFeaturedChapters[index];
+                      final isSelected = playerState.currentChapter.reference == chapter.reference;
+                      return ChoiceChip(
+                        label: Text(chapter.reference),
+                        selected: isSelected,
+                        selectedColor: const Color(0xFF6366F1),
+                        backgroundColor: const Color(0xFF1E1B4B),
+                        labelStyle: TextStyle(
+                          color: isSelected ? Colors.white : Colors.white70,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 12,
+                        ),
+                        onSelected: (_) => notifier.loadChapter(chapter),
+                      );
+                    },
+                  ),
+                ),
               const SizedBox(height: 16),
 
-              /* Info Notice Banner (e.g. WEB OT routing to TTS or verse notice) */
+              /* Info Notice Banner */
               if (playerState.infoNotice != null) ...[
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -277,7 +367,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 18),
+                      const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 20),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(

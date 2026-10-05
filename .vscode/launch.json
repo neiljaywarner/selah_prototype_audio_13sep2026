@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Selah Web (Release / API.Bible)",
+      "type": "dart",
+      "request": "launch",
+      "args": [
+        "--dart-define=API_BIBLE_KEY=${env:API_BIBLE_KEY}",
+        "--dart-define=APTABASE_KEY=${env:APTABASE_KEY}"
+      ],
+      "web": true
+    },
+    {
+      "name": "Selah Android (Debug)",
+      "type": "dart",
+      "request": "launch",
+      "args": [
+        "--dart-define=API_BIBLE_KEY=${env:API_BIBLE_KEY}",
+        "--dart-define=APTABASE_KEY=${env:APTABASE_KEY}"
+      ]
+    },
+    {
+      "name": "Selah iOS (Debug)",
+      "type": "dart",
+      "request": "launch",
+      "args": [
+        "--dart-define=API_BIBLE_KEY=${env:API_BIBLE_KEY}",
+        "--dart-define=APTABASE_KEY=${env:APTABASE_KEY}"
+      ]
+    }
+  ]
+}

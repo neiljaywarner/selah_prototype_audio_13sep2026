@@ -5,14 +5,16 @@
 ## Mini‑Milestones
 | # | Task | Start | End | Description |
 |---|------|-------|-----|-------------|
-| 1 | Fix widget‑test failure (duplicate chip text) | 2026‑10‑04 17:45 | 2026‑10‑04 18:15 | Adjust test matcher or chip label to make test pass.
-| 2 | Add `mocktail` mocks for services (Analytics, Auth) | 2026‑10‑04 18:20 | 2026‑10‑04 18:45 | Create `MockAnalyticsWrapper`, `MockAuthRepository`.
-| 3 | Scaffold Patrol BDD tests | 2026‑10‑04 18:50 | 2026‑10‑04 19:30 | Add `dev_dependencies` and a simple `.feature` file for chapter picker flow.
-| 4 | Write `auth_feature.md` & add voting entry | 2026‑10‑04 19:35 | 2026‑10‑04 20:00 | Document upcoming Google/Apple auth and expose it in the UserOrient voting sheet.
-| 5 | Draft `ux_for_versepicker.md` & package scaffold | 2026‑10‑04 20:05 | 2026‑10‑04 20:45 | Design doc, propose reusable `bible_reference_picker` package.
-| 6 | Create ADRs (`adrs/0001-…`, `adrs/0002-…`) | 2026‑10‑04 20:50 | 2026‑10‑04 21:20 | Record architectural decisions (Feature‑First, Remote Config toggle).
-| 7 | Write `firebasetestlab_wave1.md` | 2026‑10‑04 21:25 | 2026‑10‑04 22:00 | Outline Test Lab setup, device matrix, CI integration.
-| 8 | Run `flutter test` suite, fix any remaining failures | 2026‑10‑04 22:05 | 2026‑10‑04 22:30 | Ensure all unit, widget, and patrol tests pass.
+| 1 | Fix widget‑test failure (duplicate chip text) | 2026‑10‑04 17:45 | 2026‑10‑04 18:15 | Adjust test matcher or chip label to make test pass. |
+| 2 | Add `mocktail` mocks for services (Analytics, Auth) | 2026‑10‑04 18:20 | 2026‑10‑04 18:45 | Create `MockAnalyticsWrapper`, `MockAuthRepository`. |
+| 3 | Scaffold Patrol BDD tests | 2026‑10‑04 18:50 | 2026‑10‑04 19:30 | Add `dev_dependencies` and a simple `.feature` file for chapter picker flow. |
+| 4 | Write `auth_feature.md` & add voting entry | 2026‑10‑04 19:35 | 2026‑10‑04 20:00 | Document upcoming Google/Apple auth and expose it in the UserOrient voting sheet. |
+| 5 | Draft `ux_for_versepicker.md` & package scaffold | 2026‑10‑04 20:05 | 2026‑10‑04 20:45 | Design doc, propose reusable `bible_reference_picker` package. |
+| 6 | Create ADRs (`adrs/0001-…`, `adrs/0002-…`) | 2026‑10‑04 20:50 | 2026‑10‑04 21:20 | Record architectural decisions (Feature‑First, Remote Config toggle). |
+| 7 | Write `firebasetestlab_wave1.md` | 2026‑10‑04 21:25 | 2026‑10‑04 22:00 | Outline Test Lab setup, device matrix, CI integration. |
+| 8 | Run `flutter test` suite, fix any remaining failures | 2026‑10‑04 22:05 | 2026‑10‑04 22:30 | Ensure all unit, widget, and patrol tests pass. |
+| 9 | Verify device targets and local web/test status | 2026‑10‑04 22:45 | 2026‑10‑04 23:05 | Confirm Chrome, Pixel 9a, and iPhone simulator are available and run the project suite on them. |
+| 10 | Finalize status/progress docs and branch notes | 2026‑10‑04 23:05 | 2026‑10‑04 23:20 | Align the plan and progress log with verified results and deployment constraints. |
 
 ## TL;DR
 - Fix failing widget test.

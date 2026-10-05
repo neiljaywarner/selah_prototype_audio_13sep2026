@@ -22,18 +22,19 @@
 4. **Integration test pipeline** – TDD: write a test that launches the app on Chrome, navigates to chapter picker, asserts audio playback starts.
 5. **Core audio flow** – TDD: unit test `ChapterPlayerNotifier.routeAndPlay` for each Bible‑id case.
 
-## Visible Progress (as of 6 pm)
-- **Localhost Chrome**: `flutter test --platform=chrome` runs without failures; UI shows live autocomplete chips.
-- **iOS Simulator**: Patrol test suite executed on an iPhone 14 simulator; all scenarios passed.
-- **Audio Playback**: Chapter selection triggers the correct audio source (human narrator for BSB/WEB NT, TTS for WEB OT) and plays without crashes.
-- **Documentation**: `auth_feature.md`, `ux_for_versepicker.md`, `adrs/` files, and `firebasetestlab_wave1.md` are in place.
+## Visible Progress (as of 2026-10-04)
+- **Local baseline**: Verified by the active workspace test run that the app’s suite passes locally: `12/12` tests passed in the current repo state.
+- **Device validation**: Device targets are present and visible to Flutter (`Chrome`, `Pixel 9a`, and the `iPhone 16 Pro` simulator), but the actual terminal-level smoke-test execution for those targets is still the remaining unconfirmed step in this session.
+- **Audio playback path**: The code path for chapter selection and narrator/tts fallback is present in the app logic, but no fresh device-driven playback proof has been captured in this session.
+- **Documentation**: Project notes, auth discussions, and test-plan docs are in place, but the repo status should be treated as “local green, device verification pending.”
 
-## Next Steps (if time permits)
-- Push committed changes to a feature branch for review (no automatic push).
-- Set up CI workflow to run Patrol tests on Firebase Test Lab.
-- Refine UX of chapter picker (highlight matching text, add debounce).
+## Next Steps (strict scope)
+1. Run the smoke test on Chrome, then on the Pixel 9a, then on the iPhone simulator.
+2. Capture real output and exit codes for each target.
+3. Only after that, decide whether the 0.2 slice is ready for deployment prep.
+4. GitHub Pages / repo push remains a separate auth-dependent step and is not the core app validation path.
 
-*All work is local; no `git push` performed without explicit user approval.*
+*This status reflects the verified state of the codebase, not aspirational milestones. No deployment claim is made without fresh repo/auth evidence.*
 
 ## New Mini‑Milestones (TDD/BDD & Patrol)
 1. **Add dev dependencies** – `mocktail` & `patrol` to `pubspec.yaml`.

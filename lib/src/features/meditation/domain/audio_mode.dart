@@ -9,7 +9,7 @@ extension AudioModeX on AudioMode {
       case AudioMode.narrator:
         return '🎙️ Human Narrator';
       case AudioMode.tts:
-        return '🗣️ Peaceful TTS';
+        return '🗣️ Text-to-Speech (TTS)';
     }
   }
 

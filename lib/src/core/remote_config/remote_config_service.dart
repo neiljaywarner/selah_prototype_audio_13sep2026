@@ -6,6 +6,7 @@ class RemoteConfigService {
     'default_repetitions': 3,
     'default_pause_gap': 4,
     'feedback_board_enabled': true,
+    'enable_topic_tabs': false, // Hidden until v0.4 passage playlists
     'karaoke_experimental_enabled': false,
   };
 

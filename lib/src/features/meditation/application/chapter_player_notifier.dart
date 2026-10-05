@@ -84,7 +84,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       onError: (Object e, StackTrace stack) {
         if (state.audioMode == AudioMode.narrator) {
           AppLogger.error('Audio stream error', error: e, stackTrace: stack);
-          _switchToTtsFallback('Audio stream blocked or unavailable. Falling back to peaceful TTS narration.');
+          _switchToTtsFallback('Audio stream blocked or unavailable. Falling back to TTS narration.');
         }
       },
     );
@@ -93,7 +93,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   Future<void> _initTtsEngine() async {
     try {
       await _flutterTts.setLanguage('en-US');
-      // Gentle, peaceful meditation speech rate and pitch
+      // Gentle meditation speech rate and pitch
       await _flutterTts.setSpeechRate(0.38);
       await _flutterTts.setPitch(0.95);
 
@@ -134,10 +134,10 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
     final isOt = BibleCanon.isOldTestament(bookCode);
 
-    // Rule 1: Old Testament WEB -> API.Bible lacks audio stream -> Use calming TTS
+    // Rule 1: Old Testament WEB -> API.Bible lacks audio stream -> Use standard TTS
     if (state.activeTranslation == 'WEB' && isOt) {
       AppLogger.info(
-        'Routing: WEB Old Testament ($bookCode $chapterNumber) -> Using calming TTS engine.',
+        'Routing: WEB Old Testament ($bookCode $chapterNumber) -> Using standard TTS engine.',
       );
 
       final chapterText = await _fetchChapterText(bookCode, chapterNumber) ??
@@ -154,7 +154,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       state = state.copyWith(
         currentChapter: dynamicChapter,
         audioMode: AudioMode.tts,
-        infoNotice: 'World English Bible (WEB) has no OT narrator on API.Bible — narrating with calming TTS.',
+        infoNotice: 'World English Bible (WEB) has no OT narrator on API.Bible — narrating with Text-to-Speech (TTS).',
       );
 
       await _playTts(chapterText);
@@ -201,7 +201,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       throw Exception('Resource URL empty for $chapterId');
     } catch (e, stack) {
       AppLogger.error('API.Bible narrator fetch failed for $chapterId', error: e, stackTrace: stack);
-      _switchToTtsFallback('Audio stream not available for $bookName $chapterNumber. Switched to peaceful TTS.');
+      _switchToTtsFallback('Audio stream not available for $bookName $chapterNumber. Switched to TTS.');
     }
   }
 
@@ -340,7 +340,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       play();
     } catch (e, stack) {
       AppLogger.error('Failed to set audio source URL in player', error: e, stackTrace: stack);
-      _switchToTtsFallback('Audio stream blocked or failed ($e). Loaded peaceful TTS narration.');
+      _switchToTtsFallback('Audio stream blocked or failed ($e). Loaded TTS narration.');
     }
   }
 
