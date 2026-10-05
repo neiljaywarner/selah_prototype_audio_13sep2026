@@ -28,5 +28,20 @@ void main() {
       );
       expect(result, isNull);
     });
+
+    test('1 Corinthians 13:4-7 WhisperX timestamp structure verification', () {
+      final verses = [
+        {'verse': 4, 'text': 'Love is patient, love is kind. Love does not envy.', 'startMs': 0, 'endMs': 5200},
+        {'verse': 5, 'text': 'does not behave itself inappropriately...', 'startMs': 5300, 'endMs': 11800},
+        {'verse': 6, 'text': 'does not rejoice in unrighteousness...', 'startMs': 11900, 'endMs': 16400},
+        {'verse': 7, 'text': 'bears all things, believes all things...', 'startMs': 16500, 'endMs': 22000},
+      ];
+      final list = verses.map((e) => VerseTimestamp.fromJson(e)).toList();
+      expect(list.length, equals(4));
+      expect(list.first.verse, equals(4));
+      expect(list.first.text, contains('patient'));
+      expect(list.last.verse, equals(7));
+      expect(list.last.endMs, equals(22000));
+    });
   });
 }
