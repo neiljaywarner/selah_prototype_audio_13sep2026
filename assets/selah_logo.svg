@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background: Deep Indigo Gradient -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E1B4B" />
+      <stop offset="100%" stop-color="#0F0E26" />
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="100%" stop-color="#FBBF24" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)" />
+
+  <!-- Open Book / Bible underneath -->
+  <g transform="translate(0, 40)">
+    <!-- Left page -->
+    <path d="M 256 340 C 210 320 120 320 70 340 L 70 420 C 120 400 210 400 256 420 Z" fill="#F1F5F9" opacity="0.9" />
+    <!-- Right page -->
+    <path d="M 256 340 C 302 320 392 320 442 340 L 442 420 C 392 400 302 400 256 420 Z" fill="#F8FAFC" opacity="0.95" />
+    <!-- Book spine / center fold -->
+    <line x1="256" y1="340" x2="256" y2="420" stroke="#CBD5E1" stroke-width="6" />
+  </g>
+
+  <!-- Latin Cross centered above the book -->
+  <g fill="url(#gold)">
+    <!-- Vertical beam -->
+    <rect x="226" y="110" width="60" height="240" rx="12" />
+    <!-- Horizontal beam -->
+    <rect x="156" y="165" width="200" height="60" rx="12" />
+  </g>
+</svg>
