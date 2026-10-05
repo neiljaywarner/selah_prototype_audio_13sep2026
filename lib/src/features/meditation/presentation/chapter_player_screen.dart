@@ -119,7 +119,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
       context: context,
       builder: (ctx) => ChapterPickerDialog(
         onChapterSelected: (code, chapter, name) {
-          _searchController.text = '$code.$chapter';
+          _searchController.text = '$name $chapter';
           setState(() => _searchSuggestions = []);
           ref.read(chapterPlayerProvider.notifier).routeAndPlayChapter(
                 bookCode: code,
