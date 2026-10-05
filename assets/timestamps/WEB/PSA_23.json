@@ -1,0 +1,20 @@
+[
+  {
+    "verse": 1,
+    "text": "Yahweh is my shepherd: I shall have no lack.",
+    "startMs": 0,
+    "endMs": 3800
+  },
+  {
+    "verse": 2,
+    "text": "He makes me lie down in green pastures. He leads me beside still waters.",
+    "startMs": 3850,
+    "endMs": 8900
+  },
+  {
+    "verse": 3,
+    "text": "He restores my soul. He guides me in the paths of righteousness for his name's sake.",
+    "startMs": 8950,
+    "endMs": 15000
+  }
+]
