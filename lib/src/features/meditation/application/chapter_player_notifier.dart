@@ -7,6 +7,7 @@ import 'package:just_audio/just_audio.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/bible_canon.dart';
+import '../../../core/karaoke/timestamp_loader.dart';
 import '../../../core/logging/app_logger.dart';
 import '../domain/audio_mode.dart';
 import '../domain/chapter_info.dart';
@@ -25,6 +26,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   StreamSubscription? _durSub;
   StreamSubscription? _stateSub;
   StreamSubscription? _eventSub;
+  List<VerseTimestamp>? _currentTimestamps;
 
   @override
   ChapterPlayerState build() {
@@ -66,7 +68,23 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   void _initAudioListeners() {
     _posSub = _audioPlayer.positionStream.listen((pos) {
       if (state.audioMode == AudioMode.narrator) {
-        state = state.copyWith(position: pos);
+        int hStart = 0;
+        int hEnd = 0;
+        if (_currentTimestamps != null) {
+          final posMs = pos.inMilliseconds;
+          for (final vt in _currentTimestamps!) {
+            if (posMs >= vt.startMs && posMs <= vt.endMs) {
+              hStart = 0;
+              hEnd = vt.text.length;
+              break;
+            }
+          }
+        }
+        state = state.copyWith(
+          position: pos,
+          highlightStart: hStart > 0 ? hStart : state.highlightStart,
+          highlightEnd: hEnd > 0 ? hEnd : state.highlightEnd,
+        );
       }
     });
 
@@ -316,6 +334,15 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       await _flutterTts.stop();
       await _audioPlayer.stop();
     } catch (_) {}
+
+    _currentTimestamps = await TimestampLoaderService.loadChapterTimestamps(
+      translation: state.activeTranslation,
+      bookCode: chapter.bookCode,
+      chapterNumber: chapter.chapterNumber,
+    );
+    if (_currentTimestamps != null && _currentTimestamps!.isNotEmpty) {
+      AppLogger.info('WhisperX timestamps loaded for ${chapter.reference}: ${_currentTimestamps!.length} verses.');
+    }
 
     state = state.copyWith(
       currentChapter: chapter,
