@@ -15,7 +15,7 @@ import 'widgets/feature_voting_sheet.dart';
 import 'widgets/settings_bottom_sheet.dart';
 import 'widgets/topic_tab_bar.dart';
 
-const bool kEnableTopicTabs = bool.fromEnvironment('ENABLE_TOPIC_TABS', defaultValue: false);
+const bool kEnableTopicTabs = bool.fromEnvironment('ENABLE_TOPIC_TABS', defaultValue: true);
 
 class ChapterPlayerScreen extends ConsumerStatefulWidget {
   const ChapterPlayerScreen({super.key});
