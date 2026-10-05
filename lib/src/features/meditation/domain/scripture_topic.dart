@@ -44,6 +44,20 @@ const List<ScriptureTopic> kDefaultMeditationTopics = [
         audioStreamUrl: 'https://ia800203.us.archive.org/11/items/WEB_Audio_Bible/Ps023.mp3',
         textContent: 'Yahweh is my shepherd: I shall have no lack. He makes me lie down in green pastures. He leads me beside still waters. He restores my soul...',
       ),
+      ChapterInfo(
+        bookCode: '1CO',
+        bookName: '1 Corinthians',
+        chapterNumber: 13,
+        audioStreamUrl: 'https://ia800203.us.archive.org/11/items/WEB_Audio_Bible/1Cor013.mp3',
+        textContent: 'Love is patient, love is kind. Love does not envy. Love does not brag, is not proud...',
+      ),
+      ChapterInfo(
+        bookCode: 'MRK',
+        bookName: 'Mark',
+        chapterNumber: 5,
+        audioStreamUrl: 'https://ia800203.us.archive.org/11/items/WEB_Audio_Bible/Mrk005.mp3',
+        textContent: 'They came to the other side of the sea, into the country of the Gerasenes...',
+      ),
     ],
   ),
   ScriptureTopic(
@@ -145,6 +159,20 @@ const List<ScriptureTopic> kDefaultMeditationTopics = [
         chapterNumber: 23,
         audioStreamUrl: 'https://ia800203.us.archive.org/11/items/WEB_Audio_Bible/Ps023.mp3',
         textContent: 'Yahweh is my shepherd: I shall have no lack. He makes me lie down in green pastures. He leads me beside still waters. He restores my soul...',
+      ),
+      ChapterInfo(
+        bookCode: '1CO',
+        bookName: '1 Corinthians',
+        chapterNumber: 13,
+        audioStreamUrl: 'https://ia800203.us.archive.org/11/items/WEB_Audio_Bible/1Cor013.mp3',
+        textContent: 'Love is patient, love is kind. Love does not envy. Love does not brag, is not proud...',
+      ),
+      ChapterInfo(
+        bookCode: 'MRK',
+        bookName: 'Mark',
+        chapterNumber: 5,
+        audioStreamUrl: 'https://ia800203.us.archive.org/11/items/WEB_Audio_Bible/Mrk005.mp3',
+        textContent: 'They came to the other side of the sea, into the country of the Gerasenes...',
       ),
       ChapterInfo(
         bookCode: 'PSA',
