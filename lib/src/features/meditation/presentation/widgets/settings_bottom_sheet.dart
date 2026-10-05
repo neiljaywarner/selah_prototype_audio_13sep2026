@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../application/chapter_player_notifier.dart';
 
 class SettingsBottomSheet extends ConsumerWidget {
@@ -37,33 +38,19 @@ class SettingsBottomSheet extends ConsumerWidget {
             style: TextStyle(fontSize: 11, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          Row(
-            children: ['BSB', 'WEB'].map((t) {
-              final isSel = state.activeTranslation == t;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => notifier.setTranslation(t),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSel ? const Color(0xFF6366F1) : const Color(0xFF0F0E26),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(
-                      child: Text(
-                        t == 'BSB' ? 'BSB (Berean)' : 'WEB (World English)',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: isSel ? Colors.white : Colors.white60,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF6366F1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Center(
+              child: Text(
+                'Berean Standard Bible (BSB) — Full Audio Narration',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+            ),
           ),
           const SizedBox(height: 16),
 

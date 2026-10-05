@@ -422,35 +422,20 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                             ),
                           ),
                         ),
-                        // Quick Translation Toggle
+                        // Translation Badge
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF0F0E26),
+                            color: const Color(0xFF6366F1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Row(
-                            children: ['BSB', 'WEB'].map((t) {
-                              final isSel = playerState.activeTranslation == t;
-                              return GestureDetector(
-                                onTap: () => notifier.setTranslation(t),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: isSel ? const Color(0xFF6366F1) : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    t,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-                                      color: isSel ? Colors.white : Colors.white60,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
+                          child: const Text(
+                            'BSB Audio',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ],

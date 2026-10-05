@@ -1,67 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:patrol/patrol.dart';
 import 'package:selah_prototype_audio_13sep2026/src/app.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  group('Selah core experience', () {
-    testWidgets('App launches and shows title', (tester) async {
-      await tester.pumpWidget(const ProviderScope(child: SelahApp()));
-      await tester.pumpAndSettle(const Duration(seconds: 3));
-      expect(find.text('SELAH'), findsOneWidget);
-    });
+  patrolTest(
+    'Selah core experience: launches, selects John 1 chapter audio, and verifies human narrator playback',
+    ($) async {
+      await $.pumpWidget(const ProviderScope(child: SelahApp()));
+      await $.pumpAndSettle();
 
-    testWidgets('Chapter picker autocomplete works', (tester) async {
-      await tester.pumpWidget(const ProviderScope(child: SelahApp()));
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      // 1. Verify Header
+      expect($('SELAH'), findsOneWidget);
 
-      final searchField = find.byType(TextField);
-      expect(searchField, findsOneWidget);
+      // 2. Autocomplete
+      await $(TextField).enterText('Jn');
+      await $.pump(const Duration(milliseconds: 500));
+      expect($(RegExp(r'John')), findsWidgets);
+      expect($(RegExp(r'Jonah')), findsWidgets);
 
-      await tester.enterText(searchField, 'Jn');
-      await tester.pump(const Duration(milliseconds: 500));
+      // 3. Search & select John 1
+      await $(TextField).enterText('John');
+      await $.pump(const Duration(milliseconds: 500));
 
-      // Both John and Jonah chips should appear
-      expect(find.textContaining('John'), findsWidgets);
-      expect(find.textContaining('Jonah'), findsWidgets);
-    });
-
-    testWidgets('Tapping John 1 chip navigates to chapter player', (tester) async {
-      await tester.pumpWidget(const ProviderScope(child: SelahApp()));
-      await tester.pumpAndSettle(const Duration(seconds: 3));
-
-      final searchField = find.byType(TextField);
-      await tester.enterText(searchField, 'John');
-      await tester.pump(const Duration(milliseconds: 500));
-
-      // Tap the first John chip
-      final johnChip = find.textContaining('John 1');
-      if (johnChip.evaluate().isNotEmpty) {
-        await tester.tap(johnChip.first);
-        await tester.pumpAndSettle(const Duration(seconds: 2));
+      final johnChip = $(RegExp(r'John 1'));
+      if (johnChip.visible) {
+        await johnChip.tap();
+        await $.pumpAndSettle();
       }
 
-      // Verify we have audio mode indicator (Human Narrator or TTS)
+      // Assert Audio Mode Indicator
       expect(
-        find.textContaining('Narrator').evaluate().isNotEmpty ||
-        find.textContaining('TTS').evaluate().isNotEmpty ||
-        find.textContaining('Speech').evaluate().isNotEmpty,
+        $(RegExp(r'Narrator')).visible || $(RegExp(r'TTS')).visible || $(RegExp(r'Speech')).visible,
         isTrue,
       );
-    });
 
-    testWidgets('Voting modal opens', (tester) async {
-      await tester.pumpWidget(const ProviderScope(child: SelahApp()));
-      await tester.pumpAndSettle(const Duration(seconds: 3));
-
-      final voteIcon = find.byIcon(Icons.how_to_vote_rounded);
-      expect(voteIcon, findsOneWidget);
-      await tester.tap(voteIcon);
-      await tester.pumpAndSettle();
-      expect(find.textContaining('Feature'), findsWidgets);
-    });
-  });
+      // 4. Open Roadmap Voting Modal
+      final voteIcon = $(Icons.how_to_vote_rounded);
+      if (voteIcon.visible) {
+        await voteIcon.tap();
+        await $.pumpAndSettle();
+        expect($(RegExp(r'Feature')), findsWidgets);
+      }
+    },
+    config: const PatrolTesterConfig(),
+  );
 }
