@@ -59,6 +59,20 @@ dev_dependencies:
   # BDD .feature files
   bdd_widget_test: ^1.7.2
 
+  # Launcher Icons generator
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: "ic_launcher"
+  ios: true
+  image_path: "assets/selah_logo.png"
+  min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "assets/selah_logo.png"
+    background_color: "#0B132B"
+    theme_color: "#1C2541"
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
