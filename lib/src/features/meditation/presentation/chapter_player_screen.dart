@@ -48,14 +48,10 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     final text = _searchController.text.trim();
     if (text.length >= 2 && !text.contains(':')) {
       final suggestions = BibleReferenceParser.getSuggestions(text);
-      setState(() {
-        _searchSuggestions = suggestions.take(4).toList();
-      });
+      setState(() => _searchSuggestions = suggestions.take(4).toList());
     } else {
       if (_searchSuggestions.isNotEmpty) {
-        setState(() {
-          _searchSuggestions = [];
-        });
+        setState(() => _searchSuggestions = []);
       }
     }
   }
@@ -115,40 +111,34 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
         .routeAndPlayChapter(bookCode: bookCode, chapterNumber: chapterNum, bookName: bookName);
   }
 
-  void _openChapterPicker() {
-    showDialog(
-      context: context,
-      builder: (ctx) => ChapterPickerDialog(
-        onChapterSelected: (code, chapter, name) {
-          _searchController.text = '$name $chapter';
-          setState(() => _searchSuggestions = []);
-          ref
-              .read(chapterPlayerProvider.notifier)
-              .routeAndPlayChapter(bookCode: code, chapterNumber: chapter, bookName: name);
-        },
-      ),
-    );
-  }
+  void _openChapterPicker() => showDialog(
+    context: context,
+    builder: (ctx) => ChapterPickerDialog(
+      onChapterSelected: (code, chapter, name) {
+        _searchController.text = '$name $chapter';
+        setState(() => _searchSuggestions = []);
+        ref
+            .read(chapterPlayerProvider.notifier)
+            .routeAndPlayChapter(bookCode: code, chapterNumber: chapter, bookName: name);
+      },
+    ),
+  );
 
-  void _openFeatureVoting() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => const FeatureVotingSheet(),
-    );
-  }
+  void _openFeatureVoting() => showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (ctx) => const FeatureVotingSheet(),
+  );
 
-  void _openSettingsModal() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1E1B4B),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => const SettingsBottomSheet(),
-    );
-  }
+  void _openSettingsModal() => showModalBottomSheet(
+    context: context,
+    backgroundColor: const Color(0xFF1E1B4B),
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (ctx) => const SettingsBottomSheet(),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -197,9 +187,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
               color: _showDebugLogs ? Colors.greenAccent : Colors.white70,
             ),
             tooltip: 'Diagnostic Console',
-            onPressed: () {
-              setState(() => _showDebugLogs = !_showDebugLogs);
-            },
+            onPressed: () => setState(() => _showDebugLogs = !_showDebugLogs),
           ),
           IconButton(
             icon: const Icon(Icons.settings_outlined, color: Colors.white70),
