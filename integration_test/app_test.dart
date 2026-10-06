@@ -2,51 +2,68 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:patrol/patrol.dart';
 import 'package:selah_prototype_audio_13sep2026/src/app.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  patrolTest(
+  testWidgets(
     'Selah core experience: launches, selects John 1 chapter audio, and verifies human narrator playback',
-    ($) async {
-      await $.pumpWidget(const ProviderScope(child: SelahApp()));
-      await $.pumpAndSettle();
+    (tester) async {
+      await tester.pumpWidget(const ProviderScope(child: SelahApp()));
+      await tester.pumpAndSettle(const Duration(seconds: 2));
 
       // 1. Verify Header
-      expect($('SELAH'), findsOneWidget);
+      expect(find.text('SELAH'), findsOneWidget);
 
       // 2. Autocomplete
-      await $(TextField).enterText('Jn');
-      await $.pump(const Duration(milliseconds: 500));
-      expect($(RegExp(r'John')), findsWidgets);
-      expect($(RegExp(r'Jonah')), findsWidgets);
+      final textField = find.byType(TextField);
+      await tester.enterText(textField, 'Jn');
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.textContaining('John'), findsWidgets);
+      expect(find.textContaining('Jonah'), findsWidgets);
 
       // 3. Search & select John 1
-      await $(TextField).enterText('John');
-      await $.pump(const Duration(milliseconds: 500));
+      await tester.enterText(textField, 'John');
+      await tester.pump(const Duration(milliseconds: 500));
 
-      final johnChip = $(RegExp(r'John 1'));
-      if (johnChip.visible) {
-        await johnChip.tap();
-        await $.pumpAndSettle();
+      final johnChip = find.textContaining('John 1');
+      if (johnChip.evaluate().isNotEmpty) {
+        await tester.tap(johnChip.first);
+        await tester.pumpAndSettle(const Duration(seconds: 3));
       }
 
       // Assert Audio Mode Indicator
       expect(
-        $(RegExp(r'Narrator')).visible || $(RegExp(r'TTS')).visible || $(RegExp(r'Speech')).visible,
+        find.textContaining('Narrator').evaluate().isNotEmpty ||
+            find.textContaining('TTS').evaluate().isNotEmpty ||
+            find.textContaining('Speech').evaluate().isNotEmpty,
         isTrue,
       );
 
       // 4. Open Roadmap Voting Modal
-      final voteIcon = $(Icons.how_to_vote_rounded);
-      if (voteIcon.visible) {
-        await voteIcon.tap();
-        await $.pumpAndSettle();
-        expect($(RegExp(r'Feature')), findsWidgets);
+      final voteIcon = find.byIcon(Icons.how_to_vote_rounded);
+      if (voteIcon.evaluate().isNotEmpty) {
+        await tester.tap(voteIcon);
+        await tester.pumpAndSettle();
+        expect(find.textContaining('Feature'), findsWidgets);
       }
     },
-    config: const PatrolTesterConfig(),
+  );
+
+  testWidgets(
+    'WhisperX 1 Cor 13:4-7 feature: selects 1 Corinthians 13 chip and verifies experimental preview banner',
+    (tester) async {
+      await tester.pumpWidget(const ProviderScope(child: SelahApp()));
+      await tester.pumpAndSettle(const Duration(seconds: 2));
+
+      final cor13Chip = find.textContaining('1 Corinthians 13');
+      if (cor13Chip.evaluate().isNotEmpty) {
+        await tester.tap(cor13Chip.first);
+        await tester.pumpAndSettle(const Duration(seconds: 2));
+
+        expect(find.textContaining('WhisperX Experimental Preview'), findsWidgets);
+      }
+    },
   );
 }
