@@ -153,6 +153,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     required int chapterNumber,
     required String bookName,
   }) async {
+    await stopAllPlayback();
+
     state = state.copyWith(
       isLoading: true,
       clearLastError: true,
@@ -256,6 +258,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   Future<void> fetchAndPlaySingleVerse(String query) async {
+    await stopAllPlayback();
+
     state = state.copyWith(
       isLoading: true,
       clearLastError: true,
@@ -295,11 +299,19 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     _switchToTtsFallback('Could not load online verse. Narrating fallback meditation verse.');
   }
 
-  Future<void> _playTts(String text) async {
+  Future<void> stopAllPlayback() async {
     _gapTimer?.cancel();
+    try {
+      await _flutterTts.stop();
+    } catch (_) {}
     try {
       await _audioPlayer.stop();
     } catch (_) {}
+    state = state.copyWith(isPlaying: false, isPausedInGap: false);
+  }
+
+  Future<void> _playTts(String text) async {
+    await stopAllPlayback();
 
     state = state.copyWith(
       isLoading: false,
@@ -329,11 +341,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   Future<void> loadChapter(ChapterInfo chapter) async {
-    _gapTimer?.cancel();
-    try {
-      await _flutterTts.stop();
-      await _audioPlayer.stop();
-    } catch (_) {}
+    await stopAllPlayback();
 
     _currentTimestamps = await TimestampLoaderService.loadChapterTimestamps(
       translation: state.activeTranslation,
@@ -341,7 +349,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       chapterNumber: chapter.chapterNumber,
     );
     if (_currentTimestamps != null && _currentTimestamps!.isNotEmpty) {
-      AppLogger.info('WhisperX timestamps loaded for ${chapter.reference}: ${_currentTimestamps!.length} verses.');
+      AppLogger.info(
+        'WhisperX timestamps loaded for ${chapter.reference}: ${_currentTimestamps!.length} verses.',
+      );
     }
 
     state = state.copyWith(
