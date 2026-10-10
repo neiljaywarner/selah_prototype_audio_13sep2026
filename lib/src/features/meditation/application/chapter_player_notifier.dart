@@ -9,7 +9,9 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/bible_canon.dart';
 import '../../../core/karaoke/timestamp_loader.dart';
 import '../../../core/logging/app_logger.dart';
+import '../../../core/preferences/user_preferences.dart';
 import '../domain/audio_mode.dart';
+import '../domain/bible_translation.dart';
 import '../domain/chapter_info.dart';
 import 'chapter_player_state.dart';
 
@@ -62,7 +64,21 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       _flutterTts.stop();
     });
 
-    return ChapterPlayerState(currentChapter: kFeaturedChapters[0]);
+    String initialTranslation = 'BSB';
+    try {
+      final userPrefs = ref.watch(userPreferencesProvider);
+      final saved = userPrefs.lastTranslationCode;
+      if (saved != null && saved.isNotEmpty) {
+        initialTranslation = BibleTranslation.fromCode(saved).code;
+      }
+    } catch (_) {
+      // In tests or if provider not yet overridden, fall back cleanly to BSB
+    }
+
+    return ChapterPlayerState(
+      currentChapter: kFeaturedChapters[0],
+      activeTranslation: initialTranslation,
+    );
   }
 
   void _initAudioListeners() {
@@ -198,12 +214,12 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       highlightEnd: 0,
     );
 
-    final isOt = BibleCanon.isOldTestament(bookCode);
+    final translation = state.translation;
 
-    // Rule 1: Old Testament WEB -> API.Bible lacks audio stream -> Use standard TTS
-    if (state.activeTranslation == 'WEB' && isOt) {
+    // Rule 1: translation has no human narrator for this testament (e.g. WEB OT) -> TTS
+    if (!translation.hasNarratorFor(bookCode)) {
       AppLogger.info(
-        'Routing: WEB Old Testament ($bookCode $chapterNumber) -> Using standard TTS engine.',
+        'Routing: ${translation.code} has no narrator for $bookCode $chapterNumber -> Using standard TTS engine.',
       );
 
       final chapterText = await _fetchChapterText(bookCode, chapterNumber) ?? fallbackText;
@@ -216,23 +232,24 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         textContent: chapterText,
       );
 
+      final testament = BibleCanon.isOldTestament(bookCode) ? 'OT' : 'NT';
       state = state.copyWith(
         currentChapter: dynamicChapter,
         audioMode: AudioMode.tts,
         infoNotice:
-            'World English Bible (WEB) has no OT narrator on API.Bible — narrating with Text-to-Speech (TTS).',
+            '${translation.fullName} (${translation.code}) has no $testament narrator on API.Bible — narrating with Text-to-Speech (TTS).',
       );
 
       await _playTts(chapterText);
       return;
     }
 
-    // Rule 2: BSB (OT & NT) or WEB (NT) -> Stream Human Narrator from API.Bible
-    final bibleId = state.activeTranslation == 'WEB' ? kWebAudioBibleId : kBsbAudioBibleId;
+    // Rule 2: translation has a narrator for this testament (BSB OT+NT, NIV OT+NT, WEB NT)
+    final bibleId = translation.audioBibleId;
     final chapterId = '${bookCode.toUpperCase()}.$chapterNumber';
     final url = '/audio-bibles/$bibleId/chapters/$chapterId';
 
-    AppLogger.info('Fetching narrator stream for $chapterId ($bibleId) from API.Bible...');
+    AppLogger.info('Fetching ${translation.code} narrator stream for $chapterId ($bibleId) from API.Bible...');
 
     try {
       final response = await _dio.get(url);
@@ -240,6 +257,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'];
         final String? streamUrl = data['resourceUrl'];
+        _recordFumsToken(response.data, kind: 'audio', chapterId: chapterId);
 
         if (streamUrl != null && streamUrl.isNotEmpty) {
           final fetchedText = await _fetchChapterText(bookCode, chapterNumber) ?? fallbackText;
@@ -267,7 +285,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         properties: {
           'book_code': bookCode.toUpperCase(),
           'chapter': chapterNumber,
-          'translation': state.activeTranslation,
+          'translation': translation.code,
           'audio_mode': state.audioMode.name,
           'bible_id': bibleId,
         },
@@ -278,16 +296,37 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
   }
 
+  /// Licensed translations (NIV) return a `meta.fumsToken` that API.Bible's
+  /// Fair Use Management System expects to be reported. We log it so usage is
+  /// auditable; see niv_restrictions.md for the reporting plan.
+  void _recordFumsToken(dynamic body, {required String kind, required String chapterId}) {
+    if (!state.translation.isLicensed) return;
+    String? token;
+    if (body is Map) {
+      final meta = body['meta'];
+      if (meta is Map) {
+        token = meta['fumsToken'] as String?;
+      }
+    }
+    if (token == null || token.isEmpty) return;
+    AppLogger.logEvent('fums_token_received', {
+      'translation': state.translation.code,
+      'kind': kind,
+      'chapter_id': chapterId,
+    });
+  }
+
   Future<String?> _fetchChapterText(String bookCode, int chapterNumber) async {
     if (kApiBibleKey == 'REDACTED' || kApiBibleKey.isEmpty) return null;
     try {
-      final textBibleId = state.activeTranslation == 'WEB' ? kWebTextBibleId : kBsbTextBibleId;
+      final textBibleId = state.translation.textBibleId;
       final passageId = '${bookCode.toUpperCase()}.$chapterNumber';
       final res = await _dio.get(
         '/bibles/$textBibleId/passages/$passageId',
         queryParameters: {'content-type': 'text', 'include-verse-numbers': 'false'},
       );
       if (res.statusCode == 200 && res.data != null) {
+        _recordFumsToken(res.data, kind: 'text', chapterId: passageId);
         final content = res.data['data']?['content'] as String?;
         if (content != null && content.trim().isNotEmpty) {
           return content.replaceAll(RegExp(r'\s+'), ' ').trim();
@@ -296,7 +335,6 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     } catch (_) {}
     return null;
   }
-
   Future<void> fetchAndPlaySingleVerse(String query) async {
     await stopAllPlayback();
 
@@ -527,9 +565,24 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   void setTranslation(String translation) {
-    if (state.activeTranslation == translation) return;
-    state = state.copyWith(activeTranslation: translation);
-    AppLogger.logEvent('change_translation', {'translation': translation});
+    final target = BibleTranslation.fromCode(translation);
+    if (state.activeTranslation == target.code) return;
+
+    final previousTranslation = state.activeTranslation;
+    state = state.copyWith(activeTranslation: target.code);
+
+    // Persist via SharedPreferences / LocalStorage for next launch
+    try {
+      ref.read(userPreferencesProvider).setLastTranslationCode(target.code);
+    } catch (_) {}
+
+    AppLogger.logEvent('change_translation', {
+      'translation': target.code,
+      'translation_name': target.fullName,
+      'previous_translation': previousTranslation,
+      'is_licensed': target.isLicensed,
+      'chapter': state.currentChapter.reference,
+    });
 
     // Re-route current chapter with new translation
     routeAndPlayChapter(

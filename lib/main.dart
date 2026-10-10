@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'src/app.dart';
 import 'src/core/analytics/analytics_wrapper.dart';
@@ -8,6 +9,7 @@ import 'src/core/analytics/firebase_analytics_provider.dart';
 import 'src/core/analytics/posthog_provider.dart';
 import 'src/core/constants/api_constants.dart';
 import 'src/core/logging/app_logger.dart';
+import 'src/core/preferences/user_preferences.dart';
 import 'src/core/remote_config/remote_config_service.dart';
 
 void main() async {
@@ -30,6 +32,8 @@ void main() async {
   final remoteConfig = RemoteConfigService();
   await remoteConfig.init();
 
+  final sharedPreferences = await SharedPreferences.getInstance();
+
   AppLogger.info('Selah Scripture Audio Meditation v0.2 Started.');
   AppLogger.info(
     'API.Bible Key status: ${kApiBibleKey == "REDACTED" ? "REDACTED (Set via --dart-define)" : "CONFIGURED"}',
@@ -39,5 +43,12 @@ void main() async {
   );
   AppLogger.info('Firebase Installations ID: ${firebaseProvider.installationId}');
 
-  runApp(const ProviderScope(child: SelahApp()));
+  runApp(
+    ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+      ],
+      child: const SelahApp(),
+    ),
+  );
 }

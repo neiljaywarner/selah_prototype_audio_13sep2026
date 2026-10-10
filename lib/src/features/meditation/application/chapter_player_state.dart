@@ -1,4 +1,5 @@
 import '../domain/audio_mode.dart';
+import '../domain/bible_translation.dart';
 import '../domain/chapter_info.dart';
 
 class ChapterPlayerState {
@@ -79,4 +80,6 @@ class ChapterPlayerState {
     infoNotice: clearInfoNotice ? null : (infoNotice ?? this.infoNotice),
     processingStateName: processingStateName ?? this.processingStateName,
   );
+
+  BibleTranslation get translation => BibleTranslation.fromCode(activeTranslation);
 }

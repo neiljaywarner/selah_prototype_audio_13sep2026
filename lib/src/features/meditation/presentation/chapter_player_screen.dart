@@ -9,6 +9,7 @@ import '../../../core/logging/app_logger.dart';
 import '../../../core/picker/bible_reference_parser.dart';
 import '../application/chapter_player_notifier.dart';
 import '../domain/audio_mode.dart';
+import '../domain/bible_translation.dart';
 import '../domain/chapter_info.dart';
 import '../domain/scripture_topic.dart';
 import 'widgets/chapter_picker_dialog.dart';
@@ -409,7 +410,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                             ),
                           ),
                         ),
-                        // BSB / WEB Translation Segmented Toggle
+                        // Translation Segmented Toggle (BSB, WEB, NIV)
                         Container(
                           padding: const EdgeInsets.all(2),
                           decoration: BoxDecoration(
@@ -419,12 +420,12 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: ['BSB', 'WEB'].map((tr) {
-                              final isSelected = playerState.activeTranslation == tr;
+                            children: BibleTranslation.values.map((tr) {
+                              final isSelected = playerState.activeTranslation == tr.code;
                               return GestureDetector(
-                                onTap: () => notifier.setTranslation(tr),
+                                onTap: () => notifier.setTranslation(tr.code),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                                   decoration: BoxDecoration(
                                     color: isSelected
                                         ? const Color(0xFF6366F1)
@@ -432,7 +433,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
-                                    tr,
+                                    tr.shortLabel,
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold,
@@ -458,7 +459,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${playerState.activeTranslation} • API.Bible',
+                      '${playerState.translation.fullName} (${playerState.activeTranslation}) • API.Bible',
                       style: TextStyle(fontSize: 11, color: Colors.indigo.shade200),
                     ),
                     const SizedBox(height: 16),
@@ -659,13 +660,20 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                       const Divider(color: Colors.white12),
                       const SizedBox(height: 4),
                       Text(
-                        'Target Audio ID: ${playerState.activeTranslation == "WEB" ? kWebAudioBibleId : kBsbAudioBibleId}',
+                        'Target Audio ID: ${playerState.translation.audioBibleId}',
                         style: const TextStyle(fontSize: 10, color: Colors.white54),
                       ),
                       Text(
                         'Audio Stream: ${playerState.currentChapter.audioStreamUrl.isEmpty ? "(Dynamic via API.Bible)" : "Configured (S3 Presigned)"}',
                         style: const TextStyle(fontSize: 10, color: Colors.white54),
                       ),
+                      if (playerState.translation.isLicensed) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Licensing: ${playerState.translation.fullName} (FUMS active)',
+                          style: const TextStyle(fontSize: 10, color: Color(0xFFFBBF24)),
+                        ),
+                      ],
                       const SizedBox(height: 8),
                       SizedBox(
                         height: 150,

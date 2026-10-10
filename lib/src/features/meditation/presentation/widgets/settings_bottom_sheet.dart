@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/chapter_player_notifier.dart';
+import '../../domain/bible_translation.dart';
 
 class SettingsBottomSheet extends ConsumerWidget {
   const SettingsBottomSheet({super.key});
@@ -34,43 +35,58 @@ class SettingsBottomSheet extends ConsumerWidget {
           const SizedBox(height: 12),
 
           const Text(
-            'BIBLE TRANSLATION (BSB / WEB)',
+            'BIBLE TRANSLATION',
             style: TextStyle(fontSize: 11, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Row(
-            children: [
-              {'code': 'BSB', 'label': 'BSB (OT + NT Narrator)'},
-              {'code': 'WEB', 'label': 'WEB (NT Narrator / OT TTS)'},
-            ].map((item) {
-              final code = item['code']!;
-              final label = item['label']!;
-              final isSel = state.activeTranslation == code;
+            children: BibleTranslation.values.map((item) {
+              final isSel = state.activeTranslation == item.code;
               return Expanded(
                 child: GestureDetector(
-                  onTap: () => notifier.setTranslation(code),
+                  onTap: () => notifier.setTranslation(item.code),
                   child: Container(
                     margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
                     decoration: BoxDecoration(
                       color: isSel ? const Color(0xFF6366F1) : const Color(0xFF0F0E26),
                       borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(
-                      child: Text(
-                        label,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: isSel ? Colors.white : Colors.white60,
-                        ),
+                      border: Border.all(
+                        color: isSel ? const Color(0xFF818CF8) : Colors.white10,
                       ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          item.code,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: isSel ? Colors.white : Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          item.coverageLabel,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: isSel ? Colors.white.withValues(alpha: 0.9) : Colors.white38,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               );
             }).toList(),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            state.translation.copyright,
+            style: const TextStyle(fontSize: 10, color: Colors.white38),
           ),
           const SizedBox(height: 16),
 
