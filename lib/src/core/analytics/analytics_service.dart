@@ -52,16 +52,48 @@ class AptabaseAnalyticsProvider implements AnalyticsService {
     StackTrace? stackTrace,
     Map<String, dynamic>? extraProperties,
   }) async {
-    if (appKey == 'REDACTED' || appKey.isEmpty) return;
+    final stackTop = _extractTopFrames(stackTrace);
+    final rawMessage = error?.toString() ?? errorName;
+    final truncatedMessage = rawMessage.length > 220 ? '${rawMessage.substring(0, 220)}...' : rawMessage;
+
     final props = <String, dynamic>{
       'error_name': errorName,
-      'details': error?.toString(),
+      'error_type': extraProperties?['error_type']?.toString() ?? error?.runtimeType.toString() ?? 'UnknownError',
+      'error_message': truncatedMessage,
+      'http_status': extraProperties?['http_status'] ?? 0,
+      'endpoint': extraProperties?['endpoint']?.toString() ?? '',
+      'book_code': extraProperties?['book_code']?.toString() ?? '',
+      'chapter': extraProperties?['chapter'] ?? 0,
+      'translation': extraProperties?['translation']?.toString() ?? '',
+      'audio_mode': extraProperties?['audio_mode']?.toString() ?? '',
+      'stack_top': stackTop,
+      'platform': defaultTargetPlatform.name,
+      'is_fatal': extraProperties?['is_fatal'] == true,
       ...?extraProperties,
     };
+
+    if (appKey == 'REDACTED' || appKey.isEmpty) {
+      debugPrint('📊 [APTABASE ERROR (DEV)]: app_error => $props');
+      return;
+    }
+
     try {
       await Aptabase.instance.trackEvent('app_error', props);
+      debugPrint('📊 [APTABASE ERROR SENT]: app_error => $props');
     } catch (e) {
       debugPrint('🔴 [ANALYTICS ERROR LOG FAILED]: $e');
     }
+  }
+
+  static String _extractTopFrames(StackTrace? stackTrace) {
+    if (stackTrace == null) return '';
+    final lines = stackTrace
+        .toString()
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .take(3)
+        .join(' | ');
+    return lines.length > 240 ? '${lines.substring(0, 240)}...' : lines;
   }
 }

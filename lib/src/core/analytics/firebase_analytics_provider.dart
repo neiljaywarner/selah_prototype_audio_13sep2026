@@ -38,7 +38,18 @@ class FirebaseAnalyticsProvider implements AnalyticsService {
   }) async {
     if (!_initialized) return;
     try {
-      debugPrint('🔥 [FIREBASE ERROR]: $errorName | $error');
+      final isFatal = extraProperties?['is_fatal'] == true;
+      final crashPayload = <String, dynamic>{
+        'installation_id': _installationId ?? 'unknown',
+        'error_name': errorName,
+        'error_type': extraProperties?['error_type'] ?? error?.runtimeType.toString() ?? 'UnknownError',
+        'error_message': error?.toString() ?? errorName,
+        'fatal': isFatal,
+        ...?extraProperties,
+      };
+      debugPrint(
+        '🔥 [FIREBASE CRASHLYTICS & ANALYTICS]: app_exception ($errorName) => $crashPayload',
+      );
     } catch (e) {
       debugPrint('🔴 [FIREBASE ERROR LOG FAILED]: $e');
     }

@@ -110,9 +110,19 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       (event) {},
       onError: (Object e, StackTrace stack) {
         if (state.audioMode == AudioMode.narrator) {
-          AppLogger.error('Audio stream error', error: e, stackTrace: stack);
+          AppLogger.error(
+            'Audio stream playback error',
+            error: e,
+            stackTrace: stack,
+            properties: {
+              'book_code': state.currentChapter.bookCode,
+              'chapter': state.currentChapter.chapterNumber,
+              'translation': state.activeTranslation,
+              'audio_mode': state.audioMode.name,
+            },
+          );
           _switchToTtsFallback(
-            'Audio stream blocked or unavailable. Falling back to TTS narration.',
+            'Audio stream blocked or unavailable. Switched to Text-to-Speech (TTS).',
           );
         }
       },
@@ -148,6 +158,22 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
   }
 
+  String _fallbackChapterText(String bookCode, int chapterNumber, String bookName) {
+    for (final preset in kFeaturedChapters) {
+      if (preset.bookCode.toUpperCase() == bookCode.toUpperCase() &&
+          preset.chapterNumber == chapterNumber) {
+        return preset.textContent;
+      }
+    }
+    if (state.currentChapter.bookCode.toUpperCase() == bookCode.toUpperCase() &&
+        state.currentChapter.chapterNumber == chapterNumber &&
+        state.currentChapter.textContent.isNotEmpty) {
+      return state.currentChapter.textContent;
+    }
+    return '${BibleCanon.findBook(bookCode)?.name ?? bookName} Chapter $chapterNumber.\n\n'
+        '"In the beginning was the Word, and the Word was with God, and the Word was God."';
+  }
+
   Future<void> routeAndPlayChapter({
     required String bookCode,
     required int chapterNumber,
@@ -155,7 +181,16 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }) async {
     await stopAllPlayback();
 
+    final fallbackText = _fallbackChapterText(bookCode, chapterNumber, bookName);
+
     state = state.copyWith(
+      currentChapter: ChapterInfo(
+        bookCode: bookCode.toUpperCase(),
+        bookName: bookName,
+        chapterNumber: chapterNumber,
+        audioStreamUrl: '',
+        textContent: fallbackText,
+      ),
       isLoading: true,
       clearLastError: true,
       clearInfoNotice: true,
@@ -171,12 +206,10 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         'Routing: WEB Old Testament ($bookCode $chapterNumber) -> Using standard TTS engine.',
       );
 
-      final chapterText =
-          await _fetchChapterText(bookCode, chapterNumber) ??
-          '${BibleCanon.findBook(bookCode)?.name ?? bookName} Chapter $chapterNumber.\n\n"The Lord is my shepherd; I shall not want. He makes me lie down in green pastures; He leads me beside quiet waters. He restores my soul."';
+      final chapterText = await _fetchChapterText(bookCode, chapterNumber) ?? fallbackText;
 
       final dynamicChapter = ChapterInfo(
-        bookCode: bookCode,
+        bookCode: bookCode.toUpperCase(),
         bookName: bookName,
         chapterNumber: chapterNumber,
         audioStreamUrl: '',
@@ -186,7 +219,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       state = state.copyWith(
         currentChapter: dynamicChapter,
         audioMode: AudioMode.tts,
-        infoNotice: 'World English Bible (WEB) has no OT narrator on API.Bible — narrating with Text-to-Speech (TTS).',
+        infoNotice:
+            'World English Bible (WEB) has no OT narrator on API.Bible — narrating with Text-to-Speech (TTS).',
       );
 
       await _playTts(chapterText);
@@ -208,12 +242,10 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         final String? streamUrl = data['resourceUrl'];
 
         if (streamUrl != null && streamUrl.isNotEmpty) {
-          final fetchedText =
-              await _fetchChapterText(bookCode, chapterNumber) ??
-              '${state.activeTranslation} — Live REST Audio Stream from API.Bible ($chapterId).';
+          final fetchedText = await _fetchChapterText(bookCode, chapterNumber) ?? fallbackText;
 
           final dynamicChapter = ChapterInfo(
-            bookCode: bookCode,
+            bookCode: bookCode.toUpperCase(),
             bookName: bookName,
             chapterNumber: chapterNumber,
             audioStreamUrl: streamUrl,
@@ -232,25 +264,33 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         'API.Bible narrator fetch failed for $chapterId',
         error: e,
         stackTrace: stack,
+        properties: {
+          'book_code': bookCode.toUpperCase(),
+          'chapter': chapterNumber,
+          'translation': state.activeTranslation,
+          'audio_mode': state.audioMode.name,
+          'bible_id': bibleId,
+        },
       );
       _switchToTtsFallback(
-        'Audio stream not available for $bookName $chapterNumber. Switched to TTS.',
+        'Human narrator stream unavailable for $bookName $chapterNumber (${kApiBibleKey == "REDACTED" ? "API_BIBLE_KEY not set" : "network/CORS"}). Switched to Text-to-Speech (TTS).',
       );
     }
   }
 
   Future<String?> _fetchChapterText(String bookCode, int chapterNumber) async {
+    if (kApiBibleKey == 'REDACTED' || kApiBibleKey.isEmpty) return null;
     try {
       final textBibleId = state.activeTranslation == 'WEB' ? kWebTextBibleId : kBsbTextBibleId;
       final passageId = '${bookCode.toUpperCase()}.$chapterNumber';
       final res = await _dio.get(
         '/bibles/$textBibleId/passages/$passageId',
-        queryParameters: {'content-type': 'text'},
+        queryParameters: {'content-type': 'text', 'include-verse-numbers': 'false'},
       );
       if (res.statusCode == 200 && res.data != null) {
         final content = res.data['data']?['content'] as String?;
         if (content != null && content.trim().isNotEmpty) {
-          return content.trim();
+          return content.replaceAll(RegExp(r'\s+'), ' ').trim();
         }
       }
     } catch (_) {}
@@ -387,8 +427,18 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       state = state.copyWith(isLoading: false, duration: dur ?? Duration.zero);
       play();
     } catch (e, stack) {
-      AppLogger.error('Failed to set audio source URL in player', error: e, stackTrace: stack);
-      _switchToTtsFallback('Audio stream blocked or failed ($e). Loaded TTS narration.');
+      AppLogger.error(
+        'Failed to set audio source URL in player',
+        error: e,
+        stackTrace: stack,
+        properties: {
+          'book_code': chapter.bookCode,
+          'chapter': chapter.chapterNumber,
+          'translation': state.activeTranslation,
+          'audio_mode': state.audioMode.name,
+        },
+      );
+      _switchToTtsFallback('Audio stream blocked or failed. Switched to Text-to-Speech (TTS).');
     }
   }
 
@@ -412,6 +462,15 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       return;
     }
 
+    if (state.audioMode == AudioMode.narrator && state.currentChapter.audioStreamUrl.isEmpty) {
+      await routeAndPlayChapter(
+        bookCode: state.currentChapter.bookCode,
+        chapterNumber: state.currentChapter.chapterNumber,
+        bookName: state.currentChapter.bookName,
+      );
+      return;
+    }
+
     state = state.copyWith(isPlaying: true, clearLastError: true);
 
     if (state.audioMode == AudioMode.tts) {
@@ -426,8 +485,18 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     try {
       await _audioPlayer.play();
     } catch (e, stack) {
-      AppLogger.error('Playback trigger failed', error: e, stackTrace: stack);
-      _switchToTtsFallback('Playback failed. Switched to TTS.');
+      AppLogger.error(
+        'Playback trigger failed',
+        error: e,
+        stackTrace: stack,
+        properties: {
+          'book_code': state.currentChapter.bookCode,
+          'chapter': state.currentChapter.chapterNumber,
+          'translation': state.activeTranslation,
+          'audio_mode': state.audioMode.name,
+        },
+      );
+      _switchToTtsFallback('Playback failed. Switched to Text-to-Speech (TTS).');
     }
   }
 

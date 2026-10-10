@@ -34,23 +34,43 @@ class SettingsBottomSheet extends ConsumerWidget {
           const SizedBox(height: 12),
 
           const Text(
-            'BIBLE TRANSLATION',
+            'BIBLE TRANSLATION (BSB / WEB)',
             style: TextStyle(fontSize: 11, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF6366F1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Center(
-              child: Text(
-                'Berean Standard Bible (BSB) — Full Audio Narration',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
-              ),
-            ),
+          Row(
+            children: [
+              {'code': 'BSB', 'label': 'BSB (OT + NT Narrator)'},
+              {'code': 'WEB', 'label': 'WEB (NT Narrator / OT TTS)'},
+            ].map((item) {
+              final code = item['code']!;
+              final label = item['label']!;
+              final isSel = state.activeTranslation == code;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => notifier.setTranslation(code),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: isSel ? const Color(0xFF6366F1) : const Color(0xFF0F0E26),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Text(
+                        label,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: isSel ? Colors.white : Colors.white60,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
           ),
           const SizedBox(height: 16),
 

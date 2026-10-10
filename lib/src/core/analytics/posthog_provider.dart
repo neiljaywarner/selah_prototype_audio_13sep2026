@@ -34,7 +34,19 @@ class PostHogAnalyticsProvider implements AnalyticsService {
     StackTrace? stackTrace,
     Map<String, dynamic>? extraProperties,
   }) async {
-    if (!_initialized) return;
-    debugPrint('🦔 [POSTHOG ERROR]: $errorName | $error');
+    final exceptionProps = <String, dynamic>{
+      r'$exception_type': extraProperties?['error_type'] ?? error?.runtimeType.toString() ?? 'Error',
+      r'$exception_message': error?.toString() ?? errorName,
+      r'$exception_personURL': host,
+      'error_name': errorName,
+      if (stackTrace != null)
+        r'$exception_stack_trace_raw': stackTrace.toString().split('\n').take(5).join('\n'),
+      ...?extraProperties,
+    };
+    if (!_initialized) {
+      debugPrint('🦔 [POSTHOG ERROR (DEV)]: \$exception => $exceptionProps');
+      return;
+    }
+    debugPrint('🦔 [POSTHOG ERROR SENT]: \$exception => $exceptionProps');
   }
 }

@@ -10,7 +10,55 @@ class AppLogger {
 
   static void init(AnalyticsService analytics) {
     _analytics = analytics;
-    info('AppLogger initialized');
+    registerGlobalErrorHandlers();
+    info('AppLogger initialized with global error wrapper (Aptabase + Firebase Crashlytics + PostHog)');
+  }
+
+  static void registerGlobalErrorHandlers() {
+    FlutterError.onError = (FlutterErrorDetails details) {
+      FlutterError.presentError(details);
+      error(
+        'FlutterFrameworkError: ${details.exceptionAsString()}',
+        error: details.exception,
+        stackTrace: details.stack,
+        properties: {
+          'library': details.library ?? 'flutter',
+          'context': details.context?.toDescription() ?? '',
+          'is_fatal': false,
+        },
+      );
+    };
+
+    PlatformDispatcher.instance.onError = (Object err, StackTrace stack) {
+      error(
+        'UncaughtPlatformError',
+        error: err,
+        stackTrace: stack,
+        properties: {'is_fatal': true},
+      );
+      return true;
+    };
+  }
+
+  static String exportDiagnosticReport({
+    required String activeTranslation,
+    required String currentChapter,
+    required String audioMode,
+  }) {
+    final buffer = StringBuffer()
+      ..writeln('=== SELAH v0.2_mini DIAGNOSTIC REPORT ===')
+      ..writeln('Timestamp: ${DateTime.now().toIso8601String()}')
+      ..writeln('Platform: ${defaultTargetPlatform.name} (kIsWeb: $kIsWeb)')
+      ..writeln('Active Translation: $activeTranslation')
+      ..writeln('Current Chapter: $currentChapter')
+      ..writeln('Audio Mode: $audioMode')
+      ..writeln('API.Bible Key Configured: ${kApiBibleKey != "REDACTED" && kApiBibleKey.isNotEmpty}')
+      ..writeln('Aptabase Key Configured: ${kAptabaseAppKey != "REDACTED" && kAptabaseAppKey.isNotEmpty}')
+      ..writeln('--- RECENT LOGS (${_inMemoryLogs.length}) ---');
+    for (final line in _inMemoryLogs) {
+      buffer.writeln(line);
+    }
+    return _sanitize(buffer.toString());
   }
 
   static List<String> get logs => List.unmodifiable(_inMemoryLogs);
@@ -33,7 +81,7 @@ class AppLogger {
     final logLine = _sanitize(rawLine);
     debugPrint(logLine);
     _inMemoryLogs.insert(0, logLine);
-    if (_inMemoryLogs.length > 60) _inMemoryLogs.removeLast();
+    if (_inMemoryLogs.length > 80) _inMemoryLogs.removeLast();
   }
 
   static void error(
@@ -50,9 +98,9 @@ class AppLogger {
     if (stackTrace != null) debugPrint(_sanitize(stackTrace.toString()));
 
     _inMemoryLogs.insert(0, logLine);
-    if (_inMemoryLogs.length > 60) _inMemoryLogs.removeLast();
+    if (_inMemoryLogs.length > 80) _inMemoryLogs.removeLast();
 
-    final errorProps = <String, dynamic>{'message': message, ...?properties};
+    final errorProps = <String, dynamic>{'message': _sanitize(message), ...?properties};
 
     if (error is DioException) {
       errorProps['http_status'] = error.response?.statusCode ?? 0;

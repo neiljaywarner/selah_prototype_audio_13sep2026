@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -15,7 +16,7 @@ import 'widgets/feature_voting_sheet.dart';
 import 'widgets/settings_bottom_sheet.dart';
 import 'widgets/topic_tab_bar.dart';
 
-const bool kEnableTopicTabs = bool.fromEnvironment('ENABLE_TOPIC_TABS', defaultValue: true);
+const bool kEnableTopicTabs = bool.fromEnvironment('ENABLE_TOPIC_TABS', defaultValue: false);
 
 class ChapterPlayerScreen extends ConsumerStatefulWidget {
   const ChapterPlayerScreen({super.key});
@@ -33,7 +34,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController(text: 'COL.1');
+    _searchController = TextEditingController(text: 'John 1');
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -408,20 +409,39 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                             ),
                           ),
                         ),
-                        // Translation Badge
+                        // BSB / WEB Translation Segmented Toggle
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.all(2),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF6366F1),
-                            borderRadius: BorderRadius.circular(8),
+                            color: const Color(0xFF0F0E26),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.white12),
                           ),
-                          child: const Text(
-                            'BSB Audio',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: ['BSB', 'WEB'].map((tr) {
+                              final isSelected = playerState.activeTranslation == tr;
+                              return GestureDetector(
+                                onTap: () => notifier.setTranslation(tr),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? const Color(0xFF6366F1)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    tr,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: isSelected ? Colors.white : Colors.white54,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
                           ),
                         ),
                       ],
@@ -593,16 +613,45 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.terminal, color: Colors.greenAccent, size: 18),
-                          SizedBox(width: 8),
-                          Text(
-                            'Diagnostic Console',
-                            style: TextStyle(
-                              color: Colors.greenAccent,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
+                          const Row(
+                            children: [
+                              Icon(Icons.terminal, color: Colors.greenAccent, size: 18),
+                              SizedBox(width: 8),
+                              Text(
+                                'Diagnostic Console',
+                                style: TextStyle(
+                                  color: Colors.greenAccent,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          TextButton.icon(
+                            onPressed: () {
+                              final report = AppLogger.exportDiagnosticReport(
+                                activeTranslation: playerState.activeTranslation,
+                                currentChapter: playerState.currentChapter.reference,
+                                audioMode: playerState.audioMode.name,
+                              );
+                              Clipboard.setData(ClipboardData(text: report));
+                              AppLogger.logEvent('export_diagnostic_logs', {
+                                'chapter': playerState.currentChapter.reference,
+                                'translation': playerState.activeTranslation,
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Sanitized diagnostic logs copied to clipboard & logged.'),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.copy_rounded, size: 14, color: Color(0xFFFBBF24)),
+                            label: const Text(
+                              'Copy / Send Logs',
+                              style: TextStyle(fontSize: 11, color: Color(0xFFFBBF24)),
                             ),
                           ),
                         ],
@@ -614,7 +663,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                         style: const TextStyle(fontSize: 10, color: Colors.white54),
                       ),
                       Text(
-                        'Audio Stream: ${playerState.currentChapter.audioStreamUrl}',
+                        'Audio Stream: ${playerState.currentChapter.audioStreamUrl.isEmpty ? "(Dynamic via API.Bible)" : "Configured (S3 Presigned)"}',
                         style: const TextStyle(fontSize: 10, color: Colors.white54),
                       ),
                       const SizedBox(height: 8),
