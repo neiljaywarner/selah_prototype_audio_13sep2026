@@ -42,7 +42,7 @@ final List<ChapterInfo> kFeaturedChapters = [
     chapterNumber: 13,
     audioStreamUrl: '',
     textContent:
-        'Love is patient, love is kind. It does not envy, it does not boast, it is not proud. It is not rude, it is not self-seeking, it is not easily angered, it keeps no account of wrongs. Love does not delight in evil but rejoices with the truth. It bears all things, believes all things, hopes all things, endures all things.',
+        'Love is patient, love is kind. It does not envy, it does not boast, it is not proud. It is not rude, it is not self-seeking, it is not easily angered, it keeps no account of wrongs. Love takes no pleasure in evil but rejoices with the truth. It bears all things, believes all things, hopes all things, endures all things.',
     displayTitle: '1 Cor 13:4–7',
   ),
   const ChapterInfo(

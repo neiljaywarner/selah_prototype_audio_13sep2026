@@ -81,7 +81,25 @@ Before merging:
 
 ---
 
-### 5. Commit, Push, and Merge
+---
+
+### 5. Evaluate PR Readiness Grade & Follow-up Issues
+Every PR must be evaluated against the PR Readiness Grading Rubric:
+1. **Grade Bar & Merge Threshold**:
+   - **A / A- (Ready to Merge)**: Meets or exceeds high standards across UX, Architecture, Review Ease, Mentoring/Low-WTFs, and Verification.
+   - **B+ / Urgent Pass (Conditionally Merged)**: Meets core functionality and passing tests, but minor polish or non-critical debt remains. **Mandatory follow-up protocol**: Permitted to merge ONLY if an urgent blocker or release need exists, AND all items preventing an `A-` are immediately filed as tracked GitHub issues (`gh issue create`).
+   - **B or lower (Merge Blocked)**: Merge is strictly prohibited until refactored and polished.
+2. **Scorecard Categories**:
+   - **UX & Functional Polish**: Zero regressions, human narrator audio (no unexpected robotic TTS fallback), sub-second WhisperX clipping, intuitive UX.
+   - **Maintainability & Architecture**: Clean modular design, type safety, zero `flutter analyze` lints.
+   - **Ease of Review & Scope Discipline**: Focused on ticket, atomic conventional commits, concise diff.
+   - **Instructional Clarity, Mentoring & Minimal WTFs**: Disciplined code and comments suitable for mentoring and instructional review; minimal reviewer cognitive friction.
+   - **Verification & Proof**: BDD Gherkin specs, passing unit/widget/integration tests, Marionette/ADB screenshots or recordings.
+3. **Embed Scorecard**: Include the PR Readiness Grade table in the PR description or audit comment.
+
+---
+
+### 6. Commit, Push, and Merge
 1. Stage and commit fixes:
    ```bash
    git add -A
@@ -99,8 +117,10 @@ Before merging:
 
 ---
 
-### 6. Report to User
+### 7. Report to User
 Provide the user with a concise summary table:
+- **PR Readiness Grade:** Overall letter grade (A, A-, B+) and category breakdown.
 - **Addressed:** Which comments were fixed and verified in the PR.
-- **Deferred:** Which comments were converted to GitHub issues (with clickable issue links).
+- **Deferred / Follow-up Issues:** Clickable GitHub issue links created for non-critical or B+ follow-up items.
 - **Merge Status:** Confirmation of successful merge into `main` and test suite state.
+
