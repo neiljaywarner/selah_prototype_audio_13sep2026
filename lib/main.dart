@@ -42,10 +42,10 @@ void main() async {
 
   AppLogger.info('Selah Scripture Audio Meditation v0.2 Started.');
   AppLogger.info(
-    'API.Bible Key status: ${kApiBibleKey == "REDACTED" ? "REDACTED (Set via --dart-define)" : "CONFIGURED"}',
+    'API.Bible Key status: ${kApiBibleKey == "REDACTED" ? "REDACTED (Set via --dart-define)" : "CONFIGURED (length: ${kApiBibleKey.length})"}',
   );
   AppLogger.info(
-    'Aptabase Key status: ${kAptabaseAppKey == "REDACTED" ? "REDACTED (Set via --dart-define)" : "CONFIGURED"}',
+    'Aptabase Key status: ${kAptabaseAppKey == "REDACTED" ? "REDACTED (Set via --dart-define)" : "CONFIGURED (length: ${kAptabaseAppKey.length})"}',
   );
   AppLogger.info('Firebase Installations ID: ${firebaseProvider.installationId}');
 

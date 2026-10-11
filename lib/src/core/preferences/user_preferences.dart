@@ -28,19 +28,21 @@ class UserPreferences {
 
   /// Add a chapter to the front of the LIFO queue (capped at 10 items)
   Future<void> saveChapter(String ref) async {
-    if (_prefs == null) return;
-    final list = List<String>.from(_prefs!.getStringList(savedChaptersKey) ?? const []);
+    final prefs = _prefs;
+    if (prefs == null) return;
+    final list = List<String>.from(prefs.getStringList(savedChaptersKey) ?? const []);
     list.remove(ref);
     list.insert(0, ref);
     if (list.length > 10) list.removeLast();
-    await _prefs!.setStringList(savedChaptersKey, list);
+    await prefs.setStringList(savedChaptersKey, list);
   }
 
   Future<void> removeSavedChapter(String ref) async {
-    if (_prefs == null) return;
-    final list = List<String>.from(_prefs!.getStringList(savedChaptersKey) ?? const []);
+    final prefs = _prefs;
+    if (prefs == null) return;
+    final list = List<String>.from(prefs.getStringList(savedChaptersKey) ?? const []);
     list.remove(ref);
-    await _prefs!.setStringList(savedChaptersKey, list);
+    await prefs.setStringList(savedChaptersKey, list);
   }
   SharedPreferences? get prefs => _prefs;
 }

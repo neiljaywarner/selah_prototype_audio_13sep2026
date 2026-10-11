@@ -19,7 +19,7 @@ class OfflineScriptureCache {
     if (tr != 'BSB' && tr != 'WEB') return false; // NIV is licensed, not cached offline
     final key = _cacheKey(translation, bookCode, chapter);
     if (_prefs?.containsKey(key) ?? false) return true;
-    return _embeddedPublicDomainBank.containsKey('${tr}.${bookCode.toUpperCase()}.$chapter');
+    return _embeddedPublicDomainBank.containsKey('$tr.${bookCode.toUpperCase()}.$chapter');
   }
 
   /// Retrieve cached scripture text from disk or bundled offline bank
@@ -34,9 +34,9 @@ class OfflineScriptureCache {
       return diskContent;
     }
 
-    final embedded = _embeddedPublicDomainBank['${tr}.${bookCode.toUpperCase()}.$chapter'];
+    final embedded = _embeddedPublicDomainBank['$tr.${bookCode.toUpperCase()}.$chapter'];
     if (embedded != null) {
-      AppLogger.info('Offline Cache Hit (embedded public domain bank): ${tr}.${bookCode.toUpperCase()}.$chapter');
+      AppLogger.info('Offline Cache Hit (embedded public domain bank): $tr.${bookCode.toUpperCase()}.$chapter');
       return embedded;
     }
 

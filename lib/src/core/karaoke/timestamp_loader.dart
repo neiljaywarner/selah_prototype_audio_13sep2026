@@ -1,6 +1,9 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+
+import '../logging/app_logger.dart';
 
 class VerseTimestamp {
   final int verse;
@@ -35,8 +38,25 @@ class TimestampLoaderService {
       final jsonString = await rootBundle.loadString(assetPath);
       final List<dynamic> rawList = jsonDecode(jsonString);
       return rawList.map((e) => VerseTimestamp.fromJson(e)).toList();
-    } catch (_) {
-      // Return null gracefully if file does not exist (skip highlighting without crashing)
+    } catch (e, stack) {
+      final errStr = e.toString();
+      if (errStr.contains('Unable to load asset') || e is FlutterError) {
+        AppLogger.info(
+          'WhisperX timestamp asset not present for $translation.$bookCode.$chapterNumber (falling back to standard playback)',
+        );
+      } else {
+        AppLogger.error(
+          'Unexpected error loading/parsing WhisperX timestamps for $translation.$bookCode.$chapterNumber',
+          error: e,
+          stackTrace: stack,
+          properties: {
+            'translation': translation,
+            'book_code': bookCode,
+            'chapter': chapterNumber,
+            'asset_path': assetPath,
+          },
+        );
+      }
       return null;
     }
   }

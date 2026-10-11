@@ -231,6 +231,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       );
 
       final chapterText = await _fetchChapterText(bookCode, chapterNumber) ?? fallbackText;
+      if (!ref.mounted) return;
 
       final dynamicChapter = ChapterInfo(
         bookCode: bookCode.toUpperCase(),
@@ -261,6 +262,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
     try {
       final response = await _dio.get(url);
+      if (!ref.mounted) return;
 
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'];
@@ -269,6 +271,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
         if (streamUrl != null && streamUrl.isNotEmpty) {
           final fetchedText = await _fetchChapterText(bookCode, chapterNumber) ?? fallbackText;
+          if (!ref.mounted) return;
 
           final dynamicChapter = ChapterInfo(
             bookCode: bookCode.toUpperCase(),
@@ -286,6 +289,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       }
       throw Exception('Resource URL empty for $chapterId');
     } catch (e, stack) {
+      if (!ref.mounted) return;
       AppLogger.error(
         'API.Bible narrator fetch failed for $chapterId',
         error: e,

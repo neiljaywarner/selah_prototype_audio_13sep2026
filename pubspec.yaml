@@ -42,11 +42,14 @@ dependencies:
   aptabase_flutter: ^0.5.0
   talker_flutter: ^5.1.20
   marionette_flutter: ^0.7.0
+  shared_preferences: ^2.5.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   integration_test:
+    sdk: flutter
+  flutter_driver:
     sdk: flutter
 
   # Lints
@@ -56,10 +59,10 @@ dev_dependencies:
   mocktail: ^1.0.4
 
   # Integration testing with screenshots + video
-  patrol: ^3.15.3
+  patrol: ^4.10.0
 
   # BDD .feature files
-  bdd_widget_test: ^1.7.2
+  bdd_widget_test: ^3.0.0
 
   # Launcher Icons generator
   flutter_launcher_icons: ^0.14.3

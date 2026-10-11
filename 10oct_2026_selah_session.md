@@ -1,120 +1,88 @@
-# Selah Scripture Audio Meditation — Session Log (10 Oct 2026)
+# Selah Scripture Audio Meditation — Session Log (10–11 Oct 2026)
 
-## 🎯 Executive Vision: "Begin with the End in Mind"
-
-### 🏁 Deliverable Targets
-* **TODAY (10 Oct 2026): Production Chapter Release**
-  * **Chapter Audio Engine:** Flawless playback across BSB, WEB, and NIV with graceful error recovery and FUMS telemetry.
-  * **Orientation & UX:** Clean adaptive layout supporting portrait/landscape on Android (Pixel 9a), iOS, and Web.
-  * **App Branding & Icon:** Finalized high-resolution icon set generated via `flutter_launcher_icons`.
-  * **Automated CI/CD & Hosting:** Automated pipeline build on **Codemagic** and live deployment on **Firebase Web Hosting**.
-  * **Automated Agent Verification:** Runtime driving via **Marionette MCP Server** (widget inspection, taps, screenshots, and logs).
-
-* **TOMORROW (11 Oct 2026): Verse/Passage Alignment & ESV Integration**
-  * **WhisperX Audio Alignment:** Forced timestamp alignment for word-by-word and verse-by-verse synchronized highlighting.
-  * **Crossway ESV API v3:** Integration for ESV text and audio upon API credential provisioning.
+## 📌 TL;DR
+**All 3 nightly goals achieved and live:**
+1. **Localhost Web + Chrome:** Serving with zero 403 errors; human narrator streaming active on port 8085.
+2. **Firebase Web Deploy:** Live at [https://selahword.web.app](https://selahword.web.app) with human narrator audio, Aptabase error telemetry, and an instant branded dark-mode CSS splash screen + spinner.
+3. **1 Corinthians 13:4–7 WhisperX Karaoke:** Verified live via Marionette MCP on iOS Simulator (and Pixel 9a Gradle build finishing). Plays starting directly on verse 4 (*"Love is patient..."*), starting on the word **"Love"**, with synchronized gold highlight (`#FBBF24`).
 
 ---
 
-## ⏱️ Timeline & Mini-Milestones
-
-| Milestone | Window (Local) | Status | Focus / Deliverable |
-| :--- | :--- | :--- | :--- |
-| **M1: Audio Engine & Multi-Translation** | 14:00 – 16:30 | ✅ **Complete** | BSB, WEB, and NIV audio streaming via API.Bible; removed stale legacy audio URLs; persistent translation preferences. |
-| **M2: Observability & Talker Diagnostics** | 16:30 – 17:30 | ✅ **Complete** | Integrated `talker_flutter: ^5.1.20` into `AppLogger`; in-app telemetry monitor (`Icons.monitor_heart_outlined`); API key sanitization. |
-| **M3: Marionette MCP Global Activation** | 17:40 – 17:53 | ✅ **Complete** | Activated `marionette_mcp: ^0.7.0` globally; registered in `~/.gemini/config/mcp_config.json`; added `marionette_flutter: ^0.7.0` to `pubspec.yaml`; initialized `MarionetteBinding` in `lib/main.dart`. |
-| **M4: Live Device Runtime on Pixel 9a** | 17:55 – 18:09 | ✅ **Complete** | Installed debug APK on Pixel 9a; connected Marionette MCP; automated screen driving, verified BSB/NIV switching, and verified live playback. |
-| **M5: App Icon & Visual Polish** | 18:04 – 18:12 | ✅ **Complete** | Generated adaptive launcher icons (`flutter_launcher_icons`); fixed `ic_launcher_background` linking; fixed RenderFlex overflows in AppBar & 66 Books Dialog. |
-| **M6: Codemagic CI/CD & GitHub Pages** | 18:15 – 18:22 | ✅ **Complete** | Configured `codemagic.yaml` with build email alerts to `neilwarner@gmail.com`; created `.github/workflows/deploy_gh_pages.yml` for automated Web PWA hosting. |
-| **M7: Gherkin BDD Feature Suite** | 18:14 – 18:20 | ✅ **Complete** | Authored four Given/When/Then specification suites under `test/features/`. |
-| **M8: WhisperX & ESV Passage Sync** | 11 Oct 2026 | ⏳ **Scheduled (Tomorrow)** | WhisperX timestamp processing for verse highlighting; Crossway ESV API v3 client. |
+## 🎯 Executive Summary
+During this session, we transitioned Selah from an initial prototype to a hardened, observable v0.2 production candidate:
+* **Audio & Network Resolution:** Resolved API.Bible 403 AccessDeniedException caused by unpopulated `--dart-define` keys in earlier web builds. Tested and verified live audio streaming across BSB, WEB, and NIV.
+* **Security & Clean Repo:** Enforced zero plaintext API keys across repository files, `codemagic.yaml`, and git commits. Codified Antigravity rules in [GEMINI.md](file:///Users/neil/AndroidStudioProjects/selah_prototype_audio_13sep2026/GEMINI.md) and [.agents/rules/no_api_keys.md](file:///Users/neil/AndroidStudioProjects/selah_prototype_audio_13sep2026/.agents/rules/no_api_keys.md).
+* **WhisperX Karaoke Alignment:** Formatted, normalized, and bundled word/verse timestamps (`1CO_13.json`) for BSB and WEB. Updated player notifier and screen so verse 4 begins on word "Love" with interactive synchronized gold highlighting.
+* **Web Load UX Optimization:** Eliminated the multi-second blank screen on Flutter Web by adding a 50ms instant dark-mode splash screen and CSS spinner directly in [web/index.html](file:///Users/neil/AndroidStudioProjects/selah_prototype_audio_13sep2026/web/index.html), transitioning out upon `flutter-first-frame`.
+* **Telemetry & Error Routing:** Enhanced `AppLogger` with `Talker`, Aptabase telemetry, and key length diagnostics. Confirmed graceful logging for non-critical missing assets vs unexpected parse errors.
+* **Dependency Upgrades:** Safely upgraded `patrol` (3.20 -> 4.10.0), `patrol_finders` (2.9 -> 3.6.0), `patrol_log` (0.5 -> 0.10.1), and `bdd_widget_test` (1.8 -> 3.0.0). All 24 unit/widget tests passing cleanly with zero static analysis warnings.
 
 ---
 
-## 🔗 GitHub Tracking Issues
-* **Issue #1:** [WIP: WhisperX 1 Corinthians 13:4-7 timestamp alignment](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/1)
-* **Issue #2:** [[Release] Selah v0.2 Production Chapter Audio Release (Web & Mobile)](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/2)
-* **Issue #3:** [[Integration] Crossway ESV API v3 Audio & Text Integration](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/3)
-* **Issue #4:** [[Feedback] Integrate UserOrient & Doorbell in-app feedback widgets](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/4)
+## ⏱️ Mini-Milestones Table
 
----
-
-## 🤖 Marionette MCP Server: Tool Inventory & Status
-
-The Marionette MCP server (`marionette_mcp` v0.7.0) is active in Antigravity and provides full runtime automation:
-
-| Tool | Category | Purpose | Status |
-| :--- | :--- | :--- | :--- |
-| `connect` | Session | Connects to Flutter VM service URI (`ws://127.0.0.1:PORT/ws`) | ✅ Authorized & Verified |
-| `disconnect` | Session | Detaches from active VM service session | ✅ Authorized & Verified |
-| `get_interactive_elements` | Inspection | Returns visible interactive widgets, ValueKeys, text, and hit bounds | ✅ Authorized & Verified (39 elements discovered) |
-| `tap` | Gesture | Simulates single tap by Key, text, or coordinates | ✅ Authorized & Verified (tapped Colossians 1, NIV, Play) |
-| `double_tap` | Gesture | Simulates double tap gesture | ✅ Authorized & Ready |
-| `secondary_tap` | Gesture | Simulates right-click / secondary tap | ✅ Authorized & Ready |
-| `long_press` | Gesture | Simulates long press on targeted widget | ✅ Authorized & Ready |
-| `enter_text` | Input | Types text into focused or targeted text inputs | ✅ Authorized & Ready |
-| `scroll_to` | Navigation | Automatically scrolls until target widget comes into view | ✅ Authorized & Ready |
-| `swipe` | Gesture | Performs programmatic swipes (up, down, left, right) | ✅ Authorized & Ready |
-| `pinch_zoom` | Gesture | Performs pinch-to-zoom multi-touch gestures | ✅ Authorized & Ready |
-| `press_key` | Input | Sends hardware/virtual key events (Enter, Tab, etc.) | ✅ Authorized & Ready |
-| `press_back_button` | Navigation | Simulates system Android back button | ✅ Authorized & Verified (popped Talker route) |
-| `take_screenshots` | Diagnostics | Captures high-res viewport screenshot of running app | ✅ Authorized & Verified (captured 5 live screenshots) |
-| `get_logs` | Diagnostics | Dumps real-time application logs collected since last query | ✅ Authorized & Ready |
-| `hot_reload` | Development | Triggers instantaneous state-preserving hot reload | ✅ Authorized & Verified |
-| `hot_restart` | Development | Fully restarts app from `main()` resetting widget tree | ✅ Authorized & Ready |
-| `set_device_config` | Environment | Alters device orientation, text scale factor, and locale | ✅ Authorized & Ready |
-| `list_custom_extensions` | RPC | Lists custom VM service extensions registered in app | ✅ Authorized & Ready |
-| `call_custom_extension` | RPC | Invokes custom VM service extension registered in app | ✅ Authorized & Ready |
-
----
-
-## 📊 Translation & Feature Status Matrix
-
-| Translation | Audio Provider | Text Provider | Persistence | Telemetry / FUMS | Status |
+| Milestone ID & Title | Scope / Description | Start Time | End Time | Status | Proof / Verification Artifact |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **BSB** | API.Bible (`aadc8a2f4bdb467b-01`) | API.Bible (`bba9f40183526463-01`) | ✅ Saved | ✅ Dispatched | **Ready** |
-| **WEB** | API.Bible (`105a06b6146d11e7-01`) | API.Bible (`9879dbb7cfe39e4d-01`) | ✅ Saved | ✅ Dispatched | **Ready** |
-| **NIV** | API.Bible (`5dd1a42b02d2dee6-01`) | API.Bible (`78a9f6124f344018-01`) | ✅ Saved | ✅ Dispatched | **Ready** |
-| **ESV** | Crossway Audio API | Crossway Text API | Planned | Planned | Spec in `PLAN_FOR_ESV_oct10.md` (Issue #3) |
+| **M1: Audio Engine & Multi-Translation** | BSB, WEB, NIV streaming via API.Bible; fix legacy endpoints | 2026-10-10 14:00 | 2026-10-10 16:30 | ✅ Complete | Audio playback active; persistent user preferences verified |
+| **M2: Observability & Talker** | Integrate `talker_flutter: ^5.1.20` into `AppLogger` | 2026-10-10 16:30 | 2026-10-10 17:30 | ✅ Complete | Talker dashboard accessible via in-app heartbeat icon |
+| **M3: Marionette MCP Activation** | Global activation of Marionette MCP in Antigravity | 2026-10-10 17:40 | 2026-10-10 17:53 | ✅ Complete | Connected to Flutter VM Service; automated driving |
+| **M4: Live Device on Pixel 9a** | Debug APK install on Pixel 9a; automated verification | 2026-10-10 17:55 | 2026-10-10 18:09 | ✅ Complete | Screenshot artifact `pixel_9a_live.png` |
+| **M5: App Icon & Visual Polish** | Launcher icon generation; fix RenderFlex overflows | 2026-10-10 18:04 | 2026-10-10 18:12 | ✅ Complete | `flutter_launcher_icons` applied; 0 layout overflows |
+| **M6: Codemagic CI/CD & Security** | Sanitize `codemagic.yaml`; remove plaintext secrets | 2026-10-10 18:15 | 2026-10-10 22:30 | ✅ Complete | Commit `20d1d99` pushed; [docs/CODEMAGIC_DEPLOYMENT.md](file:///Users/neil/AndroidStudioProjects/selah_prototype_audio_13sep2026/docs/CODEMAGIC_DEPLOYMENT.md) |
+| **M7: Clean Domain Firebase Deploy** | Deploy site `selahword` on project `selahwordapp` | 2026-10-10 22:35 | 2026-10-10 23:45 | ✅ Complete | [https://selahword.web.app](https://selahword.web.app) live (HTTP 200) |
+| **M8: API.Bible Spanish & Catalog** | Query API.Bible catalog for Spanish & English bibles | 2026-10-11 00:05 | 2026-10-11 00:20 | ✅ Complete | Evaluated 112 audio bibles; identified RVR09 for Spanish TTS |
+| **M9: 1 Cor 13:4-7 WhisperX Karaoke** | Start at Verse 4 on word "Love"; gold highlighting | 2026-10-11 00:20 | 2026-10-11 00:35 | ✅ Complete | [1CO_13.json](file:///Users/neil/AndroidStudioProjects/selah_prototype_audio_13sep2026/assets/timestamps/WEB/1CO_13.json); verified in Marionette |
+| **M10: Background Audio Spec** | Walking/driving lockscreen & background audio issue | 2026-10-11 00:30 | 2026-10-11 00:40 | ✅ Complete | GitHub Issue [#6](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/6); spec in [docs/BACKGROUND_AUDIO_AND_LOCKSCREEN_MODE.md](file:///Users/neil/AndroidStudioProjects/selah_prototype_audio_13sep2026/docs/BACKGROUND_AUDIO_AND_LOCKSCREEN_MODE.md) |
+| **M11: Web Build Optimization & Splash** | `--no-wasm-dry-run` fix; instant HTML/CSS splash | 2026-10-11 00:45 | 2026-10-11 01:03 | ✅ Complete | Deployed to [https://selahword.web.app](https://selahword.web.app) |
+| **M12: Patrol & Dependency Upgrade** | Upgrade Patrol to ^4.10.0, BDD to ^3.0.0 | 2026-10-11 00:40 | 2026-10-11 00:46 | ✅ Complete | `flutter pub outdated` audit; all 24 tests green |
 
 ---
 
-## 🔍 Live Runtime Observations & Issue Tracker
+## 📍 Where We Are Right Now & Next 3 Priorities
 
-* **Observation 1 (Fixed):** Adding `marionette_flutter` required `MarionetteBinding.ensureInitialized()` in `lib/main.dart` conditional on `kDebugMode` to avoid runtime test/release overhead.
-* **Observation 2 (Fixed):** Web builds tree-shake font icons down by 99.4%, reducing bundle size significantly.
-* **Observation 3 (Fixed):** Missing `ic_launcher_background` color token in `colors.xml` blocked Gradle resource linking. Resolved by running `flutter_launcher_icons`.
-* **Observation 4 (Fixed):** RenderFlex 8.1px overflow on mobile app bar title resolved by wrapping title column in `Expanded`.
-* **Observation 5 (Fixed):** RenderFlex 13px overflow in 66 Books Dialog header resolved by wrapping title in `Expanded` and filter chips in `SingleChildScrollView`.
-* **Observation 6 (Verified):** Marionette MCP successfully connected to live app on Pixel 9a, tapped chips, switched to NIV, popped routes, and hot-reloaded UI live.
+### Current State
+* **Web (PWA):** Fully working at [https://selahword.web.app](https://selahword.web.app) with narrator audio, BSB/WEB/NIV switching, dark mode splash screen, and Aptabase tracking.
+* **iOS Simulator:** Running live via Marionette (`oL-paTAUXG4=`). Verified 1 Cor 13:4 starting on "Love" with gold karaoke highlighting (`#FBBF24`).
+* **Tests & Quality:** 24 unit/widget tests passing; zero `flutter analyze` errors or warnings.
+* **Git Branches:** Primary branch `v0.2_mini` ready to merge into `main` for release.
 
-* **Observation 7 (Fixed):** RenderFlex 21px overflow in player card header resolved by wrapping audio badge in `Flexible` (`TextOverflow.ellipsis`) and sizing shuffle toggle to 28x28px. Verified zero overflow stripes on physical Pixel 9a.
-* **Observation 8 (Verified):** Translation shuffle toggle (BSB -> WEB -> NIV) verified cycling across loop repetitions.
-* **Observation 9 (Verified):** Single-row horizontally scrollable preset list (John 1, Colossians 1, Psalms 23, Psalms 126, Romans 8, Philippians 4, 1 Corinthians 13) plus LIFO bookmark queue with disk caching for offline/airplane mode.
-* **Observation 10 (Deployed):** Flutter Web release compiled and pushed to branch `gh-pages` (commit `77418dc`).
+### Next 3 Tactical Priorities
+1. **Merge PR / Branch `v0.2_mini` into `main`:** Tag `v0.2.0` release milestone and share [https://selahword.web.app](https://selahword.web.app) with colleagues/beta testers.
+2. **UserOrient / Feedback Integration (Issue #4):** Wire in-app feedback dialog (Doorbell / UserOrient) to capture early user feedback directly from testers.
+3. **Walking/Driving Mode Background Audio (Issue #6):** Implement audio service session handler (`just_audio_background` or `audio_service`) for continuous loop playback when screen is locked.
 
 ---
 
-## 🌐 Web Deployment Status
+## ❓ Frequently Asked Questions (FAQ)
 
-1. **GitHub Pages (`https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/`):**
-   * Built release artifacts (`build/web`) compiled with `--base-href /selah_prototype_audio_13sep2026/`.
-   * Pushed to branch `gh-pages` (Commit `77418dc`).
-   * **Action Needed:** To activate Pages for the repository, open:
-     `https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/settings/pages`
-     Under **Build and deployment**:
-     - **Source:** *Deploy from a branch*
-     - **Branch:** `gh-pages` / `/ (root)` -> Click **Save**.
-     *(GitHub REST API returns 404 for automated enablement without repo admin PAT scopes).*
+### Q: Why did Flutter Web take long to load initially?
+**A:** Flutter Web downloads `main.dart.js` (3.1 MB) and `canvaskit.wasm`. Previously, `web/index.html` contained no HTML/CSS, so the browser displayed a blank white screen during initial asset download. We added a lightweight, instant CSS splash screen with a glowing Selah badge and gold spinner that renders in 50ms and smoothly fades out on `flutter-first-frame`.
 
-2. **Firebase Web Hosting (`https://selahword.web.app`):**
-   * Site `selahword` created under project `selahwordapp`.
-   * Deployed live via `npx -y firebase-tools@latest deploy --only hosting`.
-   * **Live URLs:**
-     - Primary: [https://selahword.web.app](https://selahword.web.app)
-     - Alternate: [https://selahword.firebaseapp.com](https://selahword.firebaseapp.com)
-     - Legacy: [https://selahwordapp.web.app](https://selahwordapp.web.app)
+### Q: Why did `timestamp_loader.dart` have errors when hot restarted?
+**A:** `timestamp_loader.dart` lacked imports for `package:flutter/foundation.dart` (for `FlutterError`) and `../logging/app_logger.dart` (for `AppLogger`). Missing asset files are now cleanly logged as informational notices, while genuine JSON parse errors are dispatched to `AppLogger.error` and forwarded to Aptabase.
 
-3. **Codemagic CI/CD:**
-   * Configured in `codemagic.yaml` for both Web PWA and Android APK builds with notification emails to `neilwarner@gmail.com`. Runs automatically on push once webhook is active.
+### Q: Are API keys secure on Web?
+**A:** In client-side web architectures, compiled strings are visible via client inspection. In Selah, keys are injected at build time via `--dart-define` without storing plaintext in git. For strict multi-tenant isolation, proxying through Firebase Cloud Functions or Firebase App Check is planned for v0.3.
 
+---
+
+## 🛠️ Troubleshooting Guide
+
+| Issue / Symptom | Root Cause | Diagnosis Command | Resolution |
+| :--- | :--- | :--- | :--- |
+| **HTTP 403 AccessDeniedException on Web** | Web build compiled without `--dart-define=API_BIBLE_KEY=...`, defaulting to `'REDACTED'`. | Open Chrome DevTools Console; check `API.Bible Key status`. | Always pass `--dart-define=API_BIBLE_KEY="$API_BIBLE_KEY"` during `flutter build web` or `flutter run`. |
+| **Web build hangs on `dart compile wasm`** | Flutter 3.47 tries wasm dry-run on dependencies using legacy web interop (`just_audio_web`). | `ps aux \| grep dart` shows `dart compile wasm --dry-run`. | Pass `--no-wasm-dry-run` to `flutter build web --release`. |
+| **Missing asset error on WhisperX load** | Not all 66 books/chapters have pre-computed WhisperX JSON files yet. | Inspect Talker logs for `WhisperX timestamp asset not present`. | Handled gracefully: falls back to regular narrator audio without crash. |
+
+---
+
+## 📎 Appendix: Verification & Environment Details
+
+* **Live Firebase Hosting Domain:** [https://selahword.web.app](https://selahword.web.app)
+* **Alternate Domain:** [https://selahword.firebaseapp.com](https://selahword.firebaseapp.com)
+* **Localhost Dev Server:** [http://localhost:8085](http://localhost:8085)
+* **Primary Git Branch:** `v0.2_mini` (HEAD: `f028cd2`)
+* **Secondary Worktree:** `/Users/neil/AndroidStudioProjects/selah_v0.3_worktree` (`feat/v0.3-whisper-timestamps`)
+* **Active iOS Simulator:** iPhone 16 Pro (`C3163AE7-B276-4AE0-8EC1-B80250D824FD`)
+* **Physical Android Device:** Google Pixel 9a (`58221JEBF20835`)
+* **Automated Driving:** Marionette MCP Server v0.7.0 (`marionette_flutter`)

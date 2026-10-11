@@ -1,5 +1,5 @@
 import 'package:flutter_driver/flutter_driver.dart';
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 /// Web integration test driver.
 /// Run with: flutter drive --driver=test_driver/web_driver.dart --target=integration_test/app_test.dart -d chrome
