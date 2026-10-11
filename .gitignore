@@ -58,3 +58,7 @@ GoogleService-Info.plist
 firebase-debug.log*
 remote_config.json
 .firebase/
+*.mp3
+*.wav
+**/xcshareddata/
+.worktrees/

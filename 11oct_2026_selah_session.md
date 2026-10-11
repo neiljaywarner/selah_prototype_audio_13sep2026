@@ -50,9 +50,17 @@ During this session, we completed the final review, hardening, and verification 
 * **Issues Backlog:** Non-critical feedback cleanly tracked in GitHub issues for future sprints.
 
 ### Next 3 Tactical Priorities
-1. **Background Audio & Lockscreen Controls**: Implement lockscreen playback controls and background service support ([Issue #6](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/6)).
-2. **Offline Scripture Expansion**: Expand offline cached passages beyond 1 Cor 13, Psalm 23, and John 1.
-3. **Crossway ESV API Audio Integration**: Complete integration of ESV audio stream options ([Issue #3](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/3)).
+1. **Background Audio & Lockscreen Controls**: Implement lockscreen playback controls and background service support ([Issue #6](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/6)):
+   - **Progress Made**:
+     - Upgraded audio player source architecture from `setUrl` + `setClip` to native `ClippingAudioSource(start: window.start, end: window.end)`.
+     - Confirmed sub-millisecond excerpt clipping and verified 1 Cor 13:4–7 starts cleanly at verse 4 ("Love is patient...") on physical Google Pixel 9a.
+     - Fixed repeat loop iteration bug by eliminating redundant `setClip` calls and using `_audioPlayer.seek(Duration.zero)`.
+     - Captured verified visual artifact on Pixel 9a (`docs/artifacts/screenshots/pixel9a_matt11_clipped.png`) with active karaoke highlighting at 00:17/00:23.
+   - **Next Steps**: Configure `just_audio_background` notification actions and test lockscreen wake-lock stability during extended walking sessions.
+2. **Curated Timestamps Calibration (Matthew 11 & Romans 8)**:
+   - Recalibrate `MAT_11.json` starting timestamp to true verse 28 ("Come to Me...") boundary so it begins precisely on verse 28 rather than verse 19 ("drinking").
+3. **PR #24 Final Verification & Submission**:
+   - Merge Gherkin BDD specs, PRD, and Marionette runbooks with PR Readiness Grade (`A-`).
 
 ---
 

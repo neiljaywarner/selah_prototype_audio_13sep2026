@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "github": {
+      "command": "/bin/bash",
+      "args": [
+        "/Users/neil/AndroidStudioProjects/selah_prototype_audio_13sep2026/.agents/plugins/github/run_github_mcp.sh"
+      ]
+    },
+    "ios-simulator": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "ios-simulator-mcp@2.1.0"
+      ]
+    },
+    "adb": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "adb-mcp@0.1.1"
+      ]
+    }
+  }
+}
