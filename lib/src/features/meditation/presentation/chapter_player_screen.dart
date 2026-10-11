@@ -8,6 +8,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/bible_canon.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/picker/bible_reference_parser.dart';
+import '../../../core/preferences/user_preferences.dart';
 import '../application/chapter_player_notifier.dart';
 import '../domain/audio_mode.dart';
 import '../domain/bible_translation.dart';
@@ -67,13 +68,17 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
 
     if (raw.contains(':')) {
       AppLogger.logEvent('request_single_verse', {'query': raw});
+      ref.read(userPreferencesProvider).saveChapter(raw);
       ref.read(chapterPlayerProvider.notifier).fetchAndPlaySingleVerse(raw);
+      setState(() {});
       return;
     }
 
     final parsedList = BibleReferenceParser.getSuggestions(raw);
     if (parsedList.isNotEmpty) {
       final match = parsedList.first;
+      final refStr = '${match.book.name} ${match.chapter}';
+      ref.read(userPreferencesProvider).saveChapter(refStr);
       ref
           .read(chapterPlayerProvider.notifier)
           .routeAndPlayChapter(
@@ -81,6 +86,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
             chapterNumber: match.chapter,
             bookName: match.book.name,
           );
+      setState(() {});
       return;
     }
 
@@ -109,20 +115,26 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
       return;
     }
 
+    final refStr = '$bookName $chapterNum';
+    ref.read(userPreferencesProvider).saveChapter(refStr);
     ref
         .read(chapterPlayerProvider.notifier)
         .routeAndPlayChapter(bookCode: bookCode, chapterNumber: chapterNum, bookName: bookName);
+    setState(() {});
   }
 
   void _openChapterPicker() => showDialog(
     context: context,
     builder: (ctx) => ChapterPickerDialog(
       onChapterSelected: (code, chapter, name) {
-        _searchController.text = '$name $chapter';
+        final refStr = '$name $chapter';
+        _searchController.text = refStr;
         setState(() => _searchSuggestions = []);
+        ref.read(userPreferencesProvider).saveChapter(refStr);
         ref
             .read(chapterPlayerProvider.notifier)
             .routeAndPlayChapter(bookCode: code, chapterNumber: chapter, bookName: name);
+        setState(() {});
       },
     ),
   );
@@ -147,6 +159,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
   Widget build(BuildContext context) {
     final playerState = ref.watch(chapterPlayerProvider);
     final notifier = ref.read(chapterPlayerProvider.notifier);
+    final userPrefs = ref.watch(userPreferencesProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -263,6 +276,29 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                       padding: const EdgeInsets.all(12),
                     ),
                   ),
+                  const SizedBox(width: 6),
+                  IconButton(
+                    onPressed: () async {
+                      final curRef = playerState.currentChapter.reference;
+                      await ref.read(userPreferencesProvider).saveChapter(curRef);
+                      if (context.mounted) {
+                        setState(() {});
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Saved "$curRef" to recents'),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.bookmark_add_outlined, color: Color(0xFFFBBF24)),
+                    tooltip: 'Save Current Chapter to Recents',
+                    style: IconButton.styleFrom(
+                      backgroundColor: const Color(0xFF1E1B4B),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      padding: const EdgeInsets.all(12),
+                    ),
+                  ),
                 ],
               ),
 
@@ -302,7 +338,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
               ],
               const SizedBox(height: 16),
 
-              /* Featured Presets (or Topic Tabs if enabled) */
+              /* Featured Presets (or Topic Tabs if enabled) - Single-row horizontal scroll */
               if (kEnableTopicTabs)
                 TopicTabBar(
                   topics: kDefaultMeditationTopics,
@@ -315,24 +351,65 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                   },
                 )
               else
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: kFeaturedChapters.map((chapter) {
-                    final isSelected = playerState.currentChapter.reference == chapter.reference;
-                    return ChoiceChip(
-                      label: Text(chapter.reference),
-                      selected: isSelected,
-                      selectedColor: const Color(0xFF6366F1),
-                      backgroundColor: const Color(0xFF1E1B4B),
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : Colors.white70,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        fontSize: 12,
-                      ),
-                      onSelected: (_) => notifier.loadChapter(chapter),
-                    );
-                  }).toList(),
+                SizedBox(
+                  height: 38,
+                  child: Builder(
+                    builder: (context) {
+                      final savedList = userPrefs.savedChapters;
+                      final savedSet = savedList.map((s) => s.toLowerCase().trim()).toSet();
+                      final remainingPresets = kFeaturedChapters
+                          .where((c) => !savedSet.contains(c.reference.toLowerCase().trim()))
+                          .toList();
+                      final totalCount = savedList.length + remainingPresets.length;
+
+                      return ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: totalCount,
+                        separatorBuilder: (context, index) => const SizedBox(width: 8),
+                        itemBuilder: (context, index) {
+                          if (index < savedList.length) {
+                            final refStr = savedList[index];
+                            final isSelected = playerState.currentChapter.reference.toLowerCase().trim() ==
+                                refStr.toLowerCase().trim();
+                            return ChoiceChip(
+                              avatar: const Icon(
+                                Icons.bookmark_rounded,
+                                size: 14,
+                                color: Color(0xFFFBBF24),
+                              ),
+                              label: Text(refStr),
+                              selected: isSelected,
+                              selectedColor: const Color(0xFF6366F1),
+                              backgroundColor: const Color(0xFF1E1B4B),
+                              labelStyle: TextStyle(
+                                color: isSelected ? Colors.white : Colors.white70,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 12,
+                              ),
+                              onSelected: (_) => _handleSearchSubmit(refStr),
+                            );
+                          } else {
+                            final chapter = remainingPresets[index - savedList.length];
+                            final isSelected =
+                                playerState.currentChapter.reference == chapter.reference;
+                            return ChoiceChip(
+                              label: Text(chapter.reference),
+                              selected: isSelected,
+                              selectedColor: const Color(0xFF6366F1),
+                              backgroundColor: const Color(0xFF1E1B4B),
+                              labelStyle: TextStyle(
+                                color: isSelected ? Colors.white : Colors.white70,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                fontSize: 12,
+                              ),
+                              onSelected: (_) => notifier.loadChapter(chapter),
+                            );
+                          }
+                        },
+                      );
+                    },
+                  ),
                 ),
               const SizedBox(height: 16),
 
@@ -403,64 +480,110 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: playerState.audioMode.isNarrator
-                                ? Colors.indigo.withValues(alpha: 0.4)
-                                : const Color(0xFFFBBF24).withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
                               color: playerState.audioMode.isNarrator
-                                  ? const Color(0xFF6366F1)
-                                  : const Color(0xFFFBBF24),
+                                  ? Colors.indigo.withValues(alpha: 0.4)
+                                  : const Color(0xFFFBBF24).withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: playerState.audioMode.isNarrator
+                                    ? const Color(0xFF6366F1)
+                                    : const Color(0xFFFBBF24),
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            playerState.audioMode.label,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: playerState.audioMode.isNarrator
-                                  ? Colors.white
-                                  : const Color(0xFFFBBF24),
+                            child: Text(
+                              playerState.audioMode.label,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: playerState.audioMode.isNarrator
+                                    ? Colors.white
+                                    : const Color(0xFFFBBF24),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           ),
                         ),
-                        // Translation Segmented Toggle (BSB, WEB, NIV)
-                        Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF0F0E26),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.white12),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: BibleTranslation.values.map((tr) {
-                              final isSelected = playerState.activeTranslation == tr.code;
-                              return GestureDetector(
-                                onTap: () => notifier.setTranslation(tr.code),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? const Color(0xFF6366F1)
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    tr.shortLabel,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: isSelected ? Colors.white : Colors.white54,
+                        const SizedBox(width: 6),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Translation Segmented Toggle (BSB, WEB, NIV)
+                            Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF0F0E26),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.white12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: BibleTranslation.values.map((tr) {
+                                  final isSelected = playerState.activeTranslation == tr.code;
+                                  return GestureDetector(
+                                    onTap: () => notifier.setTranslation(tr.code),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? const Color(0xFF6366F1)
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        tr.shortLabel,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: isSelected ? Colors.white : Colors.white54,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            // Shuffle Translations Toggle Button
+                            Tooltip(
+                              message: playerState.shuffleTranslations
+                                  ? 'Translation Shuffle ON (Cycles BSB ↔ WEB ↔ NIV per repeat)'
+                                  : 'Turn on Translation Shuffle across repetitions',
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(10),
+                                  onTap: () => notifier.toggleShuffleTranslations(),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(5),
+                                    decoration: BoxDecoration(
+                                      color: playerState.shuffleTranslations
+                                          ? const Color(0xFFFBBF24).withValues(alpha: 0.25)
+                                          : const Color(0xFF0F0E26),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: playerState.shuffleTranslations
+                                            ? const Color(0xFFFBBF24)
+                                            : Colors.white12,
+                                        width: playerState.shuffleTranslations ? 1.5 : 1.0,
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      Icons.shuffle_rounded,
+                                      size: 16,
+                                      color: playerState.shuffleTranslations
+                                          ? const Color(0xFFFBBF24)
+                                          : Colors.white54,
                                     ),
                                   ),
                                 ),
-                              );
-                            }).toList(),
-                          ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -476,7 +599,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${playerState.translation.fullName} (${playerState.activeTranslation}) • API.Bible',
+                      '${playerState.translation.fullName} (${playerState.activeTranslation}) • API.Bible${playerState.shuffleTranslations ? ' • 🔀 Shuffle Active' : ''}',
                       style: TextStyle(fontSize: 11, color: Colors.indigo.shade200),
                     ),
                     const SizedBox(height: 16),

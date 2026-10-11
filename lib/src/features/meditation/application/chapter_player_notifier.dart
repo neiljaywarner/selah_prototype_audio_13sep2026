@@ -61,7 +61,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       _eventSub?.cancel();
       _gapTimer?.cancel();
       _audioPlayer.dispose();
-      _flutterTts.stop();
+      _flutterTts.stop().catchError((_) => 0);
     });
 
     String initialTranslation = 'BSB';
@@ -196,6 +196,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     required String bookName,
   }) async {
     await stopAllPlayback();
+    if (!ref.mounted) return;
 
     final fallbackText = _fallbackChapterText(bookCode, chapterNumber, bookName);
 
@@ -290,8 +291,14 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
           'bible_id': bibleId,
         },
       );
+      final cachedText = ref.read(offlineScriptureCacheProvider).getOfflineText(
+            translation.code,
+            bookCode,
+            chapterNumber,
+          ) ?? fallbackText;
       _switchToTtsFallback(
-        'Human narrator stream unavailable for $bookName $chapterNumber (${kApiBibleKey == "REDACTED" ? "API_BIBLE_KEY not set" : "network/CORS"}). Switched to Text-to-Speech (TTS).',
+        'Offline / Airplane Mode: Narrating ${translation.fullName} (${translation.code}) scripture via Text-to-Speech (TTS).',
+        overrideText: cachedText,
       );
     }
   }
@@ -317,6 +324,15 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   Future<String?> _fetchChapterText(String bookCode, int chapterNumber) async {
+    // Check offline disk cache first for public domain BSB / WEB
+    try {
+      final cache = ref.read(offlineScriptureCacheProvider);
+      final cached = cache.getOfflineText(state.activeTranslation, bookCode, chapterNumber);
+      if (cached != null && cached.trim().isNotEmpty) {
+        return cached;
+      }
+    } catch (_) {}
+
     if (kApiBibleKey == 'REDACTED' || kApiBibleKey.isEmpty) return null;
     try {
       final textBibleId = state.translation.textBibleId;
@@ -329,7 +345,16 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         _recordFumsToken(res.data, kind: 'text', chapterId: passageId);
         final content = res.data['data']?['content'] as String?;
         if (content != null && content.trim().isNotEmpty) {
-          return content.replaceAll(RegExp(r'\s+'), ' ').trim();
+          final cleaned = content.replaceAll(RegExp(r'\s+'), ' ').trim();
+          try {
+            ref.read(offlineScriptureCacheProvider).saveOfflineToDisk(
+              state.activeTranslation,
+              bookCode,
+              chapterNumber,
+              cleaned,
+            );
+          } catch (_) {}
+          return cleaned;
         }
       }
     } catch (_) {}
@@ -385,11 +410,13 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     try {
       await _audioPlayer.stop();
     } catch (_) {}
+    if (!ref.mounted) return;
     state = state.copyWith(isPlaying: false, isPausedInGap: false);
   }
 
   Future<void> _playTts(String text) async {
     await stopAllPlayback();
+    if (!ref.mounted) return;
 
     state = state.copyWith(
       isLoading: false,
@@ -413,13 +440,21 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
   }
 
-  void _switchToTtsFallback(String notice) {
-    state = state.copyWith(isLoading: false, audioMode: AudioMode.tts, infoNotice: notice);
-    _playTts(state.currentChapter.textContent);
+  void _switchToTtsFallback(String notice, {String? overrideText}) {
+    if (!ref.mounted) return;
+    final text = overrideText ?? state.currentChapter.textContent;
+    state = state.copyWith(
+      isLoading: false,
+      audioMode: AudioMode.tts,
+      infoNotice: notice,
+      currentChapter: state.currentChapter.copyWith(textContent: text),
+    );
+    _playTts(text);
   }
 
   Future<void> loadChapter(ChapterInfo chapter) async {
     await stopAllPlayback();
+    if (!ref.mounted) return;
 
     _currentTimestamps = await TimestampLoaderService.loadChapterTimestamps(
       translation: state.activeTranslation,
@@ -624,6 +659,22 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
   }
 
+  void toggleShuffleTranslations() {
+    final next = !state.shuffleTranslations;
+    state = state.copyWith(shuffleTranslations: next);
+    AppLogger.logEvent('toggle_shuffle_translations', {'enabled': next});
+    if (next) {
+      cycleNextTranslation();
+    }
+  }
+
+  void cycleNextTranslation() {
+    const list = ['BSB', 'WEB', 'NIV'];
+    final idx = list.indexOf(state.activeTranslation);
+    final next = list[(idx + 1) % list.length];
+    setTranslation(next);
+  }
+
   Future<void> _startNextIteration() async {
     AppLogger.info('Starting repetition ${state.currentIteration + 1}');
     state = state.copyWith(
@@ -631,6 +682,11 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       isPausedInGap: false,
       isPlaying: true,
     );
+
+    if (state.shuffleTranslations) {
+      cycleNextTranslation();
+      return;
+    }
 
     if (state.audioMode == AudioMode.narrator) {
       await _audioPlayer.seek(Duration.zero);

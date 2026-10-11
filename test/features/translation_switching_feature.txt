@@ -22,3 +22,13 @@ Feature: Scripture Translation Switching and Persistence
     When the user relaunches the application
     Then the initial active translation is restored to "NIV"
     And the audio mode badges reflect the licensed narrator for NIV
+
+  Scenario: Toggle Translation Shuffle across meditation repetitions
+    Given the active translation is "BSB"
+    When the user taps the "Shuffle" translation toggle button
+    Then shuffle translations mode is enabled with visual gold ON indicator
+    And the subtitle displays "🔀 Shuffle Active"
+    And the translation immediately cycles to "WEB"
+    When the chapter loop repetition completes and restarts
+    Then the translation automatically rotates to the next translation "NIV"
+

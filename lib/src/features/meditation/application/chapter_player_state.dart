@@ -20,6 +20,7 @@ class ChapterPlayerState {
   final String? lastError;
   final String? infoNotice;
   final String processingStateName;
+  final bool shuffleTranslations;
 
   const ChapterPlayerState({
     required this.currentChapter,
@@ -39,6 +40,7 @@ class ChapterPlayerState {
     this.lastError,
     this.infoNotice,
     this.processingStateName = 'idle',
+    this.shuffleTranslations = false,
   });
 
   ChapterPlayerState copyWith({
@@ -61,6 +63,7 @@ class ChapterPlayerState {
     bool clearLastError = false,
     bool clearInfoNotice = false,
     String? processingStateName,
+    bool? shuffleTranslations,
   }) => ChapterPlayerState(
     currentChapter: currentChapter ?? this.currentChapter,
     isLoading: isLoading ?? this.isLoading,
@@ -79,6 +82,7 @@ class ChapterPlayerState {
     lastError: clearLastError ? null : (lastError ?? this.lastError),
     infoNotice: clearInfoNotice ? null : (infoNotice ?? this.infoNotice),
     processingStateName: processingStateName ?? this.processingStateName,
+    shuffleTranslations: shuffleTranslations ?? this.shuffleTranslations,
   );
 
   BibleTranslation get translation => BibleTranslation.fromCode(activeTranslation);

@@ -31,3 +31,19 @@ Feature: Scripture Chapter Audio Playback
     When playback of the chapter reaches the end
     Then the loop counter increments to "Loop 2 of 3"
     And the chapter audio seamlessly replays from the beginning
+
+  Scenario: Single-row horizontal scrollable presets with Psalms 126 and Philippians 4
+    Given the user is on the Chapter Player Screen
+    Then the chapter presets are rendered in a single-row horizontally scrollable ListView
+    And the presets include "Psalms 126" and "Philippians 4"
+    When the user scrolls horizontally and taps "Philippians 4"
+    Then the player loads "Philippians 4"
+
+  Scenario: LIFO saved chapters queue prepends manual chapters
+    Given the user manually searches or bookmarks "Romans 8"
+    When the chapter loads and is saved to local storage
+    Then "Romans 8" is prepended as the first item in the horizontal preset row
+    And the saved chip is marked with a gold bookmark icon
+    When the user restarts the application
+    Then "Romans 8" remains at the front of the horizontal row
+
