@@ -87,6 +87,22 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
         }
       }
 
+      // If user typed a verse range (e.g. "col 1:17-20") not in curated excerpts
+      if (raw.contains('-')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Feature coming soon! Custom verse range "$raw" will be supported in v0.3.0. Enjoy our curated demo passages (1 Cor 13, Matt 11, Rom 8, Psalm 23) or full chapters.',
+            ),
+            backgroundColor: const Color(0xFF312E81),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        return;
+      }
+
       AppLogger.logEvent('request_single_verse', {'query': raw});
       ref.read(userPreferencesProvider).saveChapter(raw);
       ref.read(chapterPlayerProvider.notifier).fetchAndPlaySingleVerse(raw);

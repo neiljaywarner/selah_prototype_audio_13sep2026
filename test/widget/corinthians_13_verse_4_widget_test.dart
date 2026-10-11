@@ -112,5 +112,25 @@ void main() {
 
       expect(richTextFinder, findsOneWidget, reason: 'Verse 4 should be highlighted with gold background Color(0xFFFBBF24)');
     });
+
+    testWidgets('Searching non-curated verse range (e.g. "col 1:17-20") shows "Feature coming soon" SnackBar', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 1920);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: SelahApp(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final searchField = find.byType(TextField);
+      await tester.enterText(searchField, 'col 1:17-20');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump();
+
+      expect(find.textContaining('Feature coming soon!'), findsOneWidget);
+    });
   });
 }
