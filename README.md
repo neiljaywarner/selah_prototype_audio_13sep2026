@@ -117,8 +117,20 @@ All 12 core unit tests verify:
 
 ---
 
-## ⚠️ Git & Workflow Rules
-- **NEVER push directly into `main` without PR review**. All development, fixes, and features must be conducted on feature branches (e.g. `feat/...`) and merged only via reviewed Pull Requests.
+## 🗺️ Strategic Roadmap
+- **[v0.3.0 Release Roadmap](ROADMAP_v0.3.0.md)**: Walking and driving mode with lockscreen controls, curated verse excerpts (`PassageExcerpt`), community voting, direct Doorbell.io feedback, and ESV narrator integration.
+
+---
+
+## ⚠️ Git & Workflow Rules (Strictly Enforced)
+- **Zero Direct Pushes to `main`**: `main` is protected. All changes MUST be developed on dedicated branches and merged via Pull Requests audited by the PR Triage Skill.
+- **Ticket-Driven Development**: Every task, bug fix, or feature MUST be tracked by an active GitHub issue (`#<ticket-id>`).
+- **Ticket-Named Branches**: Create branches using the ticket pattern: `feat/#<ticket-id>-<slug>` or `fix/#<ticket-id>-<slug>`.
+- **Conventional Commits with Ticket Scope**: Commit messages MUST include the ticket number in their scope:
+  - `feat(#<ticket>): <imperative summary>`
+  - `fix(#<ticket>): <imperative summary>`
+  - `docs(#<ticket>): <imperative summary>`
+  - `test(#<ticket>): <imperative summary>`
 
 ---
 
