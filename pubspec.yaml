@@ -92,6 +92,7 @@ flutter:
     - assets/
     - assets/timestamps/
     - assets/timestamps/WEB/
+    - assets/timestamps/BSB/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

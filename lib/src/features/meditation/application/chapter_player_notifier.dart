@@ -86,20 +86,27 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       if (state.audioMode == AudioMode.narrator) {
         int hStart = 0;
         int hEnd = 0;
-        if (_currentTimestamps != null) {
+        if (_currentTimestamps != null && _currentTimestamps!.isNotEmpty) {
           final posMs = pos.inMilliseconds;
           for (final vt in _currentTimestamps!) {
             if (posMs >= vt.startMs && posMs <= vt.endMs) {
-              hStart = 0;
-              hEnd = vt.text.length;
+              final fullText = state.currentChapter.textContent;
+              final idx = fullText.indexOf(vt.text);
+              if (idx != -1) {
+                hStart = idx;
+                hEnd = idx + vt.text.length;
+              } else {
+                hStart = 0;
+                hEnd = vt.text.length.clamp(0, fullText.length);
+              }
               break;
             }
           }
         }
         state = state.copyWith(
           position: pos,
-          highlightStart: hStart > 0 ? hStart : state.highlightStart,
-          highlightEnd: hEnd > 0 ? hEnd : state.highlightEnd,
+          highlightStart: hEnd > hStart ? hStart : state.highlightStart,
+          highlightEnd: hEnd > hStart ? hEnd : state.highlightEnd,
         );
       }
     });

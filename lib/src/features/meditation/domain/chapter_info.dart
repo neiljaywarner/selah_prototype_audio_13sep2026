@@ -86,6 +86,6 @@ final List<ChapterInfo> kFeaturedChapters = [
     chapterNumber: 13,
     audioStreamUrl: '',
     textContent:
-        'If I speak with the languages of men and of angels, but don\'t have love, I have become sounding brass, or a clanging cymbal. Love is patient, love is kind. Love does not envy. Love does not brag, is not proud. It bears all things, believes all things, hopes all things, endures all things. Love never fails...',
+        'Love is patient, love is kind. Love does not envy. Love does not brag, is not proud, does not behave itself inappropriately, does not seek its own way, is not provoked, takes no account of evil; doesn\'t rejoice in unrighteousness, but rejoices with the truth; bears all things, believes all things, hopes all things, endures all things.',
   ),
 ];

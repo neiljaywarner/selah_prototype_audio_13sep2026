@@ -56,3 +56,5 @@ key.properties
 google-services.json
 GoogleService-Info.plist
 firebase-debug.log*
+remote_config.json
+.firebase/

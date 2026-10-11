@@ -852,8 +852,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
 
   Widget _buildKaraokeText(dynamic playerState) {
     final text = playerState.currentChapter.textContent as String;
-    if (playerState.audioMode == AudioMode.tts &&
-        playerState.highlightEnd > playerState.highlightStart &&
+    if (playerState.highlightEnd > playerState.highlightStart &&
         playerState.highlightEnd <= text.length) {
       final before = text.substring(0, playerState.highlightStart);
       final word = text.substring(playerState.highlightStart, playerState.highlightEnd);
