@@ -90,42 +90,72 @@ class BibleCanon {
   };
 
   static final Map<String, String> _aliases = {
-    'GENESIS': 'GEN',
-    'EXODUS': 'EXO',
-    'LEVITICUS': 'LEV',
-    'NUMBERS': 'NUM',
-    'DEUTERONOMY': 'DEU',
-    'JOSHUA': 'JOS',
-    'JUDGES': 'JDG',
-    'RUTH': 'RUT',
-    'SAMUEL': '1SA',
-    'PSALM': 'PSA',
-    'PSALMS': 'PSA',
-    'PSL': 'PSA',
-    'PROVERBS': 'PRO',
-    'ECCLESIASTES': 'ECC',
-    'SONG': 'SNG',
-    'ISAIAH': 'ISA',
-    'JEREMIAH': 'JER',
-    'LAMENTATIONS': 'LAM',
-    'EZEKIEL': 'EZK',
-    'DANIEL': 'DAN',
-    'MATTHEW': 'MAT',
-    'MARK': 'MRK',
-    'LUKE': 'LUK',
-    'JOHN': 'JHN',
-    'ACTS': 'ACT',
-    'ROMANS': 'ROM',
-    'CORINTHIANS': '1CO',
-    'GALATIANS': 'GAL',
-    'EPHESIANS': 'EPH',
-    'PHILIPPIANS': 'PHP',
-    'COLOSSIANS': 'COL',
-    'HEBREWS': 'HEB',
-    'JAMES': 'JAS',
-    'PETER': '1PE',
-    'JUDE': 'JUD',
-    'REVELATION': 'REV',
+    'GENESIS': 'GEN', 'GEN': 'GEN',
+    'EXODUS': 'EXO', 'EXO': 'EXO', 'EX': 'EXO',
+    'LEVITICUS': 'LEV', 'LEV': 'LEV',
+    'NUMBERS': 'NUM', 'NUM': 'NUM',
+    'DEUTERONOMY': 'DEU', 'DEU': 'DEU', 'DEUT': 'DEU',
+    'JOSHUA': 'JOS', 'JOS': 'JOS', 'JOSH': 'JOS',
+    'JUDGES': 'JDG', 'JDG': 'JDG', 'JUDG': 'JDG',
+    'RUTH': 'RUT', 'RUT': 'RUT',
+    'SAMUEL': '1SA', '1SAMUEL': '1SA', '1 SAMUEL': '1SA', '1SA': '1SA', '1SAM': '1SA', '1 SAM': '1SA',
+    '2SAMUEL': '2SA', '2 SAMUEL': '2SA', '2SA': '2SA', '2SAM': '2SA', '2 SAM': '2SA',
+    'KINGS': '1KI', '1KINGS': '1KI', '1 KINGS': '1KI', '1KI': '1KI', '1KGS': '1KI', '1 KGS': '1KI',
+    '2KINGS': '2KI', '2 KINGS': '2KI', '2KI': '2KI', '2KGS': '2KI', '2 KGS': '2KI',
+    'CHRONICLES': '1CH', '1CHRONICLES': '1CH', '1 CHRONICLES': '1CH', '1CH': '1CH', '1CHRON': '1CH', '1 CHRON': '1CH',
+    '2CHRONICLES': '2CH', '2 CHRONICLES': '2CH', '2CH': '2CH', '2CHRON': '2CH', '2 CHRON': '2CH',
+    'EZRA': 'EZR', 'EZR': 'EZR',
+    'NEHEMIAH': 'NEH', 'NEH': 'NEH',
+    'ESTHER': 'EST', 'EST': 'EST',
+    'JOB': 'JOB',
+    'PSALM': 'PSA', 'PSALMS': 'PSA', 'PSL': 'PSA', 'PSA': 'PSA', 'PS': 'PSA',
+    'PROVERBS': 'PRO', 'PRO': 'PRO', 'PROV': 'PRO',
+    'ECCLESIASTES': 'ECC', 'ECC': 'ECC', 'ECCL': 'ECC',
+    'SONG': 'SNG', 'SONGS': 'SNG', 'SONG OF SOLOMON': 'SNG', 'SNG': 'SNG', 'SOS': 'SNG',
+    'ISAIAH': 'ISA', 'ISA': 'ISA',
+    'JEREMIAH': 'JER', 'JER': 'JER',
+    'LAMENTATIONS': 'LAM', 'LAM': 'LAM',
+    'EZEKIEL': 'EZK', 'EZK': 'EZK', 'EZEK': 'EZK',
+    'DANIEL': 'DAN', 'DAN': 'DAN',
+    'HOSEA': 'HOS', 'HOS': 'HOS',
+    'JOEL': 'JOL', 'JOL': 'JOL',
+    'AMOS': 'AMO', 'AMO': 'AMO',
+    'OBADIAH': 'OBA', 'OBA': 'OBA',
+    'JONAH': 'JON', 'JON': 'JON',
+    'MICAH': 'MIC', 'MIC': 'MIC',
+    'NAHUM': 'NAM', 'NAM': 'NAM',
+    'HABAKKUK': 'HAB', 'HAB': 'HAB',
+    'ZEPHANIAH': 'ZEP', 'ZEP': 'ZEP',
+    'HAGGAI': 'HAG', 'HAG': 'HAG',
+    'ZECHARIAH': 'ZEC', 'ZEC': 'ZEC',
+    'MALACHI': 'MAL', 'MAL': 'MAL',
+    'MATTHEW': 'MAT', 'MAT': 'MAT', 'MATT': 'MAT', 'MT': 'MAT',
+    'MARK': 'MRK', 'MRK': 'MRK', 'MK': 'MRK',
+    'LUKE': 'LUK', 'LUK': 'LUK', 'LK': 'LUK',
+    'JOHN': 'JHN', 'JHN': 'JHN', 'JN': 'JHN',
+    'ACTS': 'ACT', 'ACT': 'ACT',
+    'ROMANS': 'ROM', 'ROM': 'ROM',
+    'CORINTHIANS': '1CO', '1CORINTHIANS': '1CO', '1 CORINTHIANS': '1CO', '1CO': '1CO', '1COR': '1CO', '1 COR': '1CO',
+    '2CORINTHIANS': '2CO', '2 CORINTHIANS': '2CO', '2CO': '2CO', '2COR': '2CO', '2 COR': '2CO',
+    'GALATIANS': 'GAL', 'GAL': 'GAL',
+    'EPHESIANS': 'EPH', 'EPH': 'EPH',
+    'PHILIPPIANS': 'PHP', 'PHIL': 'PHP', 'PHP': 'PHP',
+    'COLOSSIANS': 'COL', 'COL': 'COL',
+    '1THESSALONIANS': '1TH', '1 THESSALONIANS': '1TH', '1TH': '1TH', '1THESS': '1TH', '1 THESS': '1TH',
+    '2THESSALONIANS': '2TH', '2 THESSALONIANS': '2TH', '2TH': '2TH', '2THESS': '2TH', '2 THESS': '2TH',
+    '1TIMOTHY': '1TI', '1 TIMOTHY': '1TI', '1TI': '1TI', '1TIM': '1TI', '1 TIM': '1TI',
+    '2TIMOTHY': '2TI', '2 TIMOTHY': '2TI', '2TI': '2TI', '2TIM': '2TI', '2 TIM': '2TI',
+    'TITUS': 'TIT', 'TIT': 'TIT',
+    'PHILEMON': 'PHM', 'PHM': 'PHM',
+    'HEBREWS': 'HEB', 'HEB': 'HEB',
+    'JAMES': 'JAS', 'JAS': 'JAS',
+    'PETER': '1PE', '1PETER': '1PE', '1 PETER': '1PE', '1PE': '1PE', '1PET': '1PE', '1 PET': '1PE',
+    '2PETER': '2PE', '2 PETER': '2PE', '2PE': '2PE', '2PET': '2PE', '2 PET': '2PE',
+    '1JOHN': '1JN', '1 JOHN': '1JN', '1JN': '1JN',
+    '2JOHN': '2JN', '2 JOHN': '2JN', '2JN': '2JN',
+    '3JOHN': '3JN', '3 JOHN': '3JN', '3JN': '3JN',
+    'JUDE': 'JUD', 'JUD': 'JUD',
+    'REVELATION': 'REV', 'REV': 'REV',
   };
 
   static BibleBook? findBook(String query) {
@@ -138,6 +168,47 @@ class BibleCanon {
       }
     }
     return null;
+  }
+
+  static BibleBook? findExactBook(String query) {
+    final upper = query.trim().toUpperCase();
+    if (_bookByCode.containsKey(upper)) return _bookByCode[upper];
+    if (_aliases.containsKey(upper)) return _bookByCode[_aliases[upper]];
+    for (final b in books) {
+      if (b.name.toUpperCase() == upper || b.code == upper) {
+        return b;
+      }
+    }
+    return null;
+  }
+
+  /// Parses inputs such as "John ", "John 3", "1 Cor 13", "Rom 8", or "Psalms 23".
+  /// Returns a [BookChapterQuery] containing the matched book, parsed chapter,
+  /// whether the book name was explicitly followed by a space, and whether it's an exact match.
+  static BookChapterQuery? parseQuery(String input) {
+    if (input.trim().isEmpty) return null;
+
+    final regex = RegExp(r'^([1-3]?\s*[a-zA-Z\s]+?)(?:\s+(\d+))?\s*$');
+    final match = regex.firstMatch(input);
+    if (match == null) return null;
+
+    final bookPart = match.group(1)?.trim() ?? '';
+    final chapterStr = match.group(2);
+    final int? chapter = chapterStr != null ? int.tryParse(chapterStr) : null;
+
+    final exactBook = findExactBook(bookPart);
+    final book = exactBook ?? findBook(bookPart);
+    if (book == null) return null;
+
+    final isExact = exactBook != null;
+    final hasTrailingSpace = input.endsWith(' ') || chapterStr != null;
+
+    return BookChapterQuery(
+      book: book,
+      chapter: chapter,
+      hasTrailingSpace: hasTrailingSpace,
+      isExactBook: isExact,
+    );
   }
 
   static bool isOldTestament(String bookCode) {
@@ -154,4 +225,18 @@ class BibleCanon {
     final maxCh = maxChapterFor(bookCode);
     return chapter >= 1 && chapter <= maxCh;
   }
+}
+
+class BookChapterQuery {
+  final BibleBook book;
+  final int? chapter;
+  final bool hasTrailingSpace;
+  final bool isExactBook;
+
+  const BookChapterQuery({
+    required this.book,
+    this.chapter,
+    required this.hasTrailingSpace,
+    required this.isExactBook,
+  });
 }

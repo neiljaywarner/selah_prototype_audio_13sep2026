@@ -59,5 +59,47 @@ void main() {
       expect(BibleCanon.findBook('Colossians')?.code, 'COL');
       expect(BibleCanon.findBook('COL')?.code, 'COL');
     });
+
+    test('parseQuery recognizes books followed by spaces and triggers numeric readiness', () {
+      // "John " with trailing space -> ready for numbers!
+      final qJohnSpace = BibleCanon.parseQuery('John ');
+      expect(qJohnSpace, isNotNull);
+      expect(qJohnSpace!.book.code, 'JHN');
+      expect(qJohnSpace.chapter, isNull);
+      expect(qJohnSpace.hasTrailingSpace, isTrue);
+      expect(qJohnSpace.isExactBook, isTrue);
+
+      // "John 3" -> parsed chapter 3
+      final qJohn3 = BibleCanon.parseQuery('John 3');
+      expect(qJohn3, isNotNull);
+      expect(qJohn3!.book.code, 'JHN');
+      expect(qJohn3.chapter, 3);
+      expect(qJohn3.hasTrailingSpace, isTrue);
+
+      // "1 Cor 13" -> 1 Corinthians chapter 13
+      final q1Cor13 = BibleCanon.parseQuery('1 Cor 13');
+      expect(q1Cor13, isNotNull);
+      expect(q1Cor13!.book.code, '1CO');
+      expect(q1Cor13.chapter, 13);
+
+      // "Rom 8" -> Romans chapter 8
+      final qRom8 = BibleCanon.parseQuery('Rom 8');
+      expect(qRom8, isNotNull);
+      expect(qRom8!.book.code, 'ROM');
+      expect(qRom8.chapter, 8);
+
+      // "Psalms 23" -> Psalms chapter 23
+      final qPsa23 = BibleCanon.parseQuery('Psalms 23');
+      expect(qPsa23, isNotNull);
+      expect(qPsa23!.book.code, 'PSA');
+      expect(qPsa23.chapter, 23);
+
+      // Incomplete prefix without space "Joh" -> not exact, no trailing space
+      final qIncomplete = BibleCanon.parseQuery('Joh');
+      expect(qIncomplete, isNotNull);
+      expect(qIncomplete!.book.code, 'JHN');
+      expect(qIncomplete.hasTrailingSpace, isFalse);
+      expect(qIncomplete.isExactBook, isFalse);
+    });
   });
 }

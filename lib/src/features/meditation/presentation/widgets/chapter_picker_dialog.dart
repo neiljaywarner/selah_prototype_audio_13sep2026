@@ -15,6 +15,74 @@ class _ChapterPickerDialogState extends State<ChapterPickerDialog> {
   String _searchQuery = '';
   BibleBook _selectedBook = BibleCanon.books[0]; // Genesis
   int _selectedChapter = 1;
+  late final TextEditingController _searchController;
+  late final FocusNode _searchFocusNode;
+  TextInputType _keyboardType = TextInputType.text;
+  bool _isBookIdentified = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    _searchFocusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String val) {
+    final query = BibleCanon.parseQuery(val);
+    if (query != null) {
+      final shouldBeNumeric = (query.isExactBook && query.hasTrailingSpace) || (query.chapter != null);
+      setState(() {
+        _selectedBook = query.book;
+        if (query.chapter != null && BibleCanon.isValidChapter(query.book.code, query.chapter!)) {
+          _selectedChapter = query.chapter!;
+        } else if (_selectedChapter > query.book.totalChapters) {
+          _selectedChapter = 1;
+        }
+        _isBookIdentified = shouldBeNumeric;
+        _keyboardType = shouldBeNumeric ? TextInputType.number : TextInputType.text;
+        _searchQuery = query.isExactBook ? query.book.name : val;
+      });
+    } else {
+      setState(() {
+        _searchQuery = val;
+        if (_isBookIdentified) {
+          _isBookIdentified = false;
+          _keyboardType = TextInputType.text;
+        }
+      });
+    }
+  }
+
+  void _selectBook(BibleBook book) {
+    setState(() {
+      _selectedBook = book;
+      _selectedChapter = 1;
+      _isBookIdentified = true;
+      _keyboardType = TextInputType.number;
+      _searchController.text = '${book.name} ';
+      _searchController.selection = TextSelection.fromPosition(
+        TextPosition(offset: _searchController.text.length),
+      );
+      _searchQuery = book.name;
+    });
+    _searchFocusNode.requestFocus();
+  }
+
+  void _submit() {
+    Navigator.of(context).pop();
+    widget.onChapterSelected(
+      _selectedBook.code,
+      _selectedChapter,
+      _selectedBook.name,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,15 +161,36 @@ class _ChapterPickerDialogState extends State<ChapterPickerDialog> {
             ),
             const SizedBox(height: 12),
 
-            // Search filter field
+            // Smart Search filter field with dynamic numeric keyboard switching
             TextField(
-              onChanged: (val) => setState(() => _searchQuery = val),
+              key: ValueKey(_keyboardType),
+              controller: _searchController,
+              focusNode: _searchFocusNode,
+              keyboardType: _keyboardType,
+              textInputAction: TextInputAction.go,
+              onSubmitted: (_) => _submit(),
+              onChanged: _onSearchChanged,
               style: const TextStyle(fontSize: 13),
               decoration: InputDecoration(
-                hintText: 'Filter book name (e.g. Psalms, John, Colossians)...',
+                hintText: _isBookIdentified
+                    ? 'Type chapter (1 — ${_selectedBook.totalChapters}) & press Go...'
+                    : 'Filter or type book (e.g. John, Rom, Ps)...',
                 filled: true,
                 fillColor: const Color(0xFF0F0E26),
-                prefixIcon: const Icon(Icons.search, size: 18, color: Colors.white54),
+                prefixIcon: Icon(
+                  _isBookIdentified ? Icons.dialpad_rounded : Icons.search,
+                  size: 18,
+                  color: _isBookIdentified ? const Color(0xFFFBBF24) : Colors.white54,
+                ),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 16, color: Colors.white54),
+                        onPressed: () {
+                          _searchController.clear();
+                          _onSearchChanged('');
+                        },
+                      )
+                    : null,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -109,16 +198,42 @@ class _ChapterPickerDialogState extends State<ChapterPickerDialog> {
                 ),
               ),
             ),
+            if (_isBookIdentified) ...[
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFBBF24).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFFBBF24).withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check_circle_rounded, size: 13, color: Color(0xFFFBBF24)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        '${_selectedBook.name} selected • Numeric keypad active for chapter (1—${_selectedBook.totalChapters})',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFFFBBF24),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
 
             // Main Book Selection Grid
             Expanded(
               flex: 3,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0F0E26),
-                  borderRadius: BorderRadius.circular(14),
-                ),
+              child: Material(
+                color: const Color(0xFF0F0E26),
+                borderRadius: BorderRadius.circular(14),
+                clipBehavior: Clip.antiAlias,
                 child: ListView.separated(
                   padding: const EdgeInsets.all(8),
                   itemCount: filteredBooks.length,
@@ -142,14 +257,7 @@ class _ChapterPickerDialogState extends State<ChapterPickerDialog> {
                         '${book.totalChapters} ch',
                         style: const TextStyle(fontSize: 11, color: Colors.white54),
                       ),
-                      onTap: () {
-                        setState(() {
-                          _selectedBook = book;
-                          if (_selectedChapter > book.totalChapters) {
-                            _selectedChapter = 1;
-                          }
-                        });
-                      },
+                      onTap: () => _selectBook(book),
                     );
                   },
                 ),

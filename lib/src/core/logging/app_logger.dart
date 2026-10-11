@@ -92,6 +92,17 @@ class AppLogger {
     if (_inMemoryLogs.length > 80) _inMemoryLogs.removeLast();
   }
 
+  static void warning(String message, [Map<String, dynamic>? properties]) {
+    final timeStr = DateTime.now().toIso8601String();
+    final timeFormatted = timeStr.length >= 19 ? timeStr.substring(11, 19) : timeStr;
+    final rawLine = '⚠️ [SELAH WARN] $timeFormatted: $message ${properties ?? ""}';
+    final logLine = _sanitize(rawLine);
+    debugPrint(logLine);
+    talker.warning('$message ${properties ?? ""}');
+    _inMemoryLogs.insert(0, logLine);
+    if (_inMemoryLogs.length > 80) _inMemoryLogs.removeLast();
+  }
+
   static void error(
     String message, {
     dynamic error,

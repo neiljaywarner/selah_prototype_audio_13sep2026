@@ -14,6 +14,8 @@ class _FeatureVotingSheetState extends ConsumerState<FeatureVotingSheet> {
   final TextEditingController _emailController = TextEditingController();
   bool _isSubmitting = false;
   String? _statusMessage;
+  String _selectedSentiment = 'positive';
+  int _selectedNps = 10;
 
   @override
   void dispose() {
@@ -34,6 +36,8 @@ class _FeatureVotingSheetState extends ConsumerState<FeatureVotingSheet> {
     final success = await FeedbackService.submitDoorbellFeedback(
       message: msg,
       email: _emailController.text.trim().isNotEmpty ? _emailController.text.trim() : null,
+      sentiment: _selectedSentiment,
+      nps: _selectedNps,
     );
 
     setState(() {
@@ -121,6 +125,10 @@ class _FeatureVotingSheetState extends ConsumerState<FeatureVotingSheet> {
               emailController: _emailController,
               isSubmitting: _isSubmitting,
               statusMessage: _statusMessage,
+              selectedSentiment: _selectedSentiment,
+              onSentimentChanged: (s) => setState(() => _selectedSentiment = s),
+              selectedNps: _selectedNps,
+              onNpsChanged: (n) => setState(() => _selectedNps = n),
               onSubmit: _submitFeedback,
             ),
           ],
@@ -262,6 +270,10 @@ class _DirectFeedbackSection extends StatelessWidget {
     required this.emailController,
     required this.isSubmitting,
     required this.statusMessage,
+    required this.selectedSentiment,
+    required this.onSentimentChanged,
+    required this.selectedNps,
+    required this.onNpsChanged,
     required this.onSubmit,
   });
 
@@ -269,6 +281,10 @@ class _DirectFeedbackSection extends StatelessWidget {
   final TextEditingController emailController;
   final bool isSubmitting;
   final String? statusMessage;
+  final String selectedSentiment;
+  final ValueChanged<String> onSentimentChanged;
+  final int selectedNps;
+  final ValueChanged<int> onNpsChanged;
   final VoidCallback onSubmit;
 
   @override
@@ -277,16 +293,83 @@ class _DirectFeedbackSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'SEND DIRECT FEEDBACK (DOORBELL.IO READY)',
+          'SEND DIRECT FEEDBACK (DOORBELL.IO REST)',
           style: TextStyle(fontSize: 11, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 10),
+
+        // Sentiment Selector
+        const Text(
+          'How is your experience today?',
+          style: TextStyle(fontSize: 12, color: Colors.white70),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            _SentimentChip(
+              label: 'Peaceful 🙏',
+              sentimentKey: 'positive',
+              isSelected: selectedSentiment == 'positive',
+              onSelect: onSentimentChanged,
+            ),
+            const SizedBox(width: 6),
+            _SentimentChip(
+              label: 'Neutral 🕊️',
+              sentimentKey: 'neutral',
+              isSelected: selectedSentiment == 'neutral',
+              onSelect: onSentimentChanged,
+            ),
+            const SizedBox(width: 6),
+            _SentimentChip(
+              label: 'Idea / Bug 💡',
+              sentimentKey: 'negative',
+              isSelected: selectedSentiment == 'negative',
+              onSelect: onSentimentChanged,
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // NPS Rating Selector (1 to 10)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Peace / Helpful Rating (NPS):',
+              style: TextStyle(fontSize: 12, color: Colors.white70),
+            ),
+            Text(
+              '$selectedNps / 10',
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFFBBF24)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        SizedBox(
+          height: 34,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: 10,
+            separatorBuilder: (_, _) => const SizedBox(width: 5),
+            itemBuilder: (ctx, idx) {
+              final score = idx + 1;
+              return _NpsScoreChip(
+                score: score,
+                isSelected: selectedNps == score,
+                onSelect: onNpsChanged,
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Feedback text input
         TextField(
           controller: feedbackController,
           maxLines: 3,
           style: const TextStyle(fontSize: 13),
           decoration: InputDecoration(
-            hintText: 'Share a suggestion, bug report, or encouragement...',
+            hintText: 'Share a suggestion, prayer, bug report, or encouragement...',
             filled: true,
             fillColor: const Color(0xFF0F0E26),
             border: OutlineInputBorder(
@@ -296,6 +379,8 @@ class _DirectFeedbackSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
+
+        // Optional email input
         TextField(
           controller: emailController,
           keyboardType: TextInputType.emailAddress,
@@ -329,7 +414,7 @@ class _DirectFeedbackSection extends StatelessWidget {
                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
                   )
                 : const Icon(Icons.send_rounded, size: 16),
-            label: const Text('Send Feedback'),
+            label: const Text('Send Feedback to Doorbell.io'),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFFBBF24),
               foregroundColor: Colors.black,
@@ -339,6 +424,86 @@ class _DirectFeedbackSection extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _SentimentChip extends StatelessWidget {
+  const _SentimentChip({
+    required this.label,
+    required this.sentimentKey,
+    required this.isSelected,
+    required this.onSelect,
+  });
+
+  final String label;
+  final String sentimentKey;
+  final bool isSelected;
+  final ValueChanged<String> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onSelect(sentimentKey),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF6366F1) : const Color(0xFF0F0E26),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF818CF8) : Colors.white12,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected ? Colors.white : Colors.white70,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NpsScoreChip extends StatelessWidget {
+  const _NpsScoreChip({
+    required this.score,
+    required this.isSelected,
+    required this.onSelect,
+  });
+
+  final int score;
+  final bool isSelected;
+  final ValueChanged<int> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onSelect(score),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        width: 30,
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFFBBF24) : const Color(0xFF0F0E26),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? const Color(0xFFFBBF24) : Colors.white12,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            '$score',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: isSelected ? Colors.black : Colors.white70,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -7,22 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.2.1] - 2026-10-10
+## [0.2.1] - 2026-10-11
 
 ### Added
+- **Curated Passage Clipping & Excerpt Engine (`PassageExcerpt`)**: Plays excerpted passages (e.g. 1 Corinthians 13:4–7) by clipping the native API.Bible stream directly via `just_audio` `setClip(start: 39.6s, end: 72.5s)`. Audio starts precisely on verse 4 (*"Love is patient..."*) and stops cleanly at the end of verse 7 into the reflection pause gap and repeat cycles.
+- **Smart Book & Chapter Picker with Numeric Keyboard**: Detects full or abbreviated book queries (e.g. `"John "`, `"Rom "`, `"1 Cor "`), shows a gold badge indicator, and automatically switches the on-screen keyboard to `TextInputType.number` for instant chapter selection.
+- **Doorbell.io REST Feedback Integration**: Replaced third-party web views with direct REST API submission supporting NPS ratings (1–10), sentiment analysis (`positive`, `neutral`, `negative`), tags, and app telemetry metadata without hardcoded secrets.
+- **WhisperX Karaoke Highlighting**: Bundled and normalized phoneme-level word and verse timestamps for 1 Corinthians 13 (`BSB` and `WEB`) with real-time gold amber (`#FBBF24`) highlighting at character index 0.
 - **NIV Audio Narration**: Full OT+NT Listener's Bible narration (Max McLean) via API.Bible with FUMS token tracking.
-- **Marionette MCP Server Integration**: Integrated `marionette_flutter: ^0.7.0` and global `marionette_mcp` server for AI-driven runtime inspection, tapping, and screenshots.
+- **Marionette MCP Automation**: Automated UI testing, live driving, and screenshot verification on real devices (Pixel 9a) and iOS Simulator.
 - **Talker In-App Live Telemetry**: Integrated `talker_flutter: ^5.1.20` with dedicated in-app live diagnostics viewer (`Icons.monitor_heart_outlined`).
-- **Adaptive Launcher Icons**: Configured and generated production app icons across Android, iOS, and Web via `flutter_launcher_icons`.
-- **Codemagic CI/CD Pipeline**: Added `codemagic.yaml` with automated builds and email notifications to `neilwarner@gmail.com`.
-- **GitHub Pages Deployment Workflow**: Added `.github/workflows/deploy_gh_pages.yml` for automated Web PWA hosting.
-- **Gherkin BDD Feature Suite**: Added four comprehensive Given/When/Then specifications under `test/features/`.
-- **GitHub Issue Tracking**: Opened Issue #2 (Release), Issue #3 (Crossway ESV), and Issue #4 (UserOrient & Doorbell).
+- **Comprehensive Test Suite**: 49 unit and widget tests passing across canon, parser, excerpts, cache, voting, and player screens.
 
 ### Fixed
-- **App Bar Title Overflow**: Resolved RenderFlex 8.1px overflow on mobile viewports by wrapping the title Column in `Expanded` with text truncation.
-- **66 Books Dialog Overflow**: Resolved 13px header overflow by wrapping title Row in `Expanded` and wrapping filter chips in `SingleChildScrollView`.
-- **Android Resource Linking**: Added missing `ic_launcher_background` color token to `colors.xml`.
+- **1 Corinthians 13 Seek & End Boundary**: Fixed audio playing verses 1–3 by seeking directly to 39.6s on start and loop wraps, and clipping playback at 72.5s so it halts after verse 7.
+- **Preset Chips Visual Fade**: Removed linear alpha gradient mask truncation on chapter preset numbers.
+- **Inner Widget Architecture**: Migrated all `_build...` methods returning widgets to dedicated inner `StatelessWidget` / `ConsumerStatefulWidget` classes per Flutter best practices.
 
 ---
 

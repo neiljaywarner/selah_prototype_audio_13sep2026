@@ -66,6 +66,23 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     setState(() => _searchSuggestions = []);
 
     if (raw.contains(':')) {
+      // 1 Corinthians 13 is our specially curated love passage (verses 4-7) with full narrator audio
+      final parsedList = BibleReferenceParser.getSuggestions(raw);
+      if (parsedList.isNotEmpty && parsedList.first.book.code == '1CO' && parsedList.first.chapter == 13) {
+        final match = parsedList.first;
+        final refStr = '${match.book.name} 13:4-7';
+        ref.read(userPreferencesProvider).saveChapter(refStr);
+        ref
+            .read(chapterPlayerProvider.notifier)
+            .routeAndPlayChapter(
+              bookCode: match.book.code,
+              chapterNumber: match.chapter,
+              bookName: match.book.name,
+            );
+        setState(() {});
+        return;
+      }
+
       AppLogger.logEvent('request_single_verse', {'query': raw});
       ref.read(userPreferencesProvider).saveChapter(raw);
       ref.read(chapterPlayerProvider.notifier).fetchAndPlaySingleVerse(raw);

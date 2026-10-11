@@ -44,6 +44,7 @@ During this session, we transitioned Selah from an initial prototype to a harden
 | **M15: Cloud Firestore Feature Voting** | Real-time community voting with offline persistence | 2026-10-11 01:28:00 | 2026-10-11 01:31:00 | ✅ Complete | `FeatureVotingService`, Riverpod notifier, unit tests |
 | **M16: 1 Cor 13:4 Narrator Seek (39.6s)** | Align narrator stream to begin on verse 4 ("Love is...") | 2026-10-11 01:32:00 | 2026-10-11 01:39:00 | ✅ Complete | Verified on Mac audio; seek to 39,600ms on chapter load |
 | **M17: Firestore Migration Blueprint** | Author `docs/migrating_from_firestore.md` | 2026-10-11 01:26:00 | 2026-10-11 01:27:00 | ✅ Complete | [docs/migrating_from_firestore.md](docs/migrating_from_firestore.md) |
+| **M18: Firebase Hosting Redeploy & Remote Config Evaluation** | Redeploy release web bundle to `selahword.web.app`; evaluate Remote Config key delivery | 2026-10-11 01:45:00 | 2026-10-11 01:50:00 | ✅ Complete | HTTP 200 on `selahword.web.app`; comparison plan formulated |
 
 ---
 

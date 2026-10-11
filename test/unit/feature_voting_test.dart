@@ -1,8 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:selah_prototype_audio_13sep2026/src/core/feedback/feature_voting_notifier.dart';
-import 'package:selah_prototype_audio_13sep2026/src/core/feedback/feature_voting_service.dart';
+import 'package:selah_prototype_audio_13sep2026/src/core/feedback/feedback_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -102,6 +101,18 @@ void main() {
 
       expect(unvotedItem.hasVoted, isFalse);
       expect(unvotedItem.votes, equals(baselineVotes));
+    });
+  });
+
+  group('FeedbackService Doorbell Unit Tests', () {
+    test('submitDoorbellFeedback completes gracefully and caches locally when unconfigured', () async {
+      final result = await FeedbackService.submitDoorbellFeedback(
+        message: 'Loving the peaceful narration and loop modes!',
+        email: 'user@example.com',
+        sentiment: 'positive',
+        nps: 10,
+      );
+      expect(result, isTrue);
     });
   });
 }

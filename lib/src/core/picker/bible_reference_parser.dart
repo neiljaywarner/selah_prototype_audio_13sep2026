@@ -71,7 +71,18 @@ class BibleReferenceParser {
     final clean = query.trim().toUpperCase();
     if (clean.isEmpty) return const [];
 
-    // Exact matches first
+    // Special abbreviation shortcuts for autocomplete suggestions
+    if (clean == 'JN') {
+      return [
+        BibleCanon.books.firstWhere((b) => b.code == 'JHN'),
+        BibleCanon.books.firstWhere((b) => b.code == 'JON'),
+      ];
+    }
+
+    // Exact canonical or alias matches first (e.g. 1COR, 1CO, 1 COR)
+    final canonical = BibleCanon.findExactBook(clean) ?? BibleCanon.findBook(clean);
+    if (canonical != null) return [canonical];
+
     final exact = BibleCanon.books.where((b) => b.code == clean || b.name.toUpperCase() == clean).toList();
     if (exact.isNotEmpty) return exact;
 

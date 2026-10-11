@@ -13,6 +13,7 @@ import '../../../core/preferences/user_preferences.dart';
 import '../domain/audio_mode.dart';
 import '../domain/bible_translation.dart';
 import '../domain/chapter_info.dart';
+import '../domain/passage_excerpt.dart';
 import 'chapter_player_state.dart';
 
 final chapterPlayerProvider = NotifierProvider<ChapterPlayerNotifier, ChapterPlayerState>(
@@ -29,6 +30,10 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   StreamSubscription? _stateSub;
   StreamSubscription? _eventSub;
   List<VerseTimestamp>? _currentTimestamps;
+
+  /// Start of the active clip within the full chapter stream. Player positions
+  /// are clip-relative, while timestamps are chapter-absolute.
+  Duration _clipOffset = Duration.zero;
 
   @override
   ChapterPlayerState build() {
@@ -87,7 +92,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         int hStart = 0;
         int hEnd = 0;
         if (_currentTimestamps != null && _currentTimestamps!.isNotEmpty) {
-          final posMs = pos.inMilliseconds;
+          final posMs = pos.inMilliseconds + _clipOffset.inMilliseconds;
           for (final vt in _currentTimestamps!) {
             if (posMs >= vt.startMs && posMs <= vt.endMs) {
               final fullText = state.currentChapter.textContent;
@@ -384,7 +389,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     );
 
     try {
-      final res = await _dio.get('https://bible-api.com/${Uri.encodeComponent(query.trim())}');
+      final res = await Dio().get('https://bible-api.com/${Uri.encodeComponent(query.trim())}');
       if (res.statusCode == 200 && res.data is Map && res.data['text'] != null) {
         final refStr = res.data['reference'] ?? query;
         final verseStr = (res.data['text'] as String).replaceAll('\n', ' ').trim();
@@ -507,10 +512,19 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
 
     try {
-      final dur = await _audioPlayer.setUrl(chapter.audioStreamUrl);
-      if (chapter.bookCode == '1CO' && chapter.chapterNumber == 13) {
-        // Start narrator audio directly at verse 4 ("Love is patient...") boundary (39.6s)
-        await _audioPlayer.seek(const Duration(milliseconds: 39600));
+      final fullDuration = await _audioPlayer.setUrl(chapter.audioStreamUrl);
+      final window = PassageExcerpt.forChapter(
+        chapter.bookCode,
+        chapter.chapterNumber,
+      )?.clipWindow(_currentTimestamps);
+      _clipOffset = window?.start ?? Duration.zero;
+      final dur = window == null
+          ? fullDuration
+          : await _audioPlayer.setClip(start: window.start, end: window.end);
+      if (window != null) {
+        AppLogger.info(
+          'Clipped ${chapter.reference} to curated excerpt ${window.start.inMilliseconds}–${window.end.inMilliseconds}ms',
+        );
       }
       state = state.copyWith(isLoading: false, duration: dur ?? Duration.zero);
       play();
@@ -567,11 +581,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
 
     if (state.position >= state.duration && state.duration > Duration.zero) {
-      if (state.currentChapter.bookCode == '1CO' && state.currentChapter.chapterNumber == 13) {
-        await _audioPlayer.seek(const Duration(milliseconds: 39600));
-      } else {
-        await _audioPlayer.seek(Duration.zero);
-      }
+      await _audioPlayer.seek(Duration.zero);
     }
 
     try {
@@ -660,8 +670,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         highlightStart: 0,
         highlightEnd: 0,
       );
-      if (state.currentChapter.bookCode == '1CO' && state.currentChapter.chapterNumber == 13) {
-        _audioPlayer.seek(const Duration(milliseconds: 39600));
+      if (state.audioMode == AudioMode.narrator) {
+        _audioPlayer.pause().then((_) => _audioPlayer.seek(Duration.zero));
       } else {
         _audioPlayer.seek(Duration.zero);
       }
@@ -712,11 +722,16 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
 
     if (state.audioMode == AudioMode.narrator) {
-      if (state.currentChapter.bookCode == '1CO' && state.currentChapter.chapterNumber == 13) {
-        await _audioPlayer.seek(const Duration(milliseconds: 39600));
-      } else {
-        await _audioPlayer.seek(Duration.zero);
+      final window = PassageExcerpt.forChapter(
+        state.currentChapter.bookCode,
+        state.currentChapter.chapterNumber,
+      )?.clipWindow(_currentTimestamps);
+
+      if (window != null) {
+        _clipOffset = window.start;
+        await _audioPlayer.setClip(start: window.start, end: window.end);
       }
+      await _audioPlayer.seek(Duration.zero);
       _audioPlayer.play();
     } else {
       await _flutterTts.speak(state.currentChapter.textContent);
