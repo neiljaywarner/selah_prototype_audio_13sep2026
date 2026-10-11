@@ -68,6 +68,11 @@ flutter build web --release \
 ```bash
 firebase deploy --only hosting
 ```
+*Live at: [https://selahword.web.app](https://selahword.web.app)*
+
+### Codemagic CI/CD Build & Deploy
+Automated Web PWA and Android APK build pipelines are pre-configured in [`codemagic.yaml`](codemagic.yaml). See the [Codemagic Deployment Guide](docs/CODEMAGIC_DEPLOYMENT.md) for instructions on manual triggers and environment variables.
+
 
 ### Android App Bundle (Google Play)
 ```bash

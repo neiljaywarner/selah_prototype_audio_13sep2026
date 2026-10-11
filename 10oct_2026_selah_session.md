@@ -107,14 +107,13 @@ The Marionette MCP server (`marionette_mcp` v0.7.0) is active in Antigravity and
      - **Branch:** `gh-pages` / `/ (root)` -> Click **Save**.
      *(GitHub REST API returns 404 for automated enablement without repo admin PAT scopes).*
 
-2. **Firebase Web Hosting (`https://selahwordapp.web.app`):**
-   * Configuration ready in `firebase.json` (`site: selahwordapp`, `public: build/web`).
-   * `build/web` release bundle is fully compiled and ready.
-   * **Action Needed:** Google OAuth refresh token for `njwandroid@gmail.com` expired in the Firebase CLI (`401 Unauthenticated`). Run:
-     ```bash
-     firebase login --reauth
-     firebase deploy --only hosting
-     ```
+2. **Firebase Web Hosting (`https://selahword.web.app`):**
+   * Site `selahword` created under project `selahwordapp`.
+   * Deployed live via `npx -y firebase-tools@latest deploy --only hosting`.
+   * **Live URLs:**
+     - Primary: [https://selahword.web.app](https://selahword.web.app)
+     - Alternate: [https://selahword.firebaseapp.com](https://selahword.firebaseapp.com)
+     - Legacy: [https://selahwordapp.web.app](https://selahwordapp.web.app)
 
 3. **Codemagic CI/CD:**
    * Configured in `codemagic.yaml` for both Web PWA and Android APK builds with notification emails to `neilwarner@gmail.com`. Runs automatically on push once webhook is active.

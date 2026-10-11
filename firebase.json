@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "site": "selahwordapp",
+    "site": "selahword",
     "public": "build/web",
     "ignore": [
       "firebase.json",
