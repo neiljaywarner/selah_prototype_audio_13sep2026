@@ -7,9 +7,6 @@ workflows:
       flutter: 3.29.0
       groups:
         - selah_secrets
-      vars:
-        API_BIBLE_KEY: ${API_BIBLE_KEY:-vObTBCIHvWdF3xZOH1IQM}
-        APTABASE_KEY: ${APTABASE_KEY:-A-US-5144164636}
     scripts:
       - name: Install dependencies
         script: |
@@ -40,9 +37,6 @@ workflows:
       flutter: 3.29.0
       groups:
         - selah_secrets
-      vars:
-        API_BIBLE_KEY: ${API_BIBLE_KEY:-vObTBCIHvWdF3xZOH1IQM}
-        APTABASE_KEY: ${APTABASE_KEY:-A-US-5144164636}
     scripts:
       - name: Install dependencies
         script: |

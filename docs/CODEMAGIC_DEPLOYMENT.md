@@ -24,8 +24,8 @@ The workflows reference the `selah_secrets` environment variable group in Codema
 1. **`API_BIBLE_KEY`**: Your API.Bible developer token for fetching Scripture audio streams and text.
 2. **`APTABASE_KEY`**: Your Aptabase app telemetry key for anonymous usage events.
 
-> [!NOTE]
-> Default fallback values are provided in `codemagic.yaml` for testing, but production keys should always be set in the Codemagic dashboard under **Environment variables > selah_secrets**.
+> [!IMPORTANT]
+> Secrets must be added to the `selah_secrets` group in the Codemagic UI. No plaintext API keys are stored or committed in `codemagic.yaml`.
 
 ---
 
