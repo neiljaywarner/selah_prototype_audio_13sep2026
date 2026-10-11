@@ -97,7 +97,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
                 hEnd = idx + vt.text.length;
               } else {
                 hStart = 0;
-                hEnd = vt.text.length.clamp(0, fullText.length);
+                hEnd = 0;
               }
               break;
             }
@@ -105,8 +105,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         }
         state = state.copyWith(
           position: pos,
-          highlightStart: hEnd > hStart ? hStart : state.highlightStart,
-          highlightEnd: hEnd > hStart ? hEnd : state.highlightEnd,
+          highlightStart: hEnd > hStart ? hStart : 0,
+          highlightEnd: hEnd > hStart ? hEnd : 0,
         );
       }
     });
@@ -508,6 +508,10 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
     try {
       final dur = await _audioPlayer.setUrl(chapter.audioStreamUrl);
+      if (chapter.bookCode == '1CO' && chapter.chapterNumber == 13) {
+        // Start narrator audio directly at verse 4 ("Love is patient...") boundary (39.6s)
+        await _audioPlayer.seek(const Duration(milliseconds: 39600));
+      }
       state = state.copyWith(isLoading: false, duration: dur ?? Duration.zero);
       play();
     } catch (e, stack) {
@@ -563,7 +567,11 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
 
     if (state.position >= state.duration && state.duration > Duration.zero) {
-      await _audioPlayer.seek(Duration.zero);
+      if (state.currentChapter.bookCode == '1CO' && state.currentChapter.chapterNumber == 13) {
+        await _audioPlayer.seek(const Duration(milliseconds: 39600));
+      } else {
+        await _audioPlayer.seek(Duration.zero);
+      }
     }
 
     try {
@@ -652,7 +660,11 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         highlightStart: 0,
         highlightEnd: 0,
       );
-      _audioPlayer.seek(Duration.zero);
+      if (state.currentChapter.bookCode == '1CO' && state.currentChapter.chapterNumber == 13) {
+        _audioPlayer.seek(const Duration(milliseconds: 39600));
+      } else {
+        _audioPlayer.seek(Duration.zero);
+      }
       return;
     }
 
@@ -700,7 +712,11 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
 
     if (state.audioMode == AudioMode.narrator) {
-      await _audioPlayer.seek(Duration.zero);
+      if (state.currentChapter.bookCode == '1CO' && state.currentChapter.chapterNumber == 13) {
+        await _audioPlayer.seek(const Duration(milliseconds: 39600));
+      } else {
+        await _audioPlayer.seek(Duration.zero);
+      }
       _audioPlayer.play();
     } else {
       await _flutterTts.speak(state.currentChapter.textContent);

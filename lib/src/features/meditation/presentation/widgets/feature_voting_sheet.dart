@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/feedback/feedback_service.dart';
 
-class FeatureVotingSheet extends StatefulWidget {
+class FeatureVotingSheet extends ConsumerStatefulWidget {
   const FeatureVotingSheet({super.key});
 
   @override
-  State<FeatureVotingSheet> createState() => _FeatureVotingSheetState();
+  ConsumerState<FeatureVotingSheet> createState() => _FeatureVotingSheetState();
 }
 
-class _FeatureVotingSheetState extends State<FeatureVotingSheet> {
+class _FeatureVotingSheetState extends ConsumerState<FeatureVotingSheet> {
   final TextEditingController _feedbackController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   bool _isSubmitting = false;
@@ -48,7 +49,8 @@ class _FeatureVotingSheetState extends State<FeatureVotingSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final features = FeedbackService.defaultRoadmapFeatures;
+    final votingState = ref.watch(featureVotingProvider);
+    final votingNotifier = ref.read(featureVotingProvider.notifier);
 
     return Container(
       constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
@@ -88,174 +90,255 @@ class _FeatureVotingSheetState extends State<FeatureVotingSheet> {
             ),
             const Divider(color: Colors.white12, height: 24),
 
-            const Text(
-              'COMMUNITY FEATURE VOTING',
-              style: TextStyle(fontSize: 11, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'COMMUNITY FEATURE VOTING',
+                  style: TextStyle(fontSize: 11, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
+                ),
+                if (votingState.isLoading)
+                  const SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(strokeWidth: 1.5, color: Color(0xFF6366F1)),
+                  ),
+              ],
             ),
             const SizedBox(height: 12),
 
-            ...features.map((feature) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0F0E26),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: feature.hasVoted ? const Color(0xFFFBBF24) : Colors.white10,
-                  ),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    InkWell(
-                      onTap: () {
-                        setState(() {
-                          FeedbackService.castVote(feature);
-                        });
-                      },
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: feature.hasVoted
-                              ? const Color(0xFFFBBF24)
-                              : const Color(0xFF1E1B4B),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.arrow_upward_rounded,
-                              size: 16,
-                              color: feature.hasVoted ? Colors.black : Colors.white70,
-                            ),
-                            Text(
-                              '${feature.votes}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: feature.hasVoted ? Colors.black : Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  feature.title,
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.indigo.withValues(alpha: 0.3),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  feature.targetVersion,
-                                  style: const TextStyle(fontSize: 10, color: Color(0xFFFBBF24)),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            feature.description,
-                            style: const TextStyle(fontSize: 11, color: Colors.white60, height: 1.3),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
+            ...votingState.features.map(
+              (feature) => _FeatureVotingTile(
+                feature: feature,
+                onVote: () => votingNotifier.toggleVote(feature.id),
+              ),
+            ),
 
             const Divider(color: Colors.white12, height: 28),
 
-            const Text(
-              'SEND DIRECT FEEDBACK (DOORBELL.IO READY)',
-              style: TextStyle(fontSize: 11, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-
-            TextField(
-              controller: _feedbackController,
-              maxLines: 3,
-              style: const TextStyle(fontSize: 13),
-              decoration: InputDecoration(
-                hintText: 'Share a suggestion, bug report, or encouragement...',
-                filled: true,
-                fillColor: const Color(0xFF0F0E26),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            TextField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              style: const TextStyle(fontSize: 13),
-              decoration: InputDecoration(
-                hintText: 'Email (optional, for reply)',
-                filled: true,
-                fillColor: const Color(0xFF0F0E26),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            if (_statusMessage != null) ...[
-              Text(
-                _statusMessage!,
-                style: const TextStyle(fontSize: 12, color: Colors.greenAccent),
-              ),
-              const SizedBox(height: 8),
-            ],
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _isSubmitting ? null : _submitFeedback,
-                icon: _isSubmitting
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
-                      )
-                    : const Icon(Icons.send_rounded, size: 16),
-                label: const Text('Send Feedback'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFBBF24),
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
+            _DirectFeedbackSection(
+              feedbackController: _feedbackController,
+              emailController: _emailController,
+              isSubmitting: _isSubmitting,
+              statusMessage: _statusMessage,
+              onSubmit: _submitFeedback,
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _FeatureVotingTile extends StatelessWidget {
+  const _FeatureVotingTile({
+    required this.feature,
+    required this.onVote,
+  });
+
+  final RoadmapFeatureItem feature;
+  final VoidCallback onVote;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F0E26),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: feature.hasVoted ? const Color(0xFFFBBF24) : Colors.white10,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _VoteButton(
+            votes: feature.votes,
+            hasVoted: feature.hasVoted,
+            onTap: onVote,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        feature.title,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.indigo.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        feature.targetVersion,
+                        style: const TextStyle(fontSize: 10, color: Color(0xFFFBBF24)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  feature.description,
+                  style: const TextStyle(fontSize: 11, color: Colors.white60, height: 1.3),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VoteButton extends StatelessWidget {
+  const _VoteButton({
+    required this.votes,
+    required this.hasVoted,
+    required this.onTap,
+  });
+
+  final int votes;
+  final bool hasVoted;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: hasVoted ? const Color(0xFFFBBF24) : const Color(0xFF1E1B4B),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: hasVoted ? const Color(0xFFFBBF24) : Colors.white12,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.arrow_upward_rounded,
+                size: 16,
+                color: hasVoted ? Colors.black : Colors.white70,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '$votes',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: hasVoted ? Colors.black : Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DirectFeedbackSection extends StatelessWidget {
+  const _DirectFeedbackSection({
+    required this.feedbackController,
+    required this.emailController,
+    required this.isSubmitting,
+    required this.statusMessage,
+    required this.onSubmit,
+  });
+
+  final TextEditingController feedbackController;
+  final TextEditingController emailController;
+  final bool isSubmitting;
+  final String? statusMessage;
+  final VoidCallback onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'SEND DIRECT FEEDBACK (DOORBELL.IO READY)',
+          style: TextStyle(fontSize: 11, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: feedbackController,
+          maxLines: 3,
+          style: const TextStyle(fontSize: 13),
+          decoration: InputDecoration(
+            hintText: 'Share a suggestion, bug report, or encouragement...',
+            filled: true,
+            fillColor: const Color(0xFF0F0E26),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: emailController,
+          keyboardType: TextInputType.emailAddress,
+          style: const TextStyle(fontSize: 13),
+          decoration: InputDecoration(
+            hintText: 'Email (optional, for reply)',
+            filled: true,
+            fillColor: const Color(0xFF0F0E26),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (statusMessage != null) ...[
+          Text(
+            statusMessage!,
+            style: const TextStyle(fontSize: 12, color: Colors.greenAccent),
+          ),
+          const SizedBox(height: 8),
+        ],
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: isSubmitting ? null : onSubmit,
+            icon: isSubmitting
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                  )
+                : const Icon(Icons.send_rounded, size: 16),
+            label: const Text('Send Feedback'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFBBF24),
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

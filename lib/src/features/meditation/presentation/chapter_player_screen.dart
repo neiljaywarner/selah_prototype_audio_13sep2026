@@ -371,38 +371,21 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                             final refStr = savedList[index];
                             final isSelected = playerState.currentChapter.reference.toLowerCase().trim() ==
                                 refStr.toLowerCase().trim();
-                            return ChoiceChip(
-                              avatar: const Icon(
-                                Icons.bookmark_rounded,
-                                size: 14,
-                                color: Color(0xFFFBBF24),
-                              ),
-                              label: Text(refStr),
-                              selected: isSelected,
-                              selectedColor: const Color(0xFF6366F1),
-                              backgroundColor: const Color(0xFF1E1B4B),
-                              labelStyle: TextStyle(
-                                color: isSelected ? Colors.white : Colors.white70,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                fontSize: 12,
-                              ),
-                              onSelected: (_) => _handleSearchSubmit(refStr),
+                            return _PresetChip(
+                              label: refStr,
+                              isSelected: isSelected,
+                              isBookmarked: true,
+                              onTap: () => _handleSearchSubmit(refStr),
                             );
                           } else {
                             final chapter = remainingPresets[index - savedList.length];
                             final isSelected =
                                 playerState.currentChapter.reference == chapter.reference;
-                            return ChoiceChip(
-                              label: Text(chapter.reference),
-                              selected: isSelected,
-                              selectedColor: const Color(0xFF6366F1),
-                              backgroundColor: const Color(0xFF1E1B4B),
-                              labelStyle: TextStyle(
-                                color: isSelected ? Colors.white : Colors.white70,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                fontSize: 12,
-                              ),
-                              onSelected: (_) => notifier.loadChapter(chapter),
+                            return _PresetChip(
+                              label: chapter.reference,
+                              isSelected: isSelected,
+                              isBookmarked: false,
+                              onTap: () => notifier.loadChapter(chapter),
                             );
                           }
                         },
@@ -611,7 +594,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                         color: const Color(0xFF0F0E26).withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: SingleChildScrollView(child: _buildKaraokeText(playerState)),
+                      child: SingleChildScrollView(child: _KaraokeTextDisplay(playerState: playerState)),
                     ),
                     const SizedBox(height: 18),
 
@@ -849,7 +832,95 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     );
   }
 
-  Widget _buildKaraokeText(dynamic playerState) {
+
+
+  String _formatDuration(Duration d) {
+    final mins = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final secs = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$mins:$secs';
+  }
+}
+
+class _PresetChip extends StatelessWidget {
+  const _PresetChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+    this.isBookmarked = false,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final bool isBookmarked;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF6366F1) : const Color(0xFF1E1B4B),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected
+                  ? const Color(0xFF818CF8)
+                  : const Color(0xFF3730A3).withValues(alpha: 0.8),
+              width: isSelected ? 1.5 : 1.0,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (isBookmarked) ...[
+                const Icon(
+                  Icons.bookmark_rounded,
+                  size: 14,
+                  color: Color(0xFFFBBF24),
+                ),
+                const SizedBox(width: 6),
+              ] else if (isSelected) ...[
+                const Icon(
+                  Icons.check_rounded,
+                  size: 14,
+                  color: Colors.white,
+                ),
+                const SizedBox(width: 4),
+              ],
+              Text(
+                label,
+                softWrap: false,
+                overflow: TextOverflow.visible,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : const Color(0xFFF8FAFC),
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                  fontSize: 12,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _KaraokeTextDisplay extends StatelessWidget {
+  const _KaraokeTextDisplay({required this.playerState});
+
+  final dynamic playerState;
+
+  @override
+  Widget build(BuildContext context) {
     final text = playerState.currentChapter.textContent as String;
     if (playerState.highlightEnd > playerState.highlightStart &&
         playerState.highlightEnd <= text.length) {
@@ -891,10 +962,5 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
       ),
     );
   }
-
-  String _formatDuration(Duration d) {
-    final mins = d.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final secs = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '$mins:$secs';
-  }
 }
+

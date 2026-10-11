@@ -68,11 +68,26 @@ class _ChapterPickerDialogState extends State<ChapterPickerDialog> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _buildFilterChip('All (66)', 'all'),
+                  _FilterChipItem(
+                    label: 'All (66)',
+                    filterKey: 'all',
+                    isSelected: _filter == 'all',
+                    onSelect: (k) => setState(() => _filter = k),
+                  ),
                   const SizedBox(width: 6),
-                  _buildFilterChip('Old Testament (39)', 'ot'),
+                  _FilterChipItem(
+                    label: 'Old Testament (39)',
+                    filterKey: 'ot',
+                    isSelected: _filter == 'ot',
+                    onSelect: (k) => setState(() => _filter = k),
+                  ),
                   const SizedBox(width: 6),
-                  _buildFilterChip('New Testament (27)', 'nt'),
+                  _FilterChipItem(
+                    label: 'New Testament (27)',
+                    filterKey: 'nt',
+                    isSelected: _filter == 'nt',
+                    onSelect: (k) => setState(() => _filter = k),
+                  ),
                 ],
               ),
             ),
@@ -213,26 +228,43 @@ class _ChapterPickerDialogState extends State<ChapterPickerDialog> {
       ),
     );
   }
+}
 
-  Widget _buildFilterChip(String label, String key) {
-    final isSel = _filter == key;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _filter = key),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          decoration: BoxDecoration(
-            color: isSel ? const Color(0xFF6366F1) : const Color(0xFF0F0E26),
-            borderRadius: BorderRadius.circular(8),
+class _FilterChipItem extends StatelessWidget {
+  const _FilterChipItem({
+    required this.label,
+    required this.filterKey,
+    required this.isSelected,
+    required this.onSelect,
+  });
+
+  final String label;
+  final String filterKey;
+  final bool isSelected;
+  final ValueChanged<String> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onSelect(filterKey),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF6366F1) : const Color(0xFF0F0E26),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF818CF8) : Colors.white12,
           ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
-                color: isSel ? Colors.white : Colors.white60,
-              ),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            softWrap: false,
+            overflow: TextOverflow.visible,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isSelected ? Colors.white : Colors.white70,
             ),
           ),
         ),
@@ -240,3 +272,4 @@ class _ChapterPickerDialogState extends State<ChapterPickerDialog> {
     );
   }
 }
+

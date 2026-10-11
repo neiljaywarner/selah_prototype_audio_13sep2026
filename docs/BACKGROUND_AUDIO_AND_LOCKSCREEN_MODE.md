@@ -66,7 +66,7 @@ AudioSource.uri(
 ```
 
 ### 3. Background Loop Resilience
-Configure `AudioPlayer.setLoopMode(LoopMode.one)` or leverage `ConcatenatingAudioSource` so chapter replay events trigger at the native OS audio player layer rather than waiting for Dart UI lifecycle timers.
+Configure chapter repetitions using a background-capable audio sequence such as `ConcatenatingAudioSource` rather than relying on `LoopMode.one`. This ensures that chapter replay transitions run reliably at the native OS audio player layer while preserving the required contemplative pause gap and per-repeat telemetry tracking without getting terminated when the device screen locks.
 
 ---
 
