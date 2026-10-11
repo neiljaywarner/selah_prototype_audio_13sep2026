@@ -35,6 +35,7 @@ During this session, we completed the final review, hardening, and verification 
 | **M5: Test Suite & Static Analysis Validation** | Run full test suite and static analysis | 2026-10-11 16:50:42 | 2026-10-11 16:51:00 | ✅ Complete | 50/50 tests PASS; `flutter analyze` 0 issues |
 | **M6: GitHub Issues for Non-Critical Feedback** | Create GitHub issues for unaddressed non-critical CodeRabbit suggestions | 2026-10-11 16:52:00 | 2026-10-11 16:55:00 | ✅ Complete | Issues filed on repository for tracking |
 | **M7: PR Merge to Main** | Merge PR #5 into `main` branch | 2026-10-11 16:55:00 | 2026-10-11 16:56:00 | ✅ Complete | Merged into `main` via `gh pr merge` |
+| **M8: Reusable AI PR Triage Skill** | Create `.agents/skills/pr-coderabbit-triage-and-merge` skill, CLI scripts, and README docs | 2026-10-11 16:56:00 | 2026-10-11 16:58:30 | ✅ Complete | [Skill README](.agents/skills/pr-coderabbit-triage-and-merge/README.md); linked in [README.md](README.md) |
 
 ---
 

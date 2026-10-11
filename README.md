@@ -71,7 +71,7 @@ firebase deploy --only hosting
 *Live at: [https://selahword.web.app](https://selahword.web.app)*
 
 ### Codemagic CI/CD Build & Deploy
-Automated Web PWA and Android APK build pipelines are pre-configured in [`codemagic.yaml`](codemagic.yaml). See the [Codemagic Deployment Guide](docs/CODEMAGIC_DEPLOYMENT.md) for instructions on manual triggers and environment variables.
+Automated Web PWA and Android APK deployment pipelines are documented in the [Codemagic Deployment Guide](docs/CODEMAGIC_DEPLOYMENT.md), outlining build environments, code signing, and secret groups.
 
 
 ### Android App Bundle (Google Play)
@@ -118,7 +118,13 @@ All 12 core unit tests verify:
 ---
 
 ## ⚠️ Git & Workflow Rules
-- **NEVER push or merge directly into `main`**. All development, fixes, and features must be conducted on feature branches (e.g. `feat/...`) and merged only via reviewed Pull Requests.
+- **NEVER push directly into `main` without PR review**. All development, fixes, and features must be conducted on feature branches (e.g. `feat/...`) and merged only via reviewed Pull Requests.
+
+---
+
+## 🤖 AI Skills & Automation Runbooks
+Custom AI developer workflows and skills located in `.agents/skills/`:
+- **[PR CodeRabbit Triage & Merge Skill](.agents/skills/pr-coderabbit-triage-and-merge/README.md)**: Automated runbook and CLI scripts (`triage_pr_comments.py`, `defer_comments_to_issues.py`) to systematically audit review findings, resolve critical blockers, defer non-critical items into tracked GitHub issues, and safely merge pull requests.
 
 ---
 
