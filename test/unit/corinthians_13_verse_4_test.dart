@@ -193,5 +193,43 @@ void main() {
         expect(vAtEnd.verse, equals(7), reason: 'Loop $loop end must highlight verse 7');
       }
     });
+
+    test('kFeaturedChapters contains exactly 4 curated demo passages', () {
+      expect(kFeaturedChapters.length, equals(4));
+      final references = kFeaturedChapters.map((c) => c.reference).toList();
+      expect(references, equals(['1 Cor 13:4–7', 'Matt 11:28–30', 'Rom 8:31–39', 'Psalm 23']));
+
+      // Matthew 11:28-30
+      final mat = kFeaturedChapters.firstWhere((c) => c.bookCode == 'MAT');
+      expect(mat.textContent, startsWith('Come to Me, all you who are weary'));
+
+      // Romans 8:31-39
+      final rom = kFeaturedChapters.firstWhere((c) => c.bookCode == 'ROM');
+      expect(rom.textContent, startsWith('What then shall we say in response to these things?'));
+
+      // Psalm 23
+      final psa = kFeaturedChapters.firstWhere((c) => c.bookCode == 'PSA');
+      expect(psa.textContent, startsWith('The LORD is my shepherd; I shall not want.'));
+    });
+
+    test('OfflineScriptureCache contains text for all 4 curated demo passages in BSB and WEB', () {
+      final cache = OfflineScriptureCache(null);
+
+      // 1 Corinthians 13
+      expect(cache.getOfflineText('BSB', '1CO', 13), startsWith('Love is patient'));
+      expect(cache.getOfflineText('WEB', '1CO', 13), startsWith('Love is patient'));
+
+      // Matthew 11
+      expect(cache.getOfflineText('BSB', 'MAT', 11), startsWith('Come to Me'));
+      expect(cache.getOfflineText('WEB', 'MAT', 11), startsWith('Come to me'));
+
+      // Romans 8
+      expect(cache.getOfflineText('BSB', 'ROM', 8), startsWith('What then shall we say'));
+      expect(cache.getOfflineText('WEB', 'ROM', 8), startsWith('What then shall we say'));
+
+      // Psalm 23
+      expect(cache.getOfflineText('BSB', 'PSA', 23), startsWith('The LORD is my shepherd'));
+      expect(cache.getOfflineText('WEB', 'PSA', 23), startsWith('Yahweh is my shepherd'));
+    });
   });
 }

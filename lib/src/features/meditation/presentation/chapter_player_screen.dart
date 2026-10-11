@@ -12,6 +12,7 @@ import '../application/chapter_player_notifier.dart';
 import '../domain/audio_mode.dart';
 import '../domain/bible_translation.dart';
 import '../domain/chapter_info.dart';
+import '../domain/passage_excerpt.dart';
 import '../domain/scripture_topic.dart';
 import 'widgets/chapter_picker_dialog.dart';
 import 'widgets/feature_voting_sheet.dart';
@@ -66,21 +67,24 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     setState(() => _searchSuggestions = []);
 
     if (raw.contains(':')) {
-      // 1 Corinthians 13 is our specially curated love passage (verses 4-7) with full narrator audio
+      // Check for curated passages (1 Cor 13:4-7, Matt 11:28-30, Rom 8:31-39, Psalm 23)
       final parsedList = BibleReferenceParser.getSuggestions(raw);
-      if (parsedList.isNotEmpty && parsedList.first.book.code == '1CO' && parsedList.first.chapter == 13) {
+      if (parsedList.isNotEmpty) {
         final match = parsedList.first;
-        final refStr = '${match.book.name} 13:4-7';
-        ref.read(userPreferencesProvider).saveChapter(refStr);
-        ref
-            .read(chapterPlayerProvider.notifier)
-            .routeAndPlayChapter(
-              bookCode: match.book.code,
-              chapterNumber: match.chapter,
-              bookName: match.book.name,
-            );
-        setState(() {});
-        return;
+        final excerpt = PassageExcerpt.forChapter(match.book.code, match.chapter);
+        if (excerpt != null) {
+          final refStr = excerpt.displayTitle ?? '${match.book.name} ${match.chapter}:${excerpt.startVerse}-${excerpt.endVerse}';
+          ref.read(userPreferencesProvider).saveChapter(refStr);
+          ref
+              .read(chapterPlayerProvider.notifier)
+              .routeAndPlayChapter(
+                bookCode: match.book.code,
+                chapterNumber: match.chapter,
+                bookName: match.book.name,
+              );
+          setState(() {});
+          return;
+        }
       }
 
       AppLogger.logEvent('request_single_verse', {'query': raw});

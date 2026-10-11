@@ -211,6 +211,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     if (!ref.mounted) return;
 
     final fallbackText = _fallbackChapterText(bookCode, chapterNumber, bookName);
+    final excerpt = PassageExcerpt.forChapter(bookCode, chapterNumber);
 
     state = state.copyWith(
       currentChapter: ChapterInfo(
@@ -219,6 +220,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         chapterNumber: chapterNumber,
         audioStreamUrl: '',
         textContent: fallbackText,
+        displayTitle: excerpt?.displayTitle,
       ),
       isLoading: true,
       clearLastError: true,
@@ -244,6 +246,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         chapterNumber: chapterNumber,
         audioStreamUrl: '',
         textContent: chapterText,
+        displayTitle: excerpt?.displayTitle,
       );
 
       final testament = BibleCanon.isOldTestament(bookCode) ? 'OT' : 'NT';
@@ -284,6 +287,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
             chapterNumber: chapterNumber,
             audioStreamUrl: streamUrl,
             textContent: fetchedText,
+            displayTitle: excerpt?.displayTitle,
           );
 
           state = state.copyWith(audioMode: AudioMode.narrator, clearInfoNotice: true);
@@ -352,7 +356,10 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     if (kApiBibleKey == 'REDACTED' || kApiBibleKey.isEmpty) return null;
     try {
       final textBibleId = state.translation.textBibleId;
-      final passageId = '${bookCode.toUpperCase()}.$chapterNumber';
+      final excerpt = PassageExcerpt.forChapter(bookCode, chapterNumber);
+      final passageId = excerpt != null
+          ? '${bookCode.toUpperCase()}.$chapterNumber.${excerpt.startVerse}-${bookCode.toUpperCase()}.$chapterNumber.${excerpt.endVerse}'
+          : '${bookCode.toUpperCase()}.$chapterNumber';
       final res = await _dio.get(
         '/bibles/$textBibleId/passages/$passageId',
         queryParameters: {'content-type': 'text', 'include-verse-numbers': 'false'},

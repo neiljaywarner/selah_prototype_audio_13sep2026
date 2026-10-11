@@ -13,12 +13,14 @@ class PassageExcerpt {
     required this.chapterNumber,
     required this.startVerse,
     required this.endVerse,
+    this.displayTitle,
   });
 
   final String bookCode;
   final int chapterNumber;
   final int startVerse;
   final int endVerse;
+  final String? displayTitle;
 
   /// Returns the curated excerpt for a chapter, or `null` when the chapter
   /// should play in full.
@@ -50,5 +52,32 @@ class PassageExcerpt {
 }
 
 const kCuratedExcerpts = [
-  PassageExcerpt(bookCode: '1CO', chapterNumber: 13, startVerse: 4, endVerse: 7),
+  PassageExcerpt(
+    bookCode: '1CO',
+    chapterNumber: 13,
+    startVerse: 4,
+    endVerse: 7,
+    displayTitle: '1 Cor 13:4–7',
+  ),
+  PassageExcerpt(
+    bookCode: 'MAT',
+    chapterNumber: 11,
+    startVerse: 28,
+    endVerse: 30,
+    displayTitle: 'Matt 11:28–30',
+  ),
+  PassageExcerpt(
+    bookCode: 'ROM',
+    chapterNumber: 8,
+    startVerse: 31,
+    endVerse: 39,
+    displayTitle: 'Rom 8:31–39',
+  ),
+  PassageExcerpt(
+    bookCode: 'PSA',
+    chapterNumber: 23,
+    startVerse: 1,
+    endVerse: 6,
+    displayTitle: 'Psalm 23',
+  ),
 ];

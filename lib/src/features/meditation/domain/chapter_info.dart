@@ -4,6 +4,7 @@ class ChapterInfo {
   final int chapterNumber;
   final String audioStreamUrl;
   final String textContent;
+  final String? displayTitle;
 
   const ChapterInfo({
     required this.bookCode,
@@ -11,9 +12,10 @@ class ChapterInfo {
     required this.chapterNumber,
     required this.audioStreamUrl,
     required this.textContent,
+    this.displayTitle,
   });
 
-  String get reference => '$bookName $chapterNumber';
+  String get reference => displayTitle ?? '$bookName $chapterNumber';
 
   ChapterInfo copyWith({
     String? bookCode,
@@ -21,6 +23,7 @@ class ChapterInfo {
     int? chapterNumber,
     String? audioStreamUrl,
     String? textContent,
+    String? displayTitle,
   }) =>
       ChapterInfo(
         bookCode: bookCode ?? this.bookCode,
@@ -28,41 +31,28 @@ class ChapterInfo {
         chapterNumber: chapterNumber ?? this.chapterNumber,
         audioStreamUrl: audioStreamUrl ?? this.audioStreamUrl,
         textContent: textContent ?? this.textContent,
+        displayTitle: displayTitle ?? this.displayTitle,
       );
 }
 
 final List<ChapterInfo> kFeaturedChapters = [
   const ChapterInfo(
-    bookCode: 'JHN',
-    bookName: 'John',
-    chapterNumber: 1,
+    bookCode: '1CO',
+    bookName: '1 Corinthians',
+    chapterNumber: 13,
     audioStreamUrl: '',
     textContent:
-        'In the beginning was the Word, and the Word was with God, and the Word was God. The same was in the beginning with God. All things were made through him...',
+        'Love is patient, love is kind. It does not envy, it does not boast, it is not proud. It is not rude, it is not self-seeking, it is not easily angered, it keeps no account of wrongs. Love does not delight in evil but rejoices with the truth. It bears all things, believes all things, hopes all things, endures all things.',
+    displayTitle: '1 Cor 13:4–7',
   ),
   const ChapterInfo(
-    bookCode: 'COL',
-    bookName: 'Colossians',
-    chapterNumber: 1,
+    bookCode: 'MAT',
+    bookName: 'Matthew',
+    chapterNumber: 11,
     audioStreamUrl: '',
     textContent:
-        'Paul, an apostle of Christ Jesus through the will of God, and Timothy our brother, to the saints and faithful brothers in Christ at Colossae: Grace to you and peace from God our Father...',
-  ),
-  const ChapterInfo(
-    bookCode: 'PSA',
-    bookName: 'Psalms',
-    chapterNumber: 23,
-    audioStreamUrl: '',
-    textContent:
-        'The Lord is my shepherd; I shall not want. He makes me lie down in green pastures. He leads me beside still waters. He restores my soul...',
-  ),
-  const ChapterInfo(
-    bookCode: 'PSA',
-    bookName: 'Psalms',
-    chapterNumber: 126,
-    audioStreamUrl: '',
-    textContent:
-        'When the LORD brought back the captivity of Zion, we were like those who dream. Then our mouth was filled with laughter, and our tongue with singing...',
+        'Come to Me, all you who are weary and burdened, and I will give you rest. Take My yoke upon you and learn from Me; for I am gentle and humble in heart, and you will find rest for your souls. For My yoke is easy and My burden is light.',
+    displayTitle: 'Matt 11:28–30',
   ),
   const ChapterInfo(
     bookCode: 'ROM',
@@ -70,22 +60,16 @@ final List<ChapterInfo> kFeaturedChapters = [
     chapterNumber: 8,
     audioStreamUrl: '',
     textContent:
-        'There is therefore now no condemnation for those who are in Christ Jesus. For the law of the Spirit of life in Christ Jesus has set you free...',
+        'What then shall we say in response to these things? If God is for us, who can be against us? He who did not spare His own Son, but gave Him up for us all, how will He not also, along with Him, freely give us all things? Who will bring any charge against God\'s elect? It is God who justifies. Who is there to condemn us? For Christ Jesus, who died, and more than that was raised to life, is at the right hand of God—and He is interceding for us. Who shall separate us from the love of Christ? Shall trouble or distress or persecution or famine or nakedness or danger or sword? As it is written: “For Your sake we face death all day long; we are considered as sheep to be slaughtered.” No, in all these things we are more than conquerors through Him who loved us. For I am convinced that neither death nor life, neither angels nor principalities, neither the present nor the future, nor any powers, neither height nor depth, nor anything else in all creation, will be able to separate us from the love of God that is in Christ Jesus our Lord.',
+    displayTitle: 'Rom 8:31–39',
   ),
   const ChapterInfo(
-    bookCode: 'PHP',
-    bookName: 'Philippians',
-    chapterNumber: 4,
+    bookCode: 'PSA',
+    bookName: 'Psalms',
+    chapterNumber: 23,
     audioStreamUrl: '',
     textContent:
-        'Rejoice in the Lord always! Again I will say, Rejoice! Let your gentleness be known to all men. The Lord is at hand. In nothing be anxious, but in everything, by prayer and petition with thanksgiving, let your requests be made known to God...',
-  ),
-  const ChapterInfo(
-    bookCode: '1CO',
-    bookName: '1 Corinthians',
-    chapterNumber: 13,
-    audioStreamUrl: '',
-    textContent:
-        'Love is patient, love is kind. Love does not envy. Love does not brag, is not proud, does not behave itself inappropriately, does not seek its own way, is not provoked, takes no account of evil; doesn\'t rejoice in unrighteousness, but rejoices with the truth; bears all things, believes all things, hopes all things, endures all things.',
+        'The LORD is my shepherd; I shall not want. He makes me lie down in green pastures; He leads me beside quiet waters. He restores my soul; He guides me in the paths of righteousness for His name’s sake. Even though I walk through the valley of the shadow of death, I will fear no evil, for You are with me; Your rod and Your staff, they comfort me. You prepare a table before me in the presence of my enemies. You anoint my head with oil; my cup overflows. Surely goodness and mercy will follow me all the days of my life, and I will dwell in the house of the LORD forever.',
+    displayTitle: 'Psalm 23',
   ),
 ];

@@ -8,13 +8,31 @@
   {
     "verse": 2,
     "text": "He makes me lie down in green pastures. He leads me beside still waters.",
-    "startMs": 3850,
+    "startMs": 3800,
     "endMs": 8900
   },
   {
     "verse": 3,
     "text": "He restores my soul. He guides me in the paths of righteousness for his name's sake.",
-    "startMs": 8950,
+    "startMs": 8900,
     "endMs": 15000
+  },
+  {
+    "verse": 4,
+    "text": "Even though I walk through the valley of the shadow of death, I will fear no evil, for you are with me. Your rod and your staff, they comfort me.",
+    "startMs": 15000,
+    "endMs": 23500
+  },
+  {
+    "verse": 5,
+    "text": "You prepare a table before me in the presence of my enemies. You anoint my head with oil. My cup runs over.",
+    "startMs": 23500,
+    "endMs": 31000
+  },
+  {
+    "verse": 6,
+    "text": "Surely goodness and loving kindness shall follow me all the days of my life, and I will dwell in Yahweh's house forever.",
+    "startMs": 31000,
+    "endMs": 39000
   }
 ]

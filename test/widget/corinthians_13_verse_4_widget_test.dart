@@ -44,7 +44,7 @@ void main() {
       expect(find.textContaining('If I speak with the tongues', findRichText: true), findsNothing);
     });
 
-    testWidgets('Preset chip for 1 Corinthians 13 is present and selectable', (WidgetTester tester) async {
+    testWidgets('Preset chips for curated passages (1 Cor 13:4–7, Matt 11:28–30, Rom 8:31–39, Psalm 23) are present', (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -56,9 +56,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // The preset chip for 1 Corinthians 13 should be present in the horizontal list
-      final chipFinder = find.text('1 Corinthians 13');
-      expect(chipFinder, findsOneWidget);
+      // Curated demo passage chips should be present in the horizontal list
+      expect(find.text('1 Cor 13:4–7'), findsWidgets); // present in preset chip and title header
+      expect(find.text('Matt 11:28–30'), findsOneWidget);
+      expect(find.text('Rom 8:31–39'), findsOneWidget);
+      expect(find.text('Psalm 23'), findsOneWidget);
     });
 
     testWidgets('Karaoke highlight highlights Verse 4 from character 0 at 39,600ms boundary', (WidgetTester tester) async {

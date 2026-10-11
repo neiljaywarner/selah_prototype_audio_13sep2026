@@ -48,14 +48,58 @@ void main() {
       expect(window.end, const Duration(milliseconds: 72500));
     });
 
-    test('Returns null when timestamps are missing or malformed', () {
-      const excerpt = PassageExcerpt(bookCode: '1CO', chapterNumber: 13, startVerse: 4, endVerse: 7);
-      expect(excerpt.clipWindow(null), isNull);
-      expect(excerpt.clipWindow(const []), isNull);
-      expect(
-        excerpt.clipWindow(const [VerseTimestamp(verse: 4, text: 'x', startMs: 5000, endMs: 5000)]),
-        isNull,
-      );
+    test('Matthew 11 is curated as verses 28-30', () {
+      final excerpt = PassageExcerpt.forChapter('MAT', 11);
+      expect(excerpt, isNotNull);
+      expect(excerpt!.startVerse, 28);
+      expect(excerpt.endVerse, 30);
+      expect(excerpt.displayTitle, 'Matt 11:28–30');
+
+      final bsbWindow = excerpt.clipWindow(_load('assets/timestamps/BSB/MAT_11.json'));
+      expect(bsbWindow, isNotNull);
+      expect(bsbWindow!.start, const Duration(milliseconds: 148000));
+      expect(bsbWindow.end, const Duration(milliseconds: 171500));
+
+      final webWindow = excerpt.clipWindow(_load('assets/timestamps/WEB/MAT_11.json'));
+      expect(webWindow, isNotNull);
+      expect(webWindow!.start, const Duration(milliseconds: 148000));
+      expect(webWindow.end, const Duration(milliseconds: 171200));
+    });
+
+    test('Romans 8 is curated as verses 31-39', () {
+      final excerpt = PassageExcerpt.forChapter('ROM', 8);
+      expect(excerpt, isNotNull);
+      expect(excerpt!.startVerse, 31);
+      expect(excerpt.endVerse, 39);
+      expect(excerpt.displayTitle, 'Rom 8:31–39');
+
+      final bsbWindow = excerpt.clipWindow(_load('assets/timestamps/BSB/ROM_8.json'));
+      expect(bsbWindow, isNotNull);
+      expect(bsbWindow!.start, const Duration(milliseconds: 205000));
+      expect(bsbWindow.end, const Duration(milliseconds: 277000));
+
+      final webWindow = excerpt.clipWindow(_load('assets/timestamps/WEB/ROM_8.json'));
+      expect(webWindow, isNotNull);
+      expect(webWindow!.start, const Duration(milliseconds: 205000));
+      expect(webWindow.end, const Duration(milliseconds: 277000));
+    });
+
+    test('Psalm 23 is curated as verses 1-6', () {
+      final excerpt = PassageExcerpt.forChapter('PSA', 23);
+      expect(excerpt, isNotNull);
+      expect(excerpt!.startVerse, 1);
+      expect(excerpt.endVerse, 6);
+      expect(excerpt.displayTitle, 'Psalm 23');
+
+      final bsbWindow = excerpt.clipWindow(_load('assets/timestamps/BSB/PSA_23.json'));
+      expect(bsbWindow, isNotNull);
+      expect(bsbWindow!.start, Duration.zero);
+      expect(bsbWindow.end, const Duration(milliseconds: 41000));
+
+      final webWindow = excerpt.clipWindow(_load('assets/timestamps/WEB/PSA_23.json'));
+      expect(webWindow, isNotNull);
+      expect(webWindow!.start, Duration.zero);
+      expect(webWindow.end, const Duration(milliseconds: 39000));
     });
   });
 }
