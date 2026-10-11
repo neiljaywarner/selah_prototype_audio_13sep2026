@@ -12,6 +12,7 @@ import '../application/chapter_player_notifier.dart';
 import '../domain/audio_mode.dart';
 import '../domain/bible_translation.dart';
 import '../domain/chapter_info.dart';
+import '../domain/passage_excerpt.dart';
 import '../domain/scripture_topic.dart';
 import 'widgets/chapter_picker_dialog.dart';
 import 'widgets/feature_voting_sheet.dart';
@@ -66,20 +67,39 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     setState(() => _searchSuggestions = []);
 
     if (raw.contains(':')) {
-      // 1 Corinthians 13 is our specially curated love passage (verses 4-7) with full narrator audio
+      // Check for curated passages (1 Cor 13:4-7, Matt 11:28-30, Rom 8:31-39, Psalm 23)
       final parsedList = BibleReferenceParser.getSuggestions(raw);
-      if (parsedList.isNotEmpty && parsedList.first.book.code == '1CO' && parsedList.first.chapter == 13) {
+      if (parsedList.isNotEmpty) {
         final match = parsedList.first;
-        final refStr = '${match.book.name} 13:4-7';
-        ref.read(userPreferencesProvider).saveChapter(refStr);
-        ref
-            .read(chapterPlayerProvider.notifier)
-            .routeAndPlayChapter(
-              bookCode: match.book.code,
-              chapterNumber: match.chapter,
-              bookName: match.book.name,
-            );
-        setState(() {});
+        final excerpt = PassageExcerpt.forChapter(match.book.code, match.chapter);
+        if (excerpt != null) {
+          final refStr = excerpt.displayTitle ?? '${match.book.name} ${match.chapter}:${excerpt.startVerse}-${excerpt.endVerse}';
+          ref.read(userPreferencesProvider).saveChapter(refStr);
+          ref
+              .read(chapterPlayerProvider.notifier)
+              .routeAndPlayChapter(
+                bookCode: match.book.code,
+                chapterNumber: match.chapter,
+                bookName: match.book.name,
+              );
+          setState(() {});
+          return;
+        }
+      }
+
+      // If user typed a verse range (e.g. "col 1:17-20") not in curated excerpts
+      if (raw.contains('-')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Feature coming soon! Custom verse range "$raw" will be supported in v0.3.0. Enjoy our curated demo passages (1 Cor 13, Matt 11, Rom 8, Psalm 23) or full chapters.',
+            ),
+            backgroundColor: const Color(0xFF312E81),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            duration: const Duration(seconds: 4),
+          ),
+        );
         return;
       }
 
