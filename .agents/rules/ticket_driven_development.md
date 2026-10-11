@@ -32,3 +32,19 @@ Under NO circumstances may any changes be pushed directly to the `main` branch. 
 
 5. **PR Merge Governance**:
    - Merge branches into `main` exclusively through Pull Requests audited and triaged using the [.agents/skills/pr-coderabbit-triage-and-merge](../../skills/pr-coderabbit-triage-and-merge/README.md) skill, ensuring all critical blockers are fixed and non-critical items are deferred to tracked issues.
+
+## Command Execution Permissions & Autonomous CLI Allowlist
+
+### 1. Always Permitted Autonomous Commands
+- `gh pr create`, `gh pr view`, `gh pr merge` (when all quality and triage gates pass).
+- `gh issue create`, `gh issue list`, `gh issue view`.
+- `git commit` (on dedicated ticket/feature branches with conventional commit syntax).
+- `git push origin <ticket-branch>` (pushing to feature/ticket branches is fully authorized).
+- `git status`, `git diff`, `git branch`, `git checkout`, `git add`.
+- Python review triage and auto-defer scripts:
+  - `python3 .agents/skills/pr-coderabbit-triage-and-merge/scripts/triage_pr_comments.py`
+  - `python3 .agents/skills/pr-coderabbit-triage-and-merge/scripts/defer_comments_to_issues.py`
+- Test & verification commands: `flutter test`, `flutter analyze`.
+
+### 2. Strictly Prohibited Operations
+- `git push origin main` or any direct commit, push, or destructive force operation targeting `main`.
