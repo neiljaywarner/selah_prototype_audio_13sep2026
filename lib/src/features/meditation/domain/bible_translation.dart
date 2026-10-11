@@ -82,6 +82,35 @@ enum BibleTranslation {
         (false, false) => 'TTS only',
       };
 
+  /// Short attribution line for player card and lockscreen displays.
+  String get shortAttribution => switch (this) {
+        BibleTranslation.bsb => 'Public Domain · Narrator: Barry Hays',
+        BibleTranslation.web => 'Public Domain · Audio ℗ 2013 Hosanna',
+        BibleTranslation.niv => 'NIV® © Biblica, Inc.® · Audio ℗ 2011 Max McLean',
+      };
+
+  /// Licensing badge label.
+  String get badgeLabel => isLicensed ? 'Licensed Stream' : 'Public Domain';
+
+  /// Human narrator credit string.
+  String get narratorCredit => switch (this) {
+        BibleTranslation.bsb => 'Barry Hays',
+        BibleTranslation.web => 'Hosanna / Faith Comes By Hearing',
+        BibleTranslation.niv => 'Max McLean (The Listener’s Bible®)',
+      };
+
+  /// Detailed audio streaming terms and offline caching boundary notice.
+  String get audioLicensingTerms => switch (this) {
+        BibleTranslation.bsb =>
+          'Berean Standard Bible audio is dedicated to the public domain and may be cached offline freely.',
+        BibleTranslation.web =>
+          'World English Bible text is public domain. NT drama audio ℗ 2013 Hosanna is provided for streaming.',
+        BibleTranslation.niv =>
+          'Proprietary audio stream (Biblica / Zondervan / Fellowship for the Performing Arts). '
+          'Streaming on-demand only under API.Bible terms. Permanent offline audio caching is prohibited. '
+          'WhisperX timestamp alignment JSONs and text metadata are cached locally.',
+      };
+
   /// Lenient lookup (case-insensitive); unknown/null codes fall back to BSB.
   static BibleTranslation fromCode(String? code) {
     final normalized = code?.trim().toUpperCase();
