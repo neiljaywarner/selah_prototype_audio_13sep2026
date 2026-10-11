@@ -1,50 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:patrol_finders/patrol_finders.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/bible_translation.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/presentation/chapter_player_screen.dart';
 
 void main() {
-  group('Player Attribution and Licensing UI Tests (#26)', () {
-    testWidgets('renders visible attribution button and opens licensing sheet', (tester) async {
-      await tester.binding.setSurfaceSize(const Size(800, 1200));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
+  group('Player Attribution and Licensing UI Tests (#26 / #31 with Patrol Finders)', () {
+    patrolWidgetTest('renders visible attribution button and opens licensing sheet using Patrol Finders', ($) async {
+      await $.tester.binding.setSurfaceSize(const Size(800, 1200));
+      addTearDown(() => $.tester.binding.setSurfaceSize(null));
 
-      await tester.pumpWidget(
+      await $.pumpWidget(
         const ProviderScope(
           child: MaterialApp(
             home: ChapterPlayerScreen(),
           ),
         ),
       );
-      await tester.pumpAndSettle();
 
-      // Verify the player attribution button is present
-      final attrButton = find.byKey(const Key('player_attribution_button'));
-      expect(attrButton, findsOneWidget);
+      // Verify the player attribution button is present using Patrol symbol key finder
+      expect($(#player_attribution_button), findsOneWidget);
 
-      // Verify the short attribution text is displayed
-      expect(find.textContaining('Public Domain · Narrator: Barry Hays'), findsOneWidget);
+      // Verify short attribution text with Patrol text finder
+      expect($('Public Domain · Narrator: Barry Hays'), findsOneWidget);
 
-      // Tap attribution button to open the bottom sheet modal
-      await tester.tap(attrButton);
-      await tester.pumpAndSettle();
+      // Tap attribution button using Patrol tap
+      await $(#player_attribution_button).tap();
 
-      // Verify the bottom sheet opened with all key licensing sections
-      expect(find.text('Scripture & Audio Licensing'), findsOneWidget);
-      expect(find.text('Text & Scripture Rights'), findsOneWidget);
-      expect(find.text('Narrator & Audio Production'), findsOneWidget);
-      expect(find.text('API.Bible & FUMS Fair Use Compliance'), findsOneWidget);
-      expect(find.text('Offline Boundaries & Local Cache'), findsOneWidget);
+      // Verify the bottom sheet modal opens with all key licensing sections
+      expect($('Scripture & Audio Licensing'), findsOneWidget);
+      expect($('Text & Scripture Rights'), findsOneWidget);
+      expect($('Narrator & Audio Production'), findsOneWidget);
+      expect($('API.Bible & FUMS Fair Use Compliance'), findsOneWidget);
+      expect($('Offline Boundaries & Local Cache'), findsOneWidget);
 
-      // Verify dismiss button works cleanly
-      final closeButton = find.byKey(const Key('close_attribution_details_button'));
-      expect(closeButton, findsOneWidget);
-      await tester.tap(closeButton);
-      await tester.pumpAndSettle();
+      // Dismiss the modal using Patrol finder and tap
+      expect($(#close_attribution_details_button), findsOneWidget);
+      await $(#close_attribution_details_button).tap();
 
       // Verify modal is closed
-      expect(find.text('Scripture & Audio Licensing'), findsNothing);
+      expect($('Scripture & Audio Licensing'), findsNothing);
     });
 
     test('BibleTranslation model provides valid attribution metadata for all translations', () {
