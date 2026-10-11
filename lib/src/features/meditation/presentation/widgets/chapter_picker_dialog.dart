@@ -40,15 +40,20 @@ class _ChapterPickerDialogState extends State<ChapterPickerDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
-                  children: [
-                    Icon(Icons.auto_stories_rounded, color: Color(0xFFFBBF24), size: 22),
-                    SizedBox(width: 8),
-                    Text(
-                      'Browse 66 Books & Chapters',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                  ],
+                const Expanded(
+                  child: Row(
+                    children: [
+                      Icon(Icons.auto_stories_rounded, color: Color(0xFFFBBF24), size: 22),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Browse 66 Books & Chapters',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close, color: Colors.white54, size: 20),
@@ -59,14 +64,17 @@ class _ChapterPickerDialogState extends State<ChapterPickerDialog> {
             const SizedBox(height: 12),
 
             // Testament filter segments
-            Row(
-              children: [
-                _buildFilterChip('All (66)', 'all'),
-                const SizedBox(width: 6),
-                _buildFilterChip('Old Testament (39)', 'ot'),
-                const SizedBox(width: 6),
-                _buildFilterChip('New Testament (27)', 'nt'),
-              ],
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildFilterChip('All (66)', 'all'),
+                  const SizedBox(width: 6),
+                  _buildFilterChip('Old Testament (39)', 'ot'),
+                  const SizedBox(width: 6),
+                  _buildFilterChip('New Testament (27)', 'nt'),
+                ],
+              ),
             ),
             const SizedBox(height: 12),
 

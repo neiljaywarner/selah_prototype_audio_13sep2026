@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:marionette_flutter/marionette_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'src/app.dart';
@@ -13,7 +15,11 @@ import 'src/core/preferences/user_preferences.dart';
 import 'src/core/remote_config/remote_config_service.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  if (kDebugMode) {
+    MarionetteBinding.ensureInitialized();
+  } else {
+    WidgetsFlutterBinding.ensureInitialized();
+  }
 
   // Multi-Provider Analytics Engine
   final aptabaseProvider = AptabaseAnalyticsProvider(appKey: kAptabaseAppKey);

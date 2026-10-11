@@ -1,0 +1,20 @@
+Feature: Observability, Diagnostics, and Telemetry
+  As an engineering maintainer and QA tester
+  I want comprehensive logging, live diagnostics, and crash resilience
+  So that I can monitor audio playback health and debug errors without exposing API secrets
+
+  Background:
+    Given the Talker logging service is initialized in AppLogger
+
+  Scenario: Live in-app Talker log inspection
+    Given the user is on the Chapter Player Screen
+    When the user taps the "Talker Live Logs" icon in the app bar
+    Then the application navigates to the TalkerScreen
+    And all recent informational, event, and error logs are displayed
+    And all API.Bible and third-party API keys are sanitized from URLs
+
+  Scenario: Error reporting and analytics broadcast
+    When a stream playback or network error occurs
+    Then an "app_error" event is dispatched to Aptabase, Firebase, and PostHog
+    And the error details include chapter, translation, and non-fatal platform status
+    And an in-app warning banner renders without crashing the player

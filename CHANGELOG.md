@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.1] - 2026-10-10
+
+### Added
+- **NIV Audio Narration**: Full OT+NT Listener's Bible narration (Max McLean) via API.Bible with FUMS token tracking.
+- **Marionette MCP Server Integration**: Integrated `marionette_flutter: ^0.7.0` and global `marionette_mcp` server for AI-driven runtime inspection, tapping, and screenshots.
+- **Talker In-App Live Telemetry**: Integrated `talker_flutter: ^5.1.20` with dedicated in-app live diagnostics viewer (`Icons.monitor_heart_outlined`).
+- **Adaptive Launcher Icons**: Configured and generated production app icons across Android, iOS, and Web via `flutter_launcher_icons`.
+- **Codemagic CI/CD Pipeline**: Added `codemagic.yaml` with automated builds and email notifications to `neilwarner@gmail.com`.
+- **GitHub Pages Deployment Workflow**: Added `.github/workflows/deploy_gh_pages.yml` for automated Web PWA hosting.
+- **Gherkin BDD Feature Suite**: Added four comprehensive Given/When/Then specifications under `test/features/`.
+- **GitHub Issue Tracking**: Opened Issue #2 (Release), Issue #3 (Crossway ESV), and Issue #4 (UserOrient & Doorbell).
+
+### Fixed
+- **App Bar Title Overflow**: Resolved RenderFlex 8.1px overflow on mobile viewports by wrapping the title Column in `Expanded` with text truncation.
+- **66 Books Dialog Overflow**: Resolved 13px header overflow by wrapping title Row in `Expanded` and wrapping filter chips in `SingleChildScrollView`.
+- **Android Resource Linking**: Added missing `ic_launcher_background` color token to `colors.xml`.
+
+---
+
 ## [0.2.0] - 2026-10-04
 
 ### Added

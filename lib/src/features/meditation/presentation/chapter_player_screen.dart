@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 
 import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/bible_canon.dart';
@@ -162,18 +163,23 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
               child: const Icon(Icons.graphic_eq_rounded, color: Color(0xFF0F0E26), size: 20),
             ),
             const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'SELAH',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 1.2),
-                ),
-                Text(
-                  'Scripture Audio Meditation v0.2',
-                  style: TextStyle(fontSize: 10, color: Colors.indigo.shade200),
-                ),
-              ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'SELAH',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 1.2),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    'Scripture Audio Meditation v0.2',
+                    style: TextStyle(fontSize: 10, color: Colors.indigo.shade200),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -190,6 +196,17 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
             ),
             tooltip: 'Diagnostic Console',
             onPressed: () => setState(() => _showDebugLogs = !_showDebugLogs),
+          ),
+          IconButton(
+            icon: const Icon(Icons.monitor_heart_outlined, color: Colors.cyanAccent),
+            tooltip: 'Talker Live Logs',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => TalkerScreen(talker: AppLogger.talker),
+                ),
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.settings_outlined, color: Colors.white70),
@@ -527,28 +544,34 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 300),
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: playerState.isPausedInGap
-                                      ? const Color(0xFFFBBF24)
-                                      : (playerState.isPlaying ? Colors.greenAccent : Colors.grey),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: playerState.isPausedInGap
+                                        ? const Color(0xFFFBBF24)
+                                        : (playerState.isPlaying ? Colors.greenAccent : Colors.grey),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                playerState.isPausedInGap
-                                    ? 'Silent Gap (${playerState.pauseGapSeconds}s)...'
-                                    : (playerState.isPlaying ? 'Meditating...' : 'Ready'),
-                                style: const TextStyle(fontSize: 12, color: Colors.white70),
-                              ),
-                            ],
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    playerState.isPausedInGap
+                                        ? 'Silent Gap (${playerState.pauseGapSeconds}s)...'
+                                        : (playerState.isPlaying ? 'Meditating...' : 'Ready'),
+                                    style: const TextStyle(fontSize: 12, color: Colors.white70),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 8),
                           Text(
                             'Loop ${playerState.currentIteration} of ${playerState.repetitions == -1 ? "∞" : playerState.repetitions}',
                             style: const TextStyle(

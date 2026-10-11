@@ -1,17 +1,24 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 
 import '../analytics/analytics_service.dart';
 import '../constants/api_constants.dart';
 
 class AppLogger {
   static AnalyticsService? _analytics;
+  static final Talker talker = TalkerFlutter.init(
+    settings: TalkerSettings(
+      useHistory: true,
+      maxHistoryItems: 200,
+    ),
+  );
   static final List<String> _inMemoryLogs = [];
 
   static void init(AnalyticsService analytics) {
     _analytics = analytics;
     registerGlobalErrorHandlers();
-    info('AppLogger initialized with global error wrapper (Aptabase + Firebase Crashlytics + PostHog)');
+    info('AppLogger initialized with global error wrapper & Talker (Aptabase + Firebase Crashlytics + PostHog)');
   }
 
   static void registerGlobalErrorHandlers() {
@@ -80,6 +87,7 @@ class AppLogger {
     final rawLine = 'ℹ️ [SELAH INFO] $timeFormatted: $message ${properties ?? ""}';
     final logLine = _sanitize(rawLine);
     debugPrint(logLine);
+    talker.info('$message ${properties ?? ""}');
     _inMemoryLogs.insert(0, logLine);
     if (_inMemoryLogs.length > 80) _inMemoryLogs.removeLast();
   }
@@ -96,6 +104,8 @@ class AppLogger {
     final logLine = _sanitize(rawLine);
     debugPrint(logLine);
     if (stackTrace != null) debugPrint(_sanitize(stackTrace.toString()));
+
+    talker.handle(error ?? message, stackTrace, message);
 
     _inMemoryLogs.insert(0, logLine);
     if (_inMemoryLogs.length > 80) _inMemoryLogs.removeLast();
