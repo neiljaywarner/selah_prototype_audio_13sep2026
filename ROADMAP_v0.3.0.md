@@ -125,16 +125,31 @@ graph TD
 
 ---
 
-## 📅 Milestones & Delivery Schedule
+## 📅 Release Schedule & Milestones
+
+### 🌟 v0.2.4 — Curated Verses POC & Design System (Fast-Track Release)
+*Target: Immediate Release before v0.3.0*
+
+| Milestone / Deliverable | Scope | Issue | Status |
+| :--- | :--- | :--- | :--- |
+| **Curated Passage Chips (POC)** | 4 compact demo chips (1 Cor 13, Matt 11, Rom 8, Psalm 23) with WhisperX clipping and offline cache | [#17](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/17) | 🚀 Ready (PR #18) |
+| **Design System & Theme Extraction** | Centralize `AppColors`, `AppSpacing`, `AppTypography` to reduce widget LOC | [#21](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/21) | 📋 Planned |
+| **CI PR Verification Gateway** | Automated GitHub Actions workflow for `flutter analyze` and `flutter test` | [#22](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/22) | 📋 Planned |
+
+---
+
+### 🚀 v0.3.0 — Continuous Contemplation (Major Release)
+*Target: Walking/Driving Mode, Whole-Bible WhisperX, Typed REST, and Community Loops*
 
 | Milestone | Target Scope | Associated Issues | Status |
 | :--- | :--- | :--- | :--- |
 | **M1: Core Governance & Ticket Rule** | Codify ticket-driven rules, conventional commits, and update docs | Rules & Governance | ✅ Complete |
 | **M2: Walking & Lockscreen Audio** | `just_audio_background`, lockscreen notification controls, background loop resilience | [#6](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/6) | ⏳ In-Progress |
-| **M3: Feedback & Voting Security** | Doorbell.io NPS ratings, sentiment chips, backend proxy for bug reporting | [#4](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/4), [#7](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/7), [#8](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/8) | 📋 Planned |
-| **M4: Curated Verses Expansion** | Expand `PassageExcerpt` to Psalm 23, Romans 8, John 1; cache fallback hierarchy | [#1](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/1), [#13](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/13) | 📋 Planned |
-| **M5: Audio Engine Hardening** | Shuffle iteration persistence, ESV API v3, FUMS tracking beacon | [#3](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/3), [#9](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/9), [#10](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/10), [#14](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/14) | 📋 Planned |
-| **M6: v0.3.0 Release Verification** | Full regression test suite, Marionette MCP driving, multi-platform release bundle | All v0.3.0 Tickets | 📋 Planned |
+| **M3: Whole-Bible WhisperX Pipeline** | Automated batch alignment pipeline across OT/NT and dynamic verse range playback | [#19](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/19) | 📋 Planned |
+| **M4: Typed Retrofit REST Client** | Evaluate and integrate pub.dev Retrofit for API.Bible endpoints | [#20](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/20) | 📋 Planned |
+| **M5: Feedback & Voting Security** | Doorbell.io NPS ratings, sentiment chips, backend proxy for bug reporting | [#4](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/4), [#7](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/7), [#8](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/8) | 📋 Planned |
+| **M6: Audio Engine Hardening** | Shuffle iteration persistence, ESV API v3, FUMS tracking beacon | [#3](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/3), [#9](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/9), [#10](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/10), [#14](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/14) | 📋 Planned |
+| **M7: v0.3.0 Release Verification** | Full regression test suite, Marionette MCP driving, multi-platform release bundle | All v0.3.0 Tickets | 📋 Planned |
 
 ---
 
