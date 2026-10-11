@@ -1,0 +1,70 @@
+# MARIONETTE AGENT RUNBOOK: SELAH SCRIPTURE AUDIO MEDITATION
+# Version: 1.0 (Target: Selah v0.2.4 & v0.3.0)
+# Audience: AI Coding & Pair Programming Agents (LLMs)
+
+[PURPOSE]
+This document provides exact, deterministic protocols for LLM agents to drive, inspect, and visually verify the Selah Scripture Audio Meditation application using Marionette MCP tools and ADB CLI.
+
+[ENVIRONMENT_TARGETS]
+1. Primary Web PWA: Chrome (`flutter run -d chrome --web-port=8080`)
+2. Flagship Mobile: Physical Google Pixel 9a (`58221JEBF20835`) via ADB & Marionette
+3. Desktop Host: macOS (`flutter run -d macos`)
+
+[AUTONOMOUS VERIFICATION FLOW]
+Step 1: Check running instance or launch target.
+- For Chrome: run_command `flutter run -d chrome --web-port=8080` (Daemon)
+- For Pixel 9a: verify device connected with `adb devices`, then run `flutter run -d 58221JEBF20835` or install debug APK.
+- Extract VM Service URI from logs (e.g. `ws://127.0.0.1:8181/ws` or `http://127.0.0.1:8181/...`).
+
+Step 2: Connect Marionette MCP
+- Call tool: `call_mcp_tool`
+  ServerName: "marionette"
+  ToolName: "connect"
+  Arguments: {"vm_service_uri": "<vm_service_uri>"}
+
+Step 3: Inspect Interactive Elements
+- Call tool: `call_mcp_tool`
+  ServerName: "marionette"
+  ToolName: "get_interactive_elements"
+  Arguments: {}
+- Note: If tree is very large, pass `ancestor_keys` to limit scope.
+
+Step 4: Drive App Interaction
+- Tap Curated Chips:
+  - "1 Cor 13:4–7" -> Verifies excerpt start at verse 4 ("Love is patient, love is kind").
+  - "Matt 11:28–30" -> Verifies Matthew excerpt ("Come to Me, all you who are weary").
+  - "Rom 8:31–39" -> Verifies Romans excerpt ("If God is for us, who can be against us?").
+  - "Psalm 23" -> Verifies Shepherd Psalm ("The LORD is my shepherd; I shall not want").
+- Trigger Uncurated Verse Search:
+  - Enter text: `call_mcp_tool` ToolName: "enter_text" Arguments: {"text": "col 1:17-20"}
+  - Tap Play button: `call_mcp_tool` ToolName: "tap" Arguments: {"text": "Play"}
+  - Verify floating SnackBar appears: "Feature coming soon! Custom verse range 'col 1:17-20' will be supported in v0.3.0..."
+
+Step 5: Capture Visual Artifacts
+- Marionette MCP Screenshot:
+  - `call_mcp_tool` ToolName: "take_screenshots"
+- Physical Pixel 9a ADB Screenshot:
+  - `adb -s 58221JEBF20835 exec-out screencap -p > docs/artifacts/screenshots/<name>.png`
+- Physical Pixel 9a ADB Screen Recording:
+  - `adb -s 58221JEBF20835 shell screenrecord --time-limit 10 /sdcard/rec.mp4`
+  - `adb -s 58221JEBF20835 pull /sdcard/rec.mp4 docs/artifacts/videos/<name>.mp4`
+  - `adb -s 58221JEBF20835 shell rm /sdcard/rec.mp4`
+
+Step 6: Update GitHub PR & Tracking File
+- For every PR:
+  1. Add verification screenshot/recording markdown or HTML table to PR comment/description via `gh pr comment` or `gh pr edit`.
+  2. Maintain `11oct_2026_selah_session.md` milestone status with proof artifacts.
+
+[KEY SELECTORS & TEXT ANCHORS]
+- Search Input Field: `TextField` with hint "Search Book & Chapter (e.g. Jn, Col 3, Ps 23)"
+- Play Submit Button: `ElevatedButton` with text "Play"
+- Book Browser Icon: `Icons.menu_book_rounded` (tooltip: "Browse All 66 Books")
+- Bookmark Current Chapter: `Icons.bookmark_add_outlined` (tooltip: "Save Current Chapter to Recents")
+- Roadmap Voting Icon: `Icons.how_to_vote_rounded` (tooltip: "Feature Roadmap & Feedback")
+- Preset Chips:
+  - "1 Cor 13:4–7"
+  - "Matt 11:28–30"
+  - "Rom 8:31–39"
+  - "Psalm 23"
+- Translation Badges: "BSB", "WEB", "NIV"
+- Audio Mode Badges: "🎙️ Human Narrator", "🔊 High-Quality Speech (TTS)"

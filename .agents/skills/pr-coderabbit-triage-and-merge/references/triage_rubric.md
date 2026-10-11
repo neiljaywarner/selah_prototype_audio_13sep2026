@@ -54,3 +54,44 @@ Before merging any PR:
 3. `git diff --staged` must be audited for zero hardcoded secrets or sensitive configs.
 4. Active session status markdown file (`<date>_selah_session.md`) must be updated with the milestone results.
 5. All unaddressed non-critical comments must have a corresponding GitHub issue created.
+6. The PR must be evaluated against the PR Readiness Grading Rubric (minimum B+ or A-).
+
+---
+
+## 3. PR Readiness Grading Rubric & Scorecard Template
+
+Every PR description or review triage summary must include this scorecard:
+
+### Category Evaluation Guidelines
+
+| Category | High Standard (A / A-) | Marginal / Actionable (B+) | Substandard / Blocker (B or below) |
+|---|---|---|---|
+| **UX & Functional Polish** | Authentic narrator audio plays smoothly; WhisperX timestamps align with zero audio gap; responsive UI with clear feedback. | Feature works; narrator audio plays; minor visual spacing imperfection or non-blocking edge case. | Regressed flow; unexpected robotic TTS fallback; audio clipping desync; jarring UI glitches. |
+| **Maintainability & Architecture** | Clean separation of concerns; type-safe; documented patterns; 0 analyzer issues. | Solid architecture; clean code; minor code duplication or opportunity for helper extraction. | Spaghetti code; logic mixed into widgets; suppressed warnings; monkey-patches. |
+| **Ease of Review & Scope Discipline** | Atomic commits; scope strictly confined to ticket; diff is clean and easy to read. | Well scoped with 1-2 minor related tweaks; clear conventional commit messages. | Large rambling diff; unrelated refactors mixed in; opaque commit messages. |
+| **Instructional Clarity, Mentoring & Minimal WTFs** | Intuitive structure; complex logic explained; clear comments; zero head-scratching moments for junior or peer reviewers. | Clear overall; a reviewer might ask 1-2 minor clarifying questions, answered by docs. | High "WTFs per minute"; unintuitive side effects; cryptic logic without comments. |
+| **Verification & Proof** | Passing tests; BDD `.feature` specs; Marionette/ADB screenshots or recordings attached. | Passing unit tests; proof artifact present; automated UI recording pending. | Tests missing, failing, or skipped; zero visual or runtime verification proof. |
+
+### Minimum Merge Threshold
+- **A / A-**: Approved for immediate merge.
+- **B+ / Urgent Pass**: Approved for merge **ONLY IF** an urgent need exists AND all items preventing an A/A- are filed as tracked GitHub issues before or during merge.
+- **B or lower**: Merge blocked. Refactor, fix, or test prior to requesting merge.
+
+### Markdown Scorecard Template
+```markdown
+### PR Readiness Scorecard
+- **Overall Grade:** [A | A- | B+]
+- **Merge Status:** [Approved | Conditional (Follow-up ticket filed) | Blocked]
+
+| Category | Grade | Notes / Justification |
+|---|---|---|
+| **UX & Functional Polish** | [A / A- / B+] | ... |
+| **Maintainability & Architecture** | [A / A- / B+] | ... |
+| **Ease of Review & Scope Discipline** | [A / A- / B+] | ... |
+| **Instructional Clarity & Minimal WTFs** | [A / A- / B+] | ... |
+| **Verification & Proof** | [A / A- / B+] | ... |
+
+#### Follow-up GitHub Issues (Mandatory for B+ or Urgent PRs)
+- [ ] #<issue-number>: <description of deferred polish or improvement>
+```
+

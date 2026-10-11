@@ -519,20 +519,28 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
 
     try {
-      final fullDuration = await _audioPlayer.setUrl(chapter.audioStreamUrl);
       final window = PassageExcerpt.forChapter(
         chapter.bookCode,
         chapter.chapterNumber,
       )?.clipWindow(_currentTimestamps);
       _clipOffset = window?.start ?? Duration.zero;
-      final dur = window == null
-          ? fullDuration
-          : await _audioPlayer.setClip(start: window.start, end: window.end);
+
+      Duration? dur;
       if (window != null) {
-        AppLogger.info(
-          'Clipped ${chapter.reference} to curated excerpt ${window.start.inMilliseconds}–${window.end.inMilliseconds}ms',
+        dur = await _audioPlayer.setAudioSource(
+          ClippingAudioSource(
+            child: AudioSource.uri(Uri.parse(chapter.audioStreamUrl)),
+            start: window.start,
+            end: window.end,
+          ),
         );
+        AppLogger.info(
+          'Initialized ClippingAudioSource for ${chapter.reference} [${window.start.inMilliseconds}–${window.end.inMilliseconds}ms]. Excerpt duration: ${dur?.inSeconds}s',
+        );
+      } else {
+        dur = await _audioPlayer.setUrl(chapter.audioStreamUrl);
       }
+
       state = state.copyWith(isLoading: false, duration: dur ?? Duration.zero);
       play();
     } catch (e, stack) {
@@ -729,15 +737,6 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
 
     if (state.audioMode == AudioMode.narrator) {
-      final window = PassageExcerpt.forChapter(
-        state.currentChapter.bookCode,
-        state.currentChapter.chapterNumber,
-      )?.clipWindow(_currentTimestamps);
-
-      if (window != null) {
-        _clipOffset = window.start;
-        await _audioPlayer.setClip(start: window.start, end: window.end);
-      }
       await _audioPlayer.seek(Duration.zero);
       _audioPlayer.play();
     } else {
