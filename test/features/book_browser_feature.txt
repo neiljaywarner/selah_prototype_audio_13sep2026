@@ -1,0 +1,22 @@
+Feature: Browse 66 Canonical Books and Chapters
+  As a student of the whole Bible
+  I want to browse all 39 Old Testament and 27 New Testament books
+  So that I can quickly select any chapter for audio meditation without layout overflow
+
+  Background:
+    Given the user is on the main Chapter Player Screen
+
+  Scenario: Filter canonical books by Testament
+    When the user taps the "Browse All 66 Books" icon button
+    Then the "Browse 66 Books & Chapters" modal appears without visual overflow
+    When the user selects the "New Testament (27)" filter chip
+    Then only New Testament books from Matthew to Revelation are visible in the list
+
+  Scenario: Search for a book by name or abbreviation
+    Given the book browser dialog is open
+    When the user types "Rom" into the search filter
+    Then the list displays "Romans" with "16 ch"
+    When the user taps "Romans" and selects chapter "8"
+    And the user taps "Play Romans 8"
+    Then the dialog closes
+    And "Romans 8" is loaded and begins streaming in the player

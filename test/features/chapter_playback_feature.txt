@@ -1,0 +1,49 @@
+Feature: Scripture Chapter Audio Playback
+  As a meditator on scripture
+  I want to listen to continuous high-fidelity audio chapters
+  So that I can immerse in God's word with loop and progress controls
+
+  Background:
+    Given the Selah app is launched in debug or release mode
+    And the default translation is configured as Berean Standard Bible (BSB)
+
+  Scenario: Stream audio for default featured chapter
+    Given the user is on the Chapter Player Screen
+    When the user selects chapter "John 1"
+    Then the chapter title "John 1" is displayed
+    And the narrator mode displays "🎙️ Human Narrator"
+    And the scripture text preview for John 1 is rendered
+    When the user taps the primary Play button
+    Then audio streaming starts from the API.Bible CDN
+    And the player state changes from "Ready" to "Meditating..."
+    And the progress slider and elapsed time advance smoothly
+
+  Scenario: Pause and resume chapter audio
+    Given audio for "Colossians 1" is actively playing
+    When the user taps the primary Pause button
+    Then playback pauses immediately
+    And the player state indicates paused
+    When the user taps the Play button again
+    Then playback resumes from the current playback position without restarting
+
+  Scenario: Chapter meditation loop cycle
+    Given loop mode is set to "Loop 1 of 3"
+    When playback of the chapter reaches the end
+    Then the loop counter increments to "Loop 2 of 3"
+    And the chapter audio seamlessly replays from the beginning
+
+  Scenario: Single-row horizontal scrollable presets with Psalms 126 and Philippians 4
+    Given the user is on the Chapter Player Screen
+    Then the chapter presets are rendered in a single-row horizontally scrollable ListView
+    And the presets include "Psalms 126" and "Philippians 4"
+    When the user scrolls horizontally and taps "Philippians 4"
+    Then the player loads "Philippians 4"
+
+  Scenario: LIFO saved chapters queue prepends manual chapters
+    Given the user manually searches or bookmarks "Romans 8"
+    When the chapter loads and is saved to local storage
+    Then "Romans 8" is prepended as the first item in the horizontal preset row
+    And the saved chip is marked with a gold bookmark icon
+    When the user restarts the application
+    Then "Romans 8" remains at the front of the horizontal row
+

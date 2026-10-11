@@ -1,0 +1,34 @@
+Feature: Scripture Translation Switching and Persistence
+  As a meditator who appreciates different translations
+  I want to switch seamlessly between BSB, WEB, and NIV
+  So that I can compare renderings and have my preference saved across app restarts
+
+  Background:
+    Given the Selah app is running
+    And SharedPreferences is initialized
+
+  Scenario: Switch from Berean Standard Bible to New International Version
+    Given the active translation is "BSB"
+    And the current chapter is "Colossians 1"
+    When the user taps the translation chip "NIV"
+    Then the active translation state updates to "NIV"
+    And the subtitle indicates "New International Version (NIV) • API.Bible"
+    And the human narrator switches to Max McLean OT+NT narration
+    And a "change_translation" event is dispatched to Aptabase, Firebase, and PostHog
+    And the preference "default_translation" = "NIV" is saved to local storage
+
+  Scenario: Re-hydrate saved translation on app startup
+    Given the user previously selected "NIV" as their preferred translation
+    When the user relaunches the application
+    Then the initial active translation is restored to "NIV"
+    And the audio mode badges reflect the licensed narrator for NIV
+
+  Scenario: Toggle Translation Shuffle across meditation repetitions
+    Given the active translation is "BSB"
+    When the user taps the "Shuffle" translation toggle button
+    Then shuffle translations mode is enabled with visual gold ON indicator
+    And the subtitle displays "🔀 Shuffle Active"
+    And the translation immediately cycles to "WEB"
+    When the chapter loop repetition completes and restarts
+    Then the translation automatically rotates to the next translation "NIV"
+

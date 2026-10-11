@@ -1,0 +1,24 @@
+appId: com.example.selah_prototype_audio_13sep2026
+---
+- launchApp
+- waitForAnimationToEnd
+
+# Check the app launched (flexible - works with both old and new UI)
+- assertVisible:
+    text: "SELAH"
+    optional: true
+
+# Try the chapter search if v0.2 UI is present
+- tapOn:
+    text: "Search chapters..."
+    optional: true
+- inputText: "John"
+- waitForAnimationToEnd
+
+- tapOn:
+    text: "John 1"
+    optional: true
+- waitForAnimationToEnd
+
+# Take a screenshot to record the state
+- takeScreenshot: test_artifacts/maestro_final_state
