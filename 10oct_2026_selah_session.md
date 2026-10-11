@@ -88,6 +88,34 @@ The Marionette MCP server (`marionette_mcp` v0.7.0) is active in Antigravity and
 * **Observation 5 (Fixed):** RenderFlex 13px overflow in 66 Books Dialog header resolved by wrapping title in `Expanded` and filter chips in `SingleChildScrollView`.
 * **Observation 6 (Verified):** Marionette MCP successfully connected to live app on Pixel 9a, tapped chips, switched to NIV, popped routes, and hot-reloaded UI live.
 
-* **Observation 2 (Fixed):** Web builds tree-shake font icons down by 99.4%, reducing bundle size significantly.
-* **Observation 3 (Active):** Pixel 9a (Android 17, API 37) device connected (`56091JEBF14039`). `assembleDebug` compiling and installing.
-* **Observation 4 (Upcoming):** App launcher icon asset generation needed prior to Firebase Hosting and Codemagic builds.
+* **Observation 7 (Fixed):** RenderFlex 21px overflow in player card header resolved by wrapping audio badge in `Flexible` (`TextOverflow.ellipsis`) and sizing shuffle toggle to 28x28px. Verified zero overflow stripes on physical Pixel 9a.
+* **Observation 8 (Verified):** Translation shuffle toggle (BSB -> WEB -> NIV) verified cycling across loop repetitions.
+* **Observation 9 (Verified):** Single-row horizontally scrollable preset list (John 1, Colossians 1, Psalms 23, Psalms 126, Romans 8, Philippians 4, 1 Corinthians 13) plus LIFO bookmark queue with disk caching for offline/airplane mode.
+* **Observation 10 (Deployed):** Flutter Web release compiled and pushed to branch `gh-pages` (commit `77418dc`).
+
+---
+
+## 🌐 Web Deployment Status
+
+1. **GitHub Pages (`https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/`):**
+   * Built release artifacts (`build/web`) compiled with `--base-href /selah_prototype_audio_13sep2026/`.
+   * Pushed to branch `gh-pages` (Commit `77418dc`).
+   * **Action Needed:** To activate Pages for the repository, open:
+     `https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/settings/pages`
+     Under **Build and deployment**:
+     - **Source:** *Deploy from a branch*
+     - **Branch:** `gh-pages` / `/ (root)` -> Click **Save**.
+     *(GitHub REST API returns 404 for automated enablement without repo admin PAT scopes).*
+
+2. **Firebase Web Hosting (`https://selahwordapp.web.app`):**
+   * Configuration ready in `firebase.json` (`site: selahwordapp`, `public: build/web`).
+   * `build/web` release bundle is fully compiled and ready.
+   * **Action Needed:** Google OAuth refresh token for `njwandroid@gmail.com` expired in the Firebase CLI (`401 Unauthenticated`). Run:
+     ```bash
+     firebase login --reauth
+     firebase deploy --only hosting
+     ```
+
+3. **Codemagic CI/CD:**
+   * Configured in `codemagic.yaml` for both Web PWA and Android APK builds with notification emails to `neilwarner@gmail.com`. Runs automatically on push once webhook is active.
+
