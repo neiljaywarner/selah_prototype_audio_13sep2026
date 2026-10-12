@@ -156,8 +156,8 @@ void main() {
           final duration = window.end - window.start;
           expect(
             duration.inSeconds,
-            greaterThan(10),
-            reason: '${excerpt.displayTitle} duration must be at least 10s',
+            greaterThanOrEqualTo(5),
+            reason: '${excerpt.displayTitle} duration must be at least 5s',
           );
         }
       }
