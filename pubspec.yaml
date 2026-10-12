@@ -98,6 +98,8 @@ flutter:
     - assets/timestamps/
     - assets/timestamps/WEB/
     - assets/timestamps/BSB/
+    - assets/audio/BSB/
+    - assets/audio/WEB/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -7,17 +7,17 @@
 
 ---
 
-## 🚧 WIP & Current Progress Status (19:30 CDT Walk Return Update)
-- **Status**: ✅ **WALK MILESTONE COMPLETE — ALL CURATED PASSAGES & ARBITRARY FALLBACK VERIFIED**
+## 🚧 WIP & Current Progress Status (21:15 CDT Update)
+- **Status**: ✅ **EOD SOFT LAUNCH COMPLETE — WEB HOSTING LIVE & PIXEL 9A VERIFIED**
 - **WhisperX Mystery Solved**: `batch_align_whisperx.py` naively assumed `verse = segment_index + 1`. Whisper splits audio into 45+ sentence clauses, so segment 28 was actually verse 19 (148s). True verse 28 begins at **257,570ms** after a 1.41s speaker pause. All boundaries are now acoustically snapped to natural speaker pauses!
 - **All 6 Curated Passages Fully Calibrated**: 1 Cor 13:4–7, Matt 11:28–30, Rom 8:31–39, Psalm 23, Psalm 62:1–2, and Col 1:1–2 are verified and tested across **BSB** and **WEB**.
 - **Arbitrary Verse Fallback**: When users type any uncurated passage range (e.g. `col 1:17-20`), the app immediately displays: *"Sorry, please request this passage with the devs!"* with an interactive **[Request]** button opening the feature voting sheet!
-- **About Selah Screen & Credits**: Implemented `AboutSelahDialog` featuring *"Crafted by Neil Jay Warner, and friends and brothers and sisters in Christ"*, release notes, and publisher licensing links (Merged via PR #47, Issue #45 closed).
-- **PostHog & Analytics Runbooks**: Authored `README_POSTHOG.md` & `README_ANALYTICS.md` and created 3 tracked GitHub tickets (#41 POC, #42 MVP, #43 Explore).
-- **Cross-Platform Verification**:
-  - **Android**: Verified running natively on Google Pixel 9a (`56091JEBF14039`, Android 17 / API 37).
-  - **Web / Chrome / Android PWA**: `flutter build web` compiles with zero errors, ready for EOD Firebase Hosting release.
-- **Test Suite 100% Green**: 63/63 tests passing green (`flutter test`), `flutter analyze` 0 warnings.
+- **Firebase Remote Config Live**: Implemented `RemoteConfigService` with SharedPreferences cache & Riverpod Notifier; published live Remote Config parameters on project `selahwordapp` (Merged via PR #52, Issue #51 closed).
+- **In-App User Feedback & Direct Email**: Built `EmojiFeedbackDialog` with 5 peaceful emojis (🕊️, 🙏, 💛, 😐, 🌧️), 1-5 stars, reflection text, and 1-tap clipboard mailer to `neilwarner+selah@gmail.com`. Wired into Settings and Feature Voting sheets (Merged via PR #53, Issue #49 closed).
+- **Private Feedback Hub**: Created private repository `njwandroid/selahfeedback` with a beginner-friendly triage guide so prayer reflections remain strictly confidential.
+- **Firebase Web Hosting Live**: Production bundle compiled and deployed to **https://selahword.web.app** (and `https://selahword.firebaseapp.com`)! (Issue #46 closed).
+- **Physical Pixel 9a Native Testing (Marionette MCP)**: Tested live on Google Pixel 9a (`56091JEBF14039`, Android 17 / API 37) via Marionette MCP. Verified element tree, bottom sheet scrolling, clipboard copy, Matthew 11:28–30 loading, and native 3-repetition audio loop completion (`Completed all 3 repetitions`).
+- **Test Suite 100% Green**: 71/71 tests passing green (`flutter test`), `flutter analyze` 0 warnings.
 
 ---
 

@@ -46,18 +46,27 @@ During this session, we completed the final review, hardening, and verification 
 | **M17: About Selah Dialog & Credits Screen** | Built `AboutSelahDialog` with credits to Neil Jay Warner, friends, brothers and sisters in Christ, release notes, and licensing navigation | 2026-10-11 19:13:00 | 2026-10-11 19:28:40 | ✅ Complete | [PR #47](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/47) merged; Issue #45 closed |
 | **M18: Curated Passages Expansion & Devs Fallback** | Added Psalm 62:1–2 and Col 1:1–2 timestamps; wired uncurated range notice to "Sorry, please request this passage with the devs!" with `Request` action | 2026-10-11 19:14:00 | 2026-10-11 19:28:40 | ✅ Complete | Verified in 63/63 passing unit and widget tests |
 | **M19: Release Checklist & Firebase Web Verification** | Authored `RELEASE_CHECKLIST.md` and verified `flutter build web` compiles with 0 errors | 2026-10-11 19:28:00 | 2026-10-11 19:30:30 | ✅ Complete | [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md); Issue #46 tracked |
+| **M20: RemoteConfigService & Dynamic Banner** | Built `RemoteConfigService` with SharedPreferences cache & Riverpod Notifier, published Remote Config template on Firebase (`selahwordapp`) | 2026-10-11 19:31:00 | 2026-10-11 20:30:10 | ✅ Complete | [PR #52](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/52) merged; Issue #51 closed |
+| **M21: In-App User Feedback Dialog & Direct Email Routing** | Implemented `EmojiFeedbackDialog` (5 emojis, 1-5 stars, reflection text, direct email to `neilwarner+selah@gmail.com`), added 4 widget tests | 2026-10-11 20:31:00 | 2026-10-11 20:53:50 | ✅ Complete | [PR #53](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/53) merged; Issue #49 closed; 71/71 tests green |
+| **M22: Private Feedback GitHub Hub** | Created private repository `njwandroid/selahfeedback` and authored beginner triage guide for collaborators | 2026-10-11 20:54:00 | 2026-10-11 20:58:25 | ✅ Complete | [njwandroid/selahfeedback](https://github.com/njwandroid/selahfeedback) |
+| **M23: Pixel 9a Device Attached & Verified** | Physical Google Pixel 9a (`56091JEBF14039`, Android 17 / API 37) detected via ADB and Flutter devices | 2026-10-11 20:58:30 | 2026-10-11 20:58:45 | ✅ Complete | `adb_devices` & `flutter devices` verified |
+| **M24: Curated Passage Audio Bundling & Offline Indicator** | Bundled public domain MP3s for all 6 curated passages (BSB & WEB), created `BundledAudioService`, added `OfflineIndicator` badge, simplified top bar actions to overflow menu, 79/79 tests green | 2026-10-11 22:45:00 | 2026-10-11 22:54:30 | ✅ Complete | [Issue #54](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/54); 79/79 tests green |
 
 ---
 
 ## 📍 Where We Are Right Now & Next 3 Priorities
 
 ### Current State
-* **Main Branch:** 100% up-to-date with PRs #30, #32, #35, #44, and #47 merged cleanly.
-* **Test Suite:** 63/63 tests passing green (`flutter test`), 0 static analysis errors (`flutter analyze`).
+* **Main Branch:** 100% up-to-date with PRs #30, #32, #35, #44, #47, #52, and #53 merged cleanly.
+* **Test Suite:** 71/71 tests passing green (`flutter test`), 0 static analysis errors (`flutter analyze`).
 * **Hardware & Platforms:**
-  - **Android:** Running natively on physical Google Pixel 9a (`56091JEBF14039`, Android 17 / API 37) with hot reload active.
-  - **Web / Chrome / Android PWA:** Production bundle `build/web` compiled cleanly.
-* **Curated Passages (6 Passages × 2 Translations + 1 Arbitrary):**
+  - **Android:** Physical Google Pixel 9a (`56091JEBF14039`, Android 17 / API 37) connected, authorized, and detected.
+  - **Web / Chrome / Android PWA:** Production bundle `build/web` compiled cleanly (`✓ Built build/web` in 71.8s).
+  - **iOS:** iPhone 16 Pro simulator available.
+* **Private Feedback System:**
+  - In-app `EmojiFeedbackDialog` with 5 emojis + 1–5 stars + reflection text.
+  - Direct 1-tap clipboard mailer to `neilwarner+selah@gmail.com`.
+  - Private GitHub repository `njwandroid/selahfeedback` initialized with triage instructions.
   - 1 Cor 13:4–7 (BSB & WEB): Calibrated & verified.
   - Matt 11:28–30 (BSB & WEB): Fixed 100s drift (starts at true v28 pause ~257.5s).
   - Rom 8:31–39 (BSB & WEB): Calibrated all 9 verses to true v31 pause (~301.1s).

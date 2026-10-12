@@ -102,5 +102,11 @@ class OfflineScriptureCache {
         'Love is patient, love is kind. It does not envy, it does not boast, it is not proud. It is not rude, it is not self-seeking, it is not easily angered, it keeps no account of wrongs. Love does not delight in evil but rejoices with the truth. It bears all things, believes all things, hopes all things, endures all things.',
     'WEB.1CO.13':
         'Love is patient, love is kind. Love does not envy. Love does not brag, is not proud, does not behave itself inappropriately, does not seek its own way, is not provoked, takes no account of evil; doesn\'t rejoice in unrighteousness, but rejoices with the truth; bears all things, believes all things, hopes all things, endures all things.',
+
+    // Psalm 62:1–2 (Curated Excerpt)
+    'BSB.PSA.62':
+        'My soul finds rest in God alone; my salvation comes from Him. He alone is my rock and my salvation; He is my fortress, I will never be shaken.',
+    'WEB.PSA.62':
+        'Truly my soul finds rest in God; my salvation comes from him. Truly he is my rock and my salvation; he is my fortress, I will never be shaken.',
   };
 }

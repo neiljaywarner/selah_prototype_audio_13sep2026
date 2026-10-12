@@ -59,6 +59,7 @@ firebase-debug.log*
 remote_config.json
 .firebase/
 *.mp3
+!assets/audio/**/*.mp3
 *.wav
 **/xcshareddata/
 .worktrees/

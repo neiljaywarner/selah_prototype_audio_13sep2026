@@ -13,6 +13,19 @@ void main() {
   setUpAll(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(const MethodChannel('flutter_tts'), (call) async => 1);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('com.ryanheise.just_audio.methods'),
+          (call) async {
+            if (call.method == 'init') {
+              return {'id': 'test-player'};
+            }
+            if (call.method == 'load') {
+              return {'duration': 10000000};
+            }
+            return {};
+          },
+        );
   });
 
   group('ChapterPlayerNotifier Unit Tests', () {

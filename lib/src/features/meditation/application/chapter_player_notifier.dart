@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:just_audio/just_audio.dart';
 
+import '../../../core/audio/bundled_audio_service.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/bible_canon.dart';
 import '../../../core/karaoke/timestamp_loader.dart';
@@ -231,6 +232,37 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
     final translation = state.translation;
 
+    // Rule 0: Bundled Human Narrator Audio for open-source translations (BSB, WEB)
+    // Ensures zero-network, zero-API-key human narration for curated meditation passages.
+    final bundledAudioPath = BundledAudioService.getBundledAudioPath(
+      translation.code,
+      bookCode,
+      chapterNumber,
+    );
+    if (bundledAudioPath != null) {
+      AppLogger.info('Found bundled human narrator audio: $bundledAudioPath');
+      final fetchedText = await _fetchChapterText(bookCode, chapterNumber) ?? fallbackText;
+      if (!ref.mounted) return;
+
+      final dynamicChapter = ChapterInfo(
+        bookCode: bookCode.toUpperCase(),
+        bookName: bookName,
+        chapterNumber: chapterNumber,
+        audioStreamUrl: bundledAudioPath,
+        textContent: fetchedText,
+        displayTitle: excerpt?.displayTitle,
+      );
+
+      state = state.copyWith(
+        audioMode: AudioMode.narrator,
+        isOffline: true,
+        clearInfoNotice: true,
+      );
+
+      await loadChapter(dynamicChapter);
+      return;
+    }
+
     // Rule 1: translation has no human narrator for this testament (e.g. WEB OT) -> TTS
     if (!translation.hasNarratorFor(bookCode)) {
       AppLogger.info(
@@ -253,6 +285,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       state = state.copyWith(
         currentChapter: dynamicChapter,
         audioMode: AudioMode.tts,
+        isOffline: true,
         infoNotice:
             '${translation.fullName} (${translation.code}) has no $testament narrator on API.Bible — narrating with Text-to-Speech (TTS).',
       );
@@ -290,7 +323,11 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
             displayTitle: excerpt?.displayTitle,
           );
 
-          state = state.copyWith(audioMode: AudioMode.narrator, clearInfoNotice: true);
+          state = state.copyWith(
+            audioMode: AudioMode.narrator,
+            isOffline: false,
+            clearInfoNotice: true,
+          );
 
           await loadChapter(dynamicChapter);
           return;
@@ -316,6 +353,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
             bookCode,
             chapterNumber,
           ) ?? fallbackText;
+      state = state.copyWith(isOffline: true);
       _switchToTtsFallback(
         'Offline / Airplane Mode: Narrating ${translation.fullName} (${translation.code}) scripture via Text-to-Speech (TTS).',
         overrideText: cachedText,
@@ -519,7 +557,13 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
 
     try {
-      final fullDuration = await _audioPlayer.setUrl(chapter.audioStreamUrl);
+      final Duration? fullDuration;
+      final isAsset = chapter.audioStreamUrl.startsWith('assets/');
+      if (isAsset) {
+        fullDuration = await _audioPlayer.setAsset(chapter.audioStreamUrl);
+      } else {
+        fullDuration = await _audioPlayer.setUrl(chapter.audioStreamUrl);
+      }
       final window = PassageExcerpt.forChapter(
         chapter.bookCode,
         chapter.chapterNumber,
@@ -533,11 +577,17 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
           'Clipped ${chapter.reference} to curated excerpt ${window.start.inMilliseconds}–${window.end.inMilliseconds}ms',
         );
       }
-      state = state.copyWith(isLoading: false, duration: dur ?? Duration.zero);
+      if (!ref.mounted) return;
+      state = state.copyWith(
+        isLoading: false,
+        duration: dur ?? Duration.zero,
+        isOffline: isAsset,
+      );
       play();
     } catch (e, stack) {
+      if (!ref.mounted) return;
       AppLogger.error(
-        'Failed to set audio source URL in player',
+        'Failed to set audio source in player',
         error: e,
         stackTrace: stack,
         properties: {
@@ -547,6 +597,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
           'audio_mode': state.audioMode.name,
         },
       );
+      state = state.copyWith(isOffline: true);
       _switchToTtsFallback('Audio stream blocked or failed. Switched to Text-to-Speech (TTS).');
     }
   }
