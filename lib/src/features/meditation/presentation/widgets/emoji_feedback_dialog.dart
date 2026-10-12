@@ -1,8 +1,10 @@
 import 'package:feedback/feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/feedback/feedback_service.dart';
+import '../../../../core/remote_config/remote_config_service.dart';
 
 /// 3-Face App Feedback Dialog (Happy 😊, Neutral 😐, Sad 😞)
 ///
@@ -10,7 +12,7 @@ import '../../../../core/feedback/feedback_service.dart';
 /// - 😊 Happy: Encourages rating 4–5 stars and leaving praise/blessing.
 /// - 😐 Neutral: Funnels directly to private feedback on what can be improved.
 /// - 😞 Sad: Funnels directly to private bug/frustration feedback routed to Neil.
-class EmojiFeedbackDialog extends StatefulWidget {
+class EmojiFeedbackDialog extends ConsumerStatefulWidget {
   const EmojiFeedbackDialog({
     super.key,
     this.currentChapter,
@@ -36,10 +38,10 @@ class EmojiFeedbackDialog extends StatefulWidget {
   }
 
   @override
-  State<EmojiFeedbackDialog> createState() => _EmojiFeedbackDialogState();
+  ConsumerState<EmojiFeedbackDialog> createState() => _EmojiFeedbackDialogState();
 }
 
-class _EmojiFeedbackDialogState extends State<EmojiFeedbackDialog> {
+class _EmojiFeedbackDialogState extends ConsumerState<EmojiFeedbackDialog> {
   final TextEditingController _commentController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
 
@@ -485,6 +487,7 @@ class _EmojiFeedbackDialogState extends State<EmojiFeedbackDialog> {
                     final rating = _selectedRating;
                     final face = _selectedFace;
                     final email = _emailController.text.trim().isNotEmpty ? _emailController.text.trim() : null;
+                    final ghToken = ref.read(remoteConfigProvider).githubFeedbackToken;
                     Navigator.of(context).pop();
                     BetterFeedback.of(context).show((UserFeedback feedback) async {
                       await FeedbackService.submitBetterFeedback(
@@ -492,6 +495,7 @@ class _EmojiFeedbackDialogState extends State<EmojiFeedbackDialog> {
                         rating: rating,
                         face: face,
                         email: email,
+                        githubToken: ghToken,
                       );
                     });
                   },

@@ -64,7 +64,14 @@ flutter build web --release \
 ```
 *Output: `build/web/`*
 
-### Firebase Hosting Deployment
+### Firebase Hosting Preview Channels (Staging)
+Test and preview web changes on ephemeral, temporary URLs without impacting live production users:
+```bash
+firebase hosting:channel:deploy preview_name
+```
+See the complete [Preview Channels Guide](README_PREVIEW_CHANNELS.md) and [Wiki Entry](docs/wiki/Firebase-Hosting-Preview-Channels.md).
+
+### Firebase Hosting Production Deployment
 ```bash
 firebase deploy --only hosting
 ```
@@ -72,6 +79,7 @@ firebase deploy --only hosting
 
 ### Codemagic CI/CD Build & Deploy
 Automated Web PWA and Android APK deployment pipelines are documented in the [Codemagic Deployment Guide](docs/CODEMAGIC_DEPLOYMENT.md), outlining build environments, code signing, and secret groups.
+
 
 
 ### Android App Bundle (Google Play)

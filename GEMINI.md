@@ -63,6 +63,7 @@ Under NO circumstances may any changes be pushed directly to the `main` branch. 
 2. **Permitted Autonomous Commands**:
    - `git commit` (on dedicated ticket/feature branches with conventional commit syntax).
    - `git push origin <ticket-branch>` (pushing to feature/ticket branches is fully authorized).
+   - `git push origin master` (**ONLY permitted within the isolated GitHub Wiki git repository** `*.wiki.git`, NEVER in code repositories).
    - `git status`, `git diff`, `git branch`, `git checkout`, `git add`.
    - Android & Device CLI: `adb devices`, `adb shell`, `adb install`, `adb exec-out`, `flutter install`, `flutter build apk`, `flutter run -d <device>`.
    - Python review triage and auto-defer scripts:
@@ -71,4 +72,7 @@ Under NO circumstances may any changes be pushed directly to the `main` branch. 
    - Test & verification commands: `flutter test`, `flutter analyze`.
 3. **Strictly Prohibited Operations**:
    - `git push origin main` or any direct commit, push, or destructive force operation targeting `main`.
+   - `git push origin master` targeting the primary code repository (`master` is reserved exclusively for the standalone GitHub Wiki `*.wiki.git` repository).
+   - Nesting the cloned wiki git repository inside tracked directories of the primary codebase (always keep it isolated under `.worktrees/` or `.git/info/exclude`).
+
 

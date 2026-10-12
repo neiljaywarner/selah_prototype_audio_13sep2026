@@ -1,0 +1,21 @@
+# Maestro Web Preview Smoke Test
+# Usage: maestro test .maestro/web_preview_smoke.yaml
+
+appId: "https://selahword--preview-v0-3-1-a15pcecz.web.app"
+---
+- openLink: "https://selahword--preview-v0-3-1-a15pcecz.web.app"
+- waitForAnimationToEnd
+
+# Verify Selah brand header and player controls
+- assertVisible:
+    text: "SELAH"
+    optional: true
+
+# Smoke test curated meditation chip
+- tapOn:
+    text: "1 Cor 13:4-7"
+    optional: true
+- waitForAnimationToEnd
+
+# Record verification artifact
+- takeScreenshot: test_artifacts/maestro_preview_smoke

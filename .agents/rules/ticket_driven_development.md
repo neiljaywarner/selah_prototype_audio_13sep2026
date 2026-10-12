@@ -42,6 +42,7 @@ Under NO circumstances may any changes be pushed directly to the `main` branch. 
 ### 1. Permitted Autonomous Commands
 - `git commit` (on dedicated ticket/feature branches with conventional commit syntax).
 - `git push origin <ticket-branch>` (pushing to feature/ticket branches is fully authorized).
+- `git push origin master` (**ONLY permitted within the isolated GitHub Wiki git repository** `*.wiki.git`, NEVER in code repositories).
 - `git status`, `git diff`, `git branch`, `git checkout`, `git add`.
 - Python review triage and auto-defer scripts:
   - `python3 .agents/skills/pr-coderabbit-triage-and-merge/scripts/triage_pr_comments.py`
@@ -50,3 +51,6 @@ Under NO circumstances may any changes be pushed directly to the `main` branch. 
 
 ### 2. Strictly Prohibited Operations
 - `git push origin main` or any direct commit, push, or destructive force operation targeting `main`.
+- `git push origin master` targeting the primary code repository (`master` is reserved exclusively for the standalone GitHub Wiki `*.wiki.git` repository).
+- Accidental nesting of the cloned wiki repo inside the primary project working directory (always clone into `.worktrees/selah_wiki` or `.git/info/exclude` directories).
+
