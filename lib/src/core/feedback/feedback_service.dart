@@ -1,5 +1,6 @@
 import 'dart:convert' show base64Encode;
 import 'dart:io' show Platform;
+import 'dart:typed_data' show Uint8List;
 import 'package:feedback/feedback.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:dio/dio.dart';
@@ -162,7 +163,7 @@ class FeedbackService {
     return true;
   }
 
-  /// Unified multi-channel feedback dispatcher forwarding to Firestore, Doorbell, and telemetry.
+  /// Unified multi-channel feedback dispatcher forwarding to Firestore, Doorbell, GitHub Issues, and telemetry.
   static Future<bool> submitFeedback({
     required int rating,
     required String emoji,
@@ -171,13 +172,14 @@ class FeedbackService {
     String? email,
     String? currentChapter,
     String? translation,
+    String? githubToken,
     Dio? dioClient,
   }) async {
     final sanitizedMessage = (message != null && message.trim().isNotEmpty)
         ? message.trim()
         : 'Meditation reflection ($rating / 5 $emoji)';
 
-    final clientContext = await AppDeviceInfoService.getClientContext();
+    final clientContext = await AppDeviceInfoService.getClientContext(dioClient: dioClient);
 
     final nps = face == 'happy'
         ? (rating == 5 ? 10 : 9)
@@ -216,7 +218,7 @@ class FeedbackService {
         email: email,
         sentiment: sentiment,
         nps: nps,
-        tags: [face, 'v0.2.4'],
+        tags: [face, 'v0.3.1'],
         properties: {
           'emoji': emoji,
           'face': face,
@@ -228,7 +230,108 @@ class FeedbackService {
       );
     }
 
+    // 3. Forward to private GitHub triage queue (njwandroid/selahfeedback) if configured
+    final effectiveGhToken = (githubToken != null && githubToken.trim().isNotEmpty)
+        ? githubToken.trim()
+        : kGitHubFeedbackToken;
+
+    if (hasGitHubConfig(effectiveGhToken) || (isFlutterTest && dioClient != null)) {
+      final summarySnippet = (message != null && message.trim().isNotEmpty)
+          ? (message.trim().length > 60
+              ? '${message.trim().substring(0, 60)}...'
+              : message.trim())
+          : 'Praise & Reflection ($rating/5 $emoji)';
+
+      final issueTitle =
+          '[Feedback] $emoji ($rating/5) - $summarySnippet';
+
+      final issueBody = '''
+### 🕊️ User Feedback Reflection
+${(message != null && message.trim().isNotEmpty) ? message.trim() : '_No comment provided_'}
+
+---
+
+### 📱 Client & Device Context
+- **Sentiment**: $face ($emoji)
+- **Rating**: $rating / 5
+- **NPS Score**: $nps
+- **Passage**: ${currentChapter ?? 'General'}
+- **Translation**: ${translation ?? 'BSB'}
+- **User Email**: ${email ?? 'anonymous@selah.app'}
+- **Platform**: ${clientContext['platform']}
+- **App Version**: ${clientContext['app_version']}
+- **Device Model**: ${clientContext['device_model'] ?? 'Unknown'}
+- **Public IP**: ${clientContext['public_ip'] ?? 'Unknown'}
+- **Timestamp (UTC)**: ${DateTime.now().toUtc().toIso8601String()}
+''';
+
+      await submitGitHubIssueFeedback(
+        title: issueTitle,
+        body: issueBody,
+        labels: ['user-feedback', face, 'reflection'],
+        token: effectiveGhToken,
+        dioClient: dioClient,
+      );
+    }
+
     return true;
+  }
+
+  /// Uploads an annotated PNG screenshot to `njwandroid/selahfeedback/feedback_assets/<fileName>`.
+  /// Returns the raw asset link for embedding directly in the GitHub issue.
+  static Future<String?> uploadScreenshotAsset({
+    required Uint8List bytes,
+    required String fileName,
+    String? token,
+    Dio? dioClient,
+  }) async {
+    final effectiveToken = (token != null && token.trim().isNotEmpty)
+        ? token.trim()
+        : kGitHubFeedbackToken;
+
+    if (!hasGitHubConfig(effectiveToken) && !(isFlutterTest && dioClient != null)) {
+      AppLogger.info('GitHub feedback token unconfigured; skipped screenshot asset upload.');
+      return null;
+    }
+
+    try {
+      final dio = dioClient ??
+          Dio(
+            BaseOptions(
+              connectTimeout: const Duration(seconds: 15),
+              receiveTimeout: const Duration(seconds: 15),
+            ),
+          );
+
+      final url = 'https://api.github.com/repos/$privateGitHubRepo/contents/feedback_assets/$fileName';
+      final payload = {
+        'message': 'chore(feedback): upload screenshot asset $fileName',
+        'content': base64Encode(bytes),
+        'branch': 'main',
+      };
+
+      final response = await dio.put(
+        url,
+        data: payload,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $effectiveToken',
+            'Accept': 'application/vnd.github.v3+json',
+            'User-Agent': 'Selah-Scripture-Audio-Meditation/0.3.1',
+          },
+        ),
+      );
+
+      final isSuccess = response.statusCode == 200 || response.statusCode == 201;
+      if (isSuccess) {
+        AppLogger.info('Screenshot uploaded successfully to $privateGitHubRepo/feedback_assets/$fileName');
+        return 'https://github.com/$privateGitHubRepo/blob/main/feedback_assets/$fileName?raw=true';
+      }
+    } catch (e, stack) {
+      AppLogger.error('Failed to upload screenshot asset to $privateGitHubRepo',
+          error: e, stackTrace: stack);
+    }
+    return null;
   }
 
   /// Submits an issue to the private triage repository `njwandroid/selahfeedback`.
@@ -311,7 +414,7 @@ class FeedbackService {
     String? githubToken,
     Dio? dioClient,
   }) async {
-    final clientContext = await AppDeviceInfoService.getClientContext();
+    final clientContext = await AppDeviceInfoService.getClientContext(dioClient: dioClient);
     final bool hasScreenshot = feedback.screenshot.isNotEmpty;
     final int screenshotSize = feedback.screenshot.length;
     final int messageLen = feedback.text.length;
@@ -382,6 +485,20 @@ class FeedbackService {
       final issueTitle =
           '[Feedback] ${face == 'happy' ? '😊' : (face == 'neutral' ? '😐' : '😞')} ($rating/5) - $summarySnippet';
 
+      // Upload screenshot asset to GitHub repo if present
+      String? screenshotEmbedUrl;
+      if (hasScreenshot) {
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final platformStr = clientContext['platform']?.toString().replaceAll(' ', '_') ?? 'unknown';
+        final fileName = 'feedback_${platformStr}_$timestamp.png';
+        screenshotEmbedUrl = await uploadScreenshotAsset(
+          bytes: feedback.screenshot,
+          fileName: fileName,
+          token: effectiveGhToken,
+          dioClient: dioClient,
+        );
+      }
+
       final issueBody = '''
 ### 🕊️ User Feedback Reflection
 ${feedback.text.trim().isNotEmpty ? feedback.text.trim() : '_No text comment provided (drawing only)_'}
@@ -395,9 +512,18 @@ ${feedback.text.trim().isNotEmpty ? feedback.text.trim() : '_No text comment pro
 - **User Email**: ${email ?? 'anonymous@selah.app'}
 - **Platform**: ${clientContext['platform']}
 - **App Version**: ${clientContext['app_version']}
-- **Device Model**: ${clientContext['device_model']}
+- **Device Model**: ${clientContext['device_model'] ?? 'Unknown'}
+- **Public IP**: ${clientContext['public_ip'] ?? 'Unknown'}
 - **Timestamp (UTC)**: ${DateTime.now().toUtc().toIso8601String()}
-- **Annotated Screenshot**: ${hasScreenshot ? 'Captured ($screenshotSize bytes)' : 'None'}
+
+---
+
+### 📸 Annotated Screenshot
+${screenshotEmbedUrl != null ? '''
+![User Feedback Screenshot]($screenshotEmbedUrl)
+
+🔗 [View Screenshot in Repository](${screenshotEmbedUrl.replaceAll('?raw=true', '')})
+''' : (hasScreenshot ? '_Screenshot captured ($screenshotSize bytes), stored locally or in Firestore._' : '_No screenshot attached._')}
 ''';
 
       gitHubSuccess = await submitGitHubIssueFeedback(

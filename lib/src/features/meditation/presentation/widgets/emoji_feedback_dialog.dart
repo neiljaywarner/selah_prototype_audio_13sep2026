@@ -92,6 +92,12 @@ class _EmojiFeedbackDialogState extends ConsumerState<EmojiFeedbackDialog> {
   Future<void> _handleSubmit() async {
     setState(() => _isSubmitting = true);
 
+    String? ghToken;
+    try {
+      ghToken = ref.read(remoteConfigProvider).githubFeedbackToken;
+    } catch (_) {
+      ghToken = null;
+    }
     await FeedbackService.submitFeedback(
       rating: _selectedRating,
       emoji: _selectedEmoji,
@@ -100,6 +106,7 @@ class _EmojiFeedbackDialogState extends ConsumerState<EmojiFeedbackDialog> {
       email: _emailController.text.trim().isNotEmpty ? _emailController.text.trim() : null,
       currentChapter: widget.currentChapter,
       translation: widget.translation,
+      githubToken: ghToken,
     );
 
     setState(() {
@@ -490,7 +497,12 @@ class _EmojiFeedbackDialogState extends ConsumerState<EmojiFeedbackDialog> {
                     final rating = _selectedRating;
                     final face = _selectedFace;
                     final email = _emailController.text.trim().isNotEmpty ? _emailController.text.trim() : null;
-                    final ghToken = ref.read(remoteConfigProvider).githubFeedbackToken;
+                    String? ghToken;
+                    try {
+                      ghToken = ref.read(remoteConfigProvider).githubFeedbackToken;
+                    } catch (_) {
+                      ghToken = null;
+                    }
                     Navigator.of(context).pop();
                     BetterFeedback.of(context).show((UserFeedback feedback) async {
                       await FeedbackService.submitBetterFeedback(
