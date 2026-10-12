@@ -33,11 +33,13 @@ Under NO circumstances may any changes be pushed directly to the `main` branch. 
 5. **PR Merge Governance**:
    - Merge branches into `main` exclusively through Pull Requests audited and triaged using the [.agents/skills/pr-coderabbit-triage-and-merge](../../skills/pr-coderabbit-triage-and-merge/README.md) skill, ensuring all critical blockers are fixed and non-critical items are deferred to tracked issues.
 
-## Command Execution Permissions & Autonomous CLI Allowlist
+## Command Execution Permissions & MCP-First Protocol
 
-### 1. Always Permitted Autonomous Commands
-- `gh pr create`, `gh pr view`, `gh pr merge` (when all quality and triage gates pass).
-- `gh issue create`, `gh issue list`, `gh issue view`.
+### 0. MCP Server Precedence (MANDATORY)
+- **Always Prefer MCP Servers**: Whenever an MCP server is configured and functional (`github` MCP via `call_mcp_tool`, `marionette` MCP, `patrol` MCP), you MUST execute GitHub operations (issue creation, PR creation, PR merging, comments, issue inspection) using the **`github` MCP server via `call_mcp_tool`**, NOT local CLI commands (`gh`).
+- Do NOT prompt or invoke `gh` CLI commands when GitHub MCP tools (`create_issue`, `create_pull_request`, `merge_pull_request`, `add_issue_comment`) are available.
+
+### 1. Permitted Autonomous Commands
 - `git commit` (on dedicated ticket/feature branches with conventional commit syntax).
 - `git push origin <ticket-branch>` (pushing to feature/ticket branches is fully authorized).
 - `git status`, `git diff`, `git branch`, `git checkout`, `git add`.

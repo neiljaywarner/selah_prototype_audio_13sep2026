@@ -24,7 +24,10 @@ void main() async {
   // Multi-Provider Analytics Engine
   final aptabaseProvider = AptabaseAnalyticsProvider(appKey: kAptabaseAppKey);
   final firebaseProvider = FirebaseAnalyticsProvider();
-  final posthogProvider = PostHogAnalyticsProvider();
+  final posthogProvider = PostHogAnalyticsProvider(
+    apiKey: kPostHogApiKey,
+    host: kPostHogHost,
+  );
 
   final analyticsWrapper = AnalyticsWrapper([
     aptabaseProvider,

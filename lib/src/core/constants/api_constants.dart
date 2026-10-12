@@ -3,6 +3,14 @@ const String kApiBibleBaseUrl = 'https://rest.api.bible/v1';
 // Default values redacted for public repository safety
 const String kApiBibleKey = String.fromEnvironment('API_BIBLE_KEY', defaultValue: 'REDACTED');
 const String kAptabaseAppKey = String.fromEnvironment('APTABASE_KEY', defaultValue: 'REDACTED');
+const String kPostHogApiKey = String.fromEnvironment(
+  'POSTHOG_KEY',
+  defaultValue: String.fromEnvironment('POSTHOG_MEMVERSE_API_KEY', defaultValue: 'REDACTED'),
+);
+const String kPostHogHost = String.fromEnvironment(
+  'POSTHOG_HOST',
+  defaultValue: 'https://us.i.posthog.com',
+);
 
 // Audio and Text Bible IDs on API.Bible
 // BSB Audio: Berean Standard Audio Bible (Non-drama, 66 books OT + NT)
