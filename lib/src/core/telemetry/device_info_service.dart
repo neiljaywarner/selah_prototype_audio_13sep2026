@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:dio/dio.dart';
 import '../logging/app_logger.dart';
 
 /// Aggregates client device, operating system, and application metadata
@@ -10,17 +11,18 @@ class AppDeviceInfoService {
   static final DeviceInfoPlugin _deviceInfoPlugin = DeviceInfoPlugin();
 
   /// Collects a unified map of metadata safe for telemetry and pre-triage.
-  static Future<Map<String, dynamic>> getClientContext() async {
+  static Future<Map<String, dynamic>> getClientContext({Dio? dioClient}) async {
     final Map<String, dynamic> context = {
       'timestamp': DateTime.now().toUtc().toIso8601String(),
       'platform': kIsWeb ? 'web' : defaultTargetPlatform.name,
     };
 
     if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) {
-      context['app_version'] = '0.2.4';
+      context['app_version'] = '0.3.1';
       context['build_number'] = '1';
       context['package_name'] = 'com.example.selah_prototype_audio_13sep2026';
       context['device_model'] = 'TestDevice';
+      context['public_ip'] = '127.0.0.1';
       return context;
     }
 
@@ -30,7 +32,7 @@ class AppDeviceInfoService {
       context['build_number'] = pkg.buildNumber;
       context['package_name'] = pkg.packageName;
     } catch (e) {
-      context['app_version'] = '0.2.4';
+      context['app_version'] = '0.3.1';
       context['build_number'] = '1';
     }
 
@@ -40,6 +42,7 @@ class AppDeviceInfoService {
         context['browser_name'] = webInfo.browserName.name;
         context['user_agent'] = webInfo.userAgent;
         context['platform_str'] = webInfo.platform;
+        context['device_model'] = '${webInfo.browserName.name} (${webInfo.platform})';
       } else if (defaultTargetPlatform == TargetPlatform.android) {
         final androidInfo = await _deviceInfoPlugin.androidInfo;
         context['device_model'] = androidInfo.model;
@@ -57,9 +60,31 @@ class AppDeviceInfoService {
         final macInfo = await _deviceInfoPlugin.macOsInfo;
         context['os_version'] = macInfo.osRelease;
         context['model'] = macInfo.model;
+        context['device_model'] = 'macOS ${macInfo.osRelease}';
       }
     } catch (e) {
       AppLogger.warning('Device telemetry probe partial error: $e');
+    }
+
+    // Resolve public IP address for triage attribution (with 2-second timeout)
+    try {
+      final dio = dioClient ??
+          Dio(
+            BaseOptions(
+              connectTimeout: const Duration(seconds: 2),
+              receiveTimeout: const Duration(seconds: 2),
+            ),
+          );
+      final ipRes = await dio.get('https://api.ipify.org?format=json');
+      if (ipRes.statusCode == 200 && ipRes.data != null) {
+        if (ipRes.data is Map) {
+          context['public_ip'] = ipRes.data['ip']?.toString() ?? 'unavailable';
+        } else if (ipRes.data is String) {
+          context['public_ip'] = ipRes.data.toString().trim();
+        }
+      }
+    } catch (_) {
+      context['public_ip'] = 'unavailable';
     }
 
     return context;

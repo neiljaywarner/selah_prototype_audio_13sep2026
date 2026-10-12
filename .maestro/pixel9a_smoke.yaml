@@ -1,0 +1,12 @@
+# Maestro Pixel 9a Smoke Test Flow
+appId: com.example.selah_prototype_audio_13sep2026
+---
+- launchApp:
+    clearState: false
+- assertVisible:
+    text: "SELAH"
+    optional: true
+- tapOn:
+    text: "Matt 11:28–30"
+    optional: true
+- takeScreenshot: docs/artifacts/screenshots/maestro_pixel9a_verified
