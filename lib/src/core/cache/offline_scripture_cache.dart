@@ -108,5 +108,35 @@ class OfflineScriptureCache {
         'My soul finds rest in God alone; my salvation comes from Him. He alone is my rock and my salvation; He is my fortress, I will never be shaken.',
     'WEB.PSA.62':
         'Truly my soul finds rest in God; my salvation comes from him. Truly he is my rock and my salvation; he is my fortress, I will never be shaken.',
+
+    // Psalm 91:1–4 (Level 2 #95)
+    'BSB.PSA.91':
+        'He who dwells in the shelter of the Most High will abide in the shadow of the Almighty. I will say of the LORD, "He is my refuge and my fortress, my God, in whom I trust." Surely He will deliver you from the snare of the fowler and from the deadly plague. He will cover you with His feathers, and under His wings you will find refuge; His faithfulness will be your shield and rampart.',
+    'WEB.PSA.91':
+        'He who dwells in the secret place of the Most High will rest in the shadow of the Almighty. I will say of Yahweh, "He is my refuge and my fortress; my God, in whom I trust." For he will deliver you from the snare of the fowler, and from the deadly pestilence. He will cover you with his feathers. Under his wings you will take refuge. His faithfulness is your shield and rampart.',
+
+    // John 3:16–17 (Level 2 #95)
+    'BSB.JHN.3':
+        'For God so loved the world that He gave His one and only Son, that everyone who believes in Him shall not perish but have eternal life. For God did not send His Son into the world to condemn the world, but to save the world through Him.',
+    'WEB.JHN.3':
+        'For God so loved the world, that he gave his one and only Son, that whoever believes in him should not perish, but have eternal life. For God didn\'t send his Son into the world to judge the world, but that the world should be saved through him.',
+
+    // Proverbs 3:5–6 (Level 2 #95)
+    'BSB.PRO.3':
+        'Trust in the LORD with all your heart, and lean not on your own understanding; in all your ways acknowledge Him, and He will make your paths straight.',
+    'WEB.PRO.3':
+        'Trust in Yahweh with all your heart, and don\'t lean on your own understanding. In all your ways acknowledge him, and he will make your paths straight.',
+
+    // Isaiah 40:28–31 (Level 2 #95)
+    'BSB.ISA.40':
+        'Do you not know? Have you not heard? The LORD is the everlasting God, the Creator of the ends of the earth. He will not grow tired or weary, and His understanding no one can fathom. He gives strength to the weary and increases the power of the weak. Even youths grow tired and weary, and young men stumble and fall; but those who wait upon the LORD will renew their strength. They will soar on wings like eagles; they will run and not grow weary, they will walk and not faint.',
+    'WEB.ISA.40':
+        'Haven\'t you known? Haven\'t you heard? The everlasting God, Yahweh, the Creator of the ends of the earth, doesn\'t faint. He isn\'t weary. His understanding is unsearchable. He gives power to the weak. He increases the strength of him who has no might. Even the youths faint and get weary, and the young men utterly fall; but those who wait for Yahweh will renew their strength. They will mount up with wings like eagles. They will run, and not be weary. They will walk, and not faint.',
+
+    // Romans 12:1–2 (Level 2 #95)
+    'BSB.ROM.12':
+        'Therefore I urge you, brothers, on account of God\'s mercy, to present your bodies as living sacrifices, holy and pleasing to God, which is your spiritual service of worship. Do not be conformed to this world, but be transformed by the renewing of your mind. Then you will be able to test and approve what is the good, pleasing, and perfect will of God.',
+    'WEB.ROM.12':
+        'Therefore I urge you, brothers, by the mercies of God, to present your bodies a living sacrifice, holy, acceptable to God, which is your spiritual service. Don\'t be conformed to this world, but be transformed by the renewing of your mind, so that you may prove what is the good, well-pleasing, and perfect will of God.',
   };
 }

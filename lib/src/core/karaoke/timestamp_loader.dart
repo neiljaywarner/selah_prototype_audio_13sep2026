@@ -29,6 +29,7 @@ class VerseTimestamp {
 class TimestampLoaderService {
   /// Set of chapters with pre-compiled WhisperX verse timestamps in assets/timestamps/
   static const Set<String> _knownTimestampChapters = {
+    // Level 1: Soft Launch Baseline (6 Curated)
     'MRK_5',
     'MAT_11',
     'PSA_62',
@@ -37,6 +38,14 @@ class TimestampLoaderService {
     '1CO_13',
     '1COR_13',
     'COL_1',
+
+    // Level 2: Top 12 Contemplative Passages (#95)
+    'PSA_91',
+    'JHN_3',
+    'PHP_4',
+    'PRO_3',
+    'ISA_40',
+    'ROM_12',
   };
 
   /// Returns true if the requested book and chapter have local WhisperX timestamps.
