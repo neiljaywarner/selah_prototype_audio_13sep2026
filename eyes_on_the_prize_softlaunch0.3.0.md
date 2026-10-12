@@ -53,9 +53,10 @@ Rather than cluttering the app with half-finished social voting or complex drivi
 | **M7** | Create Wiki Issue & Documentation Architecture | 2026-10-12 00:44 | 2026-10-12 00:45 | **COMPLETE** | GitHub Issue [#77](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/77) |
 | **M8** | A/B Experiment Setup (Remote Config Knobs) | 2026-10-12 00:49 | 2026-10-12 00:50 | **COMPLETE** | GitHub Issue [#79](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/79) |
 | **M9** | Modularization Sub-Issues (Prayer, Memorization, Meditation) | 2026-10-12 00:50 | 2026-10-12 00:51 | **COMPLETE** | GitHub Issues [#80](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/80), [#81](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/81), [#82](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/82) |
-| **M10** | Firebase Analytics Clean Integration across Platforms | 2026-10-12 00:55 | IN-PROGRESS | **IN-PROGRESS** | GitHub Issue [#71](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/71) |
-| **M11** | Merge Working Branch to Main via MCP | 2026-10-12 01:15 | PENDING | **PENDING** | Audited PR merge protocol |
-| **M12** | Production Web Build & Firebase Deploy | 2026-10-12 01:30 | PENDING | **PENDING** | `https://selahword.web.app` |
+| **M10** | Dynamic Knob A/B Telemetry & Event Dispatch | 2026-10-12 00:52 | 2026-10-12 00:59 | **COMPLETE** | PR [#84](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/84) merged |
+| **M11** | Merge Working Release Branch to Main via MCP | 2026-10-12 00:51 | 2026-10-12 00:52 | **COMPLETE** | PR [#63](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/63) merged (`693f059`) |
+| **M12** | Production Web Build & Firebase Deploy | 2026-10-12 01:00 | 2026-10-12 01:02 | **COMPLETE** | Live at [`https://selahword.web.app`](https://selahword.web.app) |
+| **M13** | Release Tag & CHANGELOG Documentation | 2026-10-12 01:02 | 2026-10-12 01:03 | **COMPLETE** | Tag `v0.2.4`, PR [#85](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/85) merged |
 
 ---
 

@@ -1,0 +1,49 @@
+name: Deploy PR Preview Channel
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  deployments: write
+
+jobs:
+  precheck_and_deploy:
+    name: Pre-Flight WTF Scan & Preview Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: AI Pre-Deployment Safety & Quality Scan
+        run: python3 scripts/preview_channel_precheck.py
+
+      - name: Build Flutter Web Release
+        run: flutter build web --release
+
+      - name: Deploy to Firebase Hosting Preview Channel
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        id: deploy
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SELAHWORDAPP }}'
+          projectId: selahwordapp
+          channelId: 'pr-${{ github.event.number }}'
+          expires: 7d

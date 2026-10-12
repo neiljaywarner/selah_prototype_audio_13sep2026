@@ -12,11 +12,18 @@ export 'feature_voting_service.dart';
 const String kUserorientKey = String.fromEnvironment('USERORIENT_KEY', defaultValue: '');
 const String kDoorbellAppId = String.fromEnvironment('DOORBELL_APP_ID', defaultValue: '');
 const String kDoorbellApiKey = String.fromEnvironment('DOORBELL_API_KEY', defaultValue: '');
+const String kGitHubFeedbackToken = String.fromEnvironment('GITHUB_FEEDBACK_TOKEN', defaultValue: '');
 
 class FeedbackService {
   static bool get isFlutterTest => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
   static bool get hasUserorientKey => kUserorientKey.isNotEmpty && kUserorientKey != 'REDACTED';
   static bool get hasDoorbellConfig => kDoorbellAppId.isNotEmpty && kDoorbellApiKey.isNotEmpty;
+  static bool hasGitHubConfig([String? overrideToken]) {
+    final token = (overrideToken != null && overrideToken.trim().isNotEmpty)
+        ? overrideToken.trim()
+        : kGitHubFeedbackToken;
+    return token.isNotEmpty && token != 'REDACTED';
+  }
   static const String defaultFeedbackEmail = 'neilwarner+selah@gmail.com';
   static const String privateGitHubRepo = 'njwandroid/selahfeedback';
 
@@ -224,12 +231,85 @@ class FeedbackService {
     return true;
   }
 
-  /// Submits BetterFeedback visual feedback with screenshot, telemetry, Doorbell, and Firestore persistence.
+  /// Submits an issue to the private triage repository `njwandroid/selahfeedback`.
+  static Future<bool> submitGitHubIssueFeedback({
+    required String title,
+    required String body,
+    List<String>? labels,
+    String? token,
+    Dio? dioClient,
+  }) async {
+    final effectiveToken = (token != null && token.trim().isNotEmpty)
+        ? token.trim()
+        : kGitHubFeedbackToken;
+
+    if (isFlutterTest && dioClient == null) {
+      AppLogger.info('Test environment active: skipping live GitHub Issue creation.');
+      return true;
+    }
+
+    if (!hasGitHubConfig(effectiveToken)) {
+      AppLogger.info('GitHub feedback token unconfigured; skipped GitHub issue creation.');
+      return false;
+    }
+
+    try {
+      final dio = dioClient ??
+          Dio(
+            BaseOptions(
+              connectTimeout: const Duration(seconds: 10),
+              receiveTimeout: const Duration(seconds: 10),
+            ),
+          );
+
+      final url = 'https://api.github.com/repos/$privateGitHubRepo/issues';
+      final payload = {
+        'title': title,
+        'body': body,
+        if (labels != null && labels.isNotEmpty) 'labels': labels,
+      };
+
+      final response = await dio.post(
+        url,
+        data: payload,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $effectiveToken',
+            'Accept': 'application/vnd.github.v3+json',
+            'User-Agent': 'Selah-Scripture-Audio-Meditation/0.3.1',
+          },
+        ),
+      );
+      final isSuccess = response.statusCode == 200 || response.statusCode == 201;
+
+      if (isSuccess) {
+        AppLogger.info(
+          'GitHub feedback issue created successfully in $privateGitHubRepo (status: ${response.statusCode})',
+        );
+        AppLogger.logEvent('github_feedback_issue_created', {
+          'status': response.statusCode,
+          'repo': privateGitHubRepo,
+        });
+      } else {
+        AppLogger.warning('GitHub issue response non-200: ${response.statusCode}');
+      }
+      return isSuccess;
+    } catch (e, stack) {
+      AppLogger.error('GitHub feedback submission error to $privateGitHubRepo',
+          error: e, stackTrace: stack);
+      return false;
+    }
+  }
+
+  /// Submits BetterFeedback visual feedback with screenshot, telemetry, Doorbell, Firestore,
+  /// and private GitHub Issues triage queue (`njwandroid/selahfeedback`).
   static Future<void> submitBetterFeedback({
     required UserFeedback feedback,
     int rating = 4,
     String face = 'neutral',
     String? email,
+    String? githubToken,
+    Dio? dioClient,
   }) async {
     final clientContext = await AppDeviceInfoService.getClientContext();
     final bool hasScreenshot = feedback.screenshot.isNotEmpty;
@@ -266,6 +346,7 @@ class FeedbackService {
         ...clientContext,
         if (screenshotBase64 != null) 'screenshot_len': screenshotSize,
       },
+      dioClient: dioClient,
     );
 
     // 3. Forward to Doorbell.io with Doorbell success/failure tracking
@@ -276,21 +357,66 @@ class FeedbackService {
         email: email,
         sentiment: face == 'happy' ? 'positive' : (face == 'neutral' ? 'neutral' : 'negative'),
         nps: nps,
-        tags: [face, 'screenshot', 'v0.2.4'],
+        tags: [face, 'screenshot', 'v0.3.1'],
         properties: {
           'has_screenshot': hasScreenshot,
           'screenshot_bytes': screenshotSize,
           ...clientContext,
         },
+        dioClient: dioClient,
+      );
+    }
+
+    // 4. Create Issue in private triage hub (njwandroid/selahfeedback) if token available
+    bool gitHubSuccess = false;
+    final effectiveGhToken = (githubToken != null && githubToken.trim().isNotEmpty)
+        ? githubToken.trim()
+        : kGitHubFeedbackToken;
+
+    if (hasGitHubConfig(effectiveGhToken) || (isFlutterTest && dioClient != null)) {
+      final summarySnippet = feedback.text.trim().isNotEmpty
+          ? (feedback.text.trim().length > 60
+              ? '${feedback.text.trim().substring(0, 60)}...'
+              : feedback.text.trim())
+          : 'Visual Feedback Annotation';
+      final issueTitle =
+          '[Feedback] ${face == 'happy' ? '😊' : (face == 'neutral' ? '😐' : '😞')} ($rating/5) - $summarySnippet';
+
+      final issueBody = '''
+### 🕊️ User Feedback Reflection
+${feedback.text.trim().isNotEmpty ? feedback.text.trim() : '_No text comment provided (drawing only)_'}
+
+---
+
+### 📱 Client & Device Context
+- **Sentiment**: $face (${face == 'happy' ? '😊 Loving it' : (face == 'neutral' ? '😐 It is okay' : '😞 Needs work')})
+- **Rating**: $rating / 5
+- **NPS Score**: $nps
+- **User Email**: ${email ?? 'anonymous@selah.app'}
+- **Platform**: ${clientContext['platform']}
+- **App Version**: ${clientContext['app_version']}
+- **Device Model**: ${clientContext['device_model']}
+- **Timestamp (UTC)**: ${DateTime.now().toUtc().toIso8601String()}
+- **Annotated Screenshot**: ${hasScreenshot ? 'Captured ($screenshotSize bytes)' : 'None'}
+''';
+
+      gitHubSuccess = await submitGitHubIssueFeedback(
+        title: issueTitle,
+        body: issueBody,
+        labels: ['user-feedback', face, if (hasScreenshot) 'screenshot'],
+        token: effectiveGhToken,
+        dioClient: dioClient,
       );
     }
 
     stopwatch.stop();
 
-    // 4. Log latency and delivery status
+    // 5. Log latency and delivery status
     AppLogger.logEvent('feedback_delivery_completed', {
       'doorbell_success': doorbellSuccess,
       'has_doorbell_config': hasDoorbellConfig,
+      'github_success': gitHubSuccess,
+      'has_github_config': hasGitHubConfig(effectiveGhToken),
       'latency_ms': stopwatch.elapsedMilliseconds,
       'nps': nps,
     });

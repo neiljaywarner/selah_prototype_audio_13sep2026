@@ -9,6 +9,8 @@ const String kFirestoreProjectId =
     String.fromEnvironment('FIRESTORE_PROJECT_ID', defaultValue: 'selahwordapp');
 const bool kEnableTopicTabsEnv =
     bool.fromEnvironment('ENABLE_TOPIC_TABS', defaultValue: false);
+const String kGitHubFeedbackTokenEnv =
+    String.fromEnvironment('GITHUB_FEEDBACK_TOKEN', defaultValue: '');
 
 /// Immutable data model containing resolved Selah remote configuration values.
 class SelahRemoteConfig {
@@ -21,6 +23,7 @@ class SelahRemoteConfig {
   final bool feedbackBoardEnabled;
   final bool featureVotingEnabled;
   final String knobOptions;
+  final String githubFeedbackToken;
 
   const SelahRemoteConfig({
     this.enableTopicTabs = kEnableTopicTabsEnv,
@@ -32,6 +35,7 @@ class SelahRemoteConfig {
     this.feedbackBoardEnabled = true,
     this.featureVotingEnabled = false,
     this.knobOptions = '1,3,7,-1',
+    this.githubFeedbackToken = kGitHubFeedbackTokenEnv,
   });
 
   List<int> get parsedKnobOptions {
@@ -58,6 +62,7 @@ class SelahRemoteConfig {
     bool? feedbackBoardEnabled,
     bool? featureVotingEnabled,
     String? knobOptions,
+    String? githubFeedbackToken,
   }) {
     return SelahRemoteConfig(
       enableTopicTabs: enableTopicTabs ?? this.enableTopicTabs,
@@ -69,6 +74,7 @@ class SelahRemoteConfig {
       feedbackBoardEnabled: feedbackBoardEnabled ?? this.feedbackBoardEnabled,
       featureVotingEnabled: featureVotingEnabled ?? this.featureVotingEnabled,
       knobOptions: knobOptions ?? this.knobOptions,
+      githubFeedbackToken: githubFeedbackToken ?? this.githubFeedbackToken,
     );
   }
 
@@ -82,6 +88,7 @@ class SelahRemoteConfig {
         'feedback_board_enabled': feedbackBoardEnabled,
         'feature_voting_enabled': featureVotingEnabled,
         'knob_options': knobOptions,
+        'github_feedback_token': githubFeedbackToken,
       };
 
   factory SelahRemoteConfig.fromJson(Map<String, dynamic> json) {
@@ -96,6 +103,8 @@ class SelahRemoteConfig {
       feedbackBoardEnabled: (json['feedback_board_enabled'] as bool?) ?? true,
       featureVotingEnabled: (json['feature_voting_enabled'] as bool?) ?? false,
       knobOptions: (json['knob_options'] as String?) ?? '1,3,7,-1',
+      githubFeedbackToken:
+          (json['github_feedback_token'] as String?) ?? kGitHubFeedbackTokenEnv,
     );
   }
 }
@@ -176,6 +185,9 @@ class RemoteConfigService {
           }
           if (fields['enable_emoji_feedback']?['booleanValue'] != null) {
             parsed['enable_emoji_feedback'] = fields['enable_emoji_feedback']['booleanValue'];
+          }
+          if (fields['github_feedback_token']?['stringValue'] != null) {
+            parsed['github_feedback_token'] = fields['github_feedback_token']['stringValue'];
           }
 
           _currentValues = {..._currentValues, ...parsed};
