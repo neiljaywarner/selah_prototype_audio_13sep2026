@@ -38,29 +38,24 @@ During this session, we completed the final review, hardening, and verification 
 | **M8: Reusable AI PR Triage Skill** | Create `.agents/skills/pr-coderabbit-triage-and-merge` skill, CLI scripts, and README docs | 2026-10-11 16:56:00 | 2026-10-11 16:58:30 | ✅ Complete | [Skill README](.agents/skills/pr-coderabbit-triage-and-merge/README.md); linked in [README.md](README.md) |
 | **M9: v0.3.0 Roadmap & Ticket Rule Codification** | Author `ROADMAP_v0.3.0.md`, codify ticket-driven rules in `GEMINI.md` and `.agents/rules/` | 2026-10-11 17:01:30 | 2026-10-11 17:03:00 | ✅ Complete | [ROADMAP_v0.3.0.md](ROADMAP_v0.3.0.md), [GEMINI.md](GEMINI.md), [.agents/rules/ticket_driven_development.md](.agents/rules/ticket_driven_development.md) |
 | **M10: Curated Passage Chips & WhisperX Excerpts** | Streamline presets to 4 compact demo chips (1 Cor 13, Matt 11, Rom 8, Psalm 23), add BSB/WEB WhisperX timestamps, update PassageExcerpt domain & offline cache | 2026-10-11 17:08:00 | 2026-10-11 17:17:30 | ✅ Complete | 54/54 tests pass; `flutter analyze` 0 warnings; [Issue #17](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/17) |
-| **M11: Milestone v0.2.4 & Strategic Issue Architecture** | Created milestone `v0.2.4`, assigned #17 and PR #18, filed #19 (Whole-Bible WhisperX), #20 (Retrofit), #21 (Theme extraction), #22 (CI PR Gateway), added non-curated verse range coming-soon notice | 2026-10-11 17:23:00 | 2026-10-11 17:26:00 | ✅ Complete | [Milestone v0.2.4](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/milestone/2), Issues #19, #20, #21, #22 |
+| **M12: Patrol Finders Migration for Tests** | Integrated `patrol_finders: ^3.6.0` and migrated player attribution widget test | 2026-10-11 18:41:40 | 2026-10-11 18:43:52 | ✅ Complete | [PR #32](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/32) merged; Issue #31 closed |
+| **M13: Matthew 11 & Romans 8 RCA & Recalibration** | Root-cause analysis of naive segment loop, recalibrated true silence boundaries for BSB & WEB | 2026-10-11 18:35:00 | 2026-10-11 18:58:10 | ✅ Complete | [MAT_11.json](assets/timestamps/BSB/MAT_11.json), [ROM_8.json](assets/timestamps/BSB/ROM_8.json) |
+| **M14: Calibration Engine & Safe API.Bible CLI** | Authored `verify_and_calibrate_timestamps.py` and `api_bible_fetch.sh` with strict copyright guard | 2026-10-11 18:53:00 | 2026-10-11 18:57:30 | ✅ Complete | [verify_and_calibrate_timestamps.py](scripts/verify_and_calibrate_timestamps.py), [api_bible_fetch.sh](scripts/api_bible_fetch.sh) |
+| **M15: Alignment Runbook, Wiki ADR & AI Skill** | Created README runbook, Wiki ADR & user guide, and AI skills for WhisperX and API.Bible | 2026-10-11 18:58:30 | 2026-10-11 19:01:00 | ✅ Complete | [README_WHISPERX_AND_TIMESTAMPS.md](README_WHISPERX_AND_TIMESTAMPS.md), [.agents/skills/whisperx-timestamp-alignment](.agents/skills/whisperx-timestamp-alignment/SKILL.md) |
 
 ---
 
 ## 📍 Where We Are Right Now & Next 3 Priorities
 
 ### Current State
-* **Working Tree:** Cleaned up, tested, verified with zero static analysis warnings or leaks.
-* **Audio Engine:** Full chapter streaming with WhisperX karaoke highlighting, curated excerpt support (`PassageExcerpt`), and repetition management.
-* **Issues Backlog:** Non-critical feedback cleanly tracked in GitHub issues for future sprints.
+* **Working Tree:** Calibrated, verified, 61/61 tests passing green, zero static analysis issues.
+* **Audio Engine:** Excerpt clipping active with sub-millisecond precision on 4 curated passages across BSB and WEB.
+* **Timestamp Engine:** Automated acoustic silence profiling and speech velocity validation active.
 
 ### Next 3 Tactical Priorities
-1. **Background Audio & Lockscreen Controls**: Implement lockscreen playback controls and background service support ([Issue #6](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/6)):
-   - **Progress Made**:
-     - Upgraded audio player source architecture from `setUrl` + `setClip` to native `ClippingAudioSource(start: window.start, end: window.end)`.
-     - Confirmed sub-millisecond excerpt clipping and verified 1 Cor 13:4–7 starts cleanly at verse 4 ("Love is patient...") on physical Google Pixel 9a.
-     - Fixed repeat loop iteration bug by eliminating redundant `setClip` calls and using `_audioPlayer.seek(Duration.zero)`.
-     - Captured verified visual artifact on Pixel 9a (`docs/artifacts/screenshots/pixel9a_matt11_clipped.png`) with active karaoke highlighting at 00:17/00:23.
-   - **Next Steps**: Configure `just_audio_background` notification actions and test lockscreen wake-lock stability during extended walking sessions.
-2. **Curated Timestamps Calibration (Matthew 11 & Romans 8)**:
-   - Recalibrate `MAT_11.json` starting timestamp to true verse 28 ("Come to Me...") boundary so it begins precisely on verse 28 rather than verse 19 ("drinking").
-3. **PR #24 Final Verification & Submission**:
-   - Merge Gherkin BDD specs, PRD, and Marionette runbooks with PR Readiness Grade (`A-`).
+1. **Submit PR for Issue #33 & Merge**: Package calibrated assets, tools, runbooks, and tests into PR #35 for Issue #33.
+2. **Lockscreen & Background Media Notification Controls**: Implement background notification actions via `just_audio_background` (Issue #6).
+3. **Investigate NIV & Proprietary Passage Clipping Feasibility**: Evaluate ephemeral slicing compliance with Biblica (Issue #34).
 
 ---
 

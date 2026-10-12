@@ -57,13 +57,13 @@ void main() {
 
       final bsbWindow = excerpt.clipWindow(_load('assets/timestamps/BSB/MAT_11.json'));
       expect(bsbWindow, isNotNull);
-      expect(bsbWindow!.start, const Duration(milliseconds: 148000));
-      expect(bsbWindow.end, const Duration(milliseconds: 171500));
+      expect(bsbWindow!.start, const Duration(milliseconds: 257570));
+      expect(bsbWindow.end, const Duration(milliseconds: 277800));
 
       final webWindow = excerpt.clipWindow(_load('assets/timestamps/WEB/MAT_11.json'));
       expect(webWindow, isNotNull);
-      expect(webWindow!.start, const Duration(milliseconds: 148000));
-      expect(webWindow.end, const Duration(milliseconds: 171200));
+      expect(webWindow!.start, const Duration(milliseconds: 235330));
+      expect(webWindow.end, const Duration(milliseconds: 250400));
     });
 
     test('Romans 8 is curated as verses 31-39', () {
@@ -75,13 +75,13 @@ void main() {
 
       final bsbWindow = excerpt.clipWindow(_load('assets/timestamps/BSB/ROM_8.json'));
       expect(bsbWindow, isNotNull);
-      expect(bsbWindow!.start, const Duration(milliseconds: 205000));
-      expect(bsbWindow.end, const Duration(milliseconds: 277000));
+      expect(bsbWindow!.start, const Duration(milliseconds: 301150));
+      expect(bsbWindow.end, const Duration(milliseconds: 387700));
 
       final webWindow = excerpt.clipWindow(_load('assets/timestamps/WEB/ROM_8.json'));
       expect(webWindow, isNotNull);
-      expect(webWindow!.start, const Duration(milliseconds: 205000));
-      expect(webWindow.end, const Duration(milliseconds: 277000));
+      expect(webWindow!.start, const Duration(milliseconds: 254300));
+      expect(webWindow.end, const Duration(milliseconds: 321600));
     });
 
     test('Psalm 23 is curated as verses 1-6', () {
