@@ -517,38 +517,47 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                     builder: (context) {
                       final savedList = userPrefs.savedChapters;
                       final savedSet = savedList.map((s) => s.toLowerCase().trim()).toSet();
-                      final remainingPresets = kFeaturedChapters
-                          .where((c) => !savedSet.contains(c.reference.toLowerCase().trim()))
-                          .toList();
-                      final totalCount = savedList.length + remainingPresets.length;
+                      final allChips = <({String label, ChapterInfo? chapter, bool isSaved})>[
+                        ...kFeaturedChapters.map((c) => (
+                              label: c.displayTitle ?? c.reference,
+                              chapter: c as ChapterInfo?,
+                              isSaved: savedSet.contains(c.reference.toLowerCase().trim()),
+                            )),
+                        ...savedList
+                            .where((s) => !kFeaturedChapters.any((c) =>
+                                c.reference.toLowerCase().trim() == s.toLowerCase().trim() ||
+                                (c.displayTitle ?? '').toLowerCase().trim() == s.toLowerCase().trim()))
+                            .map((s) => (
+                                  label: s,
+                                  chapter: null as ChapterInfo?,
+                                  isSaved: true,
+                                )),
+                      ];
 
                       return ListView.separated(
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
-                        itemCount: totalCount,
+                        itemCount: allChips.length,
                         separatorBuilder: (context, index) => const SizedBox(width: 8),
                         itemBuilder: (context, index) {
-                          if (index < savedList.length) {
-                            final refStr = savedList[index];
-                            final isSelected = playerState.currentChapter.reference.toLowerCase().trim() ==
-                                refStr.toLowerCase().trim();
-                            return _PresetChip(
-                              label: refStr,
-                              isSelected: isSelected,
-                              isBookmarked: true,
-                              onTap: () => _handleSearchSubmit(refStr),
-                            );
-                          } else {
-                            final chapter = remainingPresets[index - savedList.length];
-                            final isSelected =
-                                playerState.currentChapter.reference == chapter.reference;
-                            return _PresetChip(
-                              label: chapter.reference,
-                              isSelected: isSelected,
-                              isBookmarked: false,
-                              onTap: () => notifier.loadChapter(chapter),
-                            );
-                          }
+                          final item = allChips[index];
+                          final isSelected = playerState.currentChapter.reference.toLowerCase().trim() ==
+                                  item.label.toLowerCase().trim() ||
+                              (playerState.currentChapter.displayTitle ?? '').toLowerCase().trim() ==
+                                  item.label.toLowerCase().trim();
+
+                          return _PresetChip(
+                            label: item.label,
+                            isSelected: isSelected,
+                            isBookmarked: item.isSaved,
+                            onTap: () {
+                              if (item.chapter != null) {
+                                notifier.loadChapter(item.chapter!);
+                              } else {
+                                _handleSearchSubmit(item.label);
+                              }
+                            },
+                          );
                         },
                       );
                     },
@@ -910,12 +919,45 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Text(
-                            'Loop ${playerState.currentIteration} of ${playerState.repetitions == -1 ? "∞" : playerState.repetitions}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFFFBBF24),
-                              fontWeight: FontWeight.bold,
+                          GestureDetector(
+                            key: const Key('cycle_repetitions_chip'),
+                            onTap: () {
+                              const repsList = [1, 3, 7, -1];
+                              final currentIdx = repsList.indexOf(playerState.repetitions);
+                              final nextReps = repsList[(currentIdx + 1) % repsList.length];
+                              notifier.setRepetitions(nextReps);
+                              final label = nextReps == -1 ? 'Continuous ∞ Loop' : '${nextReps}x Repeat';
+                              ScaffoldMessenger.of(context).removeCurrentSnackBar();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Walking Repetitions: $label'),
+                                  duration: const Duration(seconds: 2),
+                                  backgroundColor: const Color(0xFF4338CA),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFBBF24).withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFFBBF24).withValues(alpha: 0.4)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.repeat_rounded, color: Color(0xFFFBBF24), size: 14),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Loop ${playerState.currentIteration} of ${playerState.repetitions == -1 ? "∞" : playerState.repetitions}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFFFBBF24),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],

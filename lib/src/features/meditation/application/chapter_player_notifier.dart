@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
+import 'package:audio_session/audio_session.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:just_audio/just_audio.dart';
@@ -59,6 +62,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
     _initAudioListeners();
     _initTtsEngine();
+    _initAudioSession();
 
     ref.onDispose(() {
       _posSub?.cancel();
@@ -85,6 +89,19 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       currentChapter: kFeaturedChapters[0],
       activeTranslation: initialTranslation,
     );
+  }
+
+  Future<void> _initAudioSession() async {
+    if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) {
+      return;
+    }
+    try {
+      final session = await AudioSession.instance;
+      await session.configure(const AudioSessionConfiguration.music());
+      AppLogger.info('AudioSession configured with Music profile for background audio playback.');
+    } catch (e) {
+      AppLogger.warning('AudioSession configuration notice: $e');
+    }
   }
 
   void _initAudioListeners() {
