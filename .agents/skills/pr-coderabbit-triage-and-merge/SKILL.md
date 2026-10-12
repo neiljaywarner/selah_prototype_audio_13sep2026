@@ -18,14 +18,14 @@ Use this skill when closing or merging a pull request that has automated or manu
 ### 0. Mandatory Wait for Automated Review Bots (CodeRabbit / CI)
 Before running triage:
 1. **Allow Review Bot Execution**: CodeRabbit typically takes 2–4 minutes after a PR is opened or new commits are pushed to analyze code diffs, run LLM heuristics, and post review comments.
-2. **Verification Condition**: Wait until CodeRabbit finishes its review (e.g. check for review comments or summary comment `<!-- This is an auto-generated comment by CodeRabbit -->` on the PR, or wait at least 3 minutes). NEVER run triage immediately within 30 seconds of PR creation!
+2. **Verification Condition**: Triage MUST always wait at least 180 seconds after PR creation or the latest commit. Review completion (such as summary comments `<!-- This is an auto-generated comment by CodeRabbit -->` or review status) should only serve as a reason to wait longer if still in progress, NEVER as a substitute for bypassing the minimum 180-second delay. NEVER run triage immediately within 30 seconds of PR creation!
 3. **Timer / Reactive Wait**: Use `schedule(DurationSeconds=180, ...)` if needed to wait for CodeRabbit before executing triage scripts.
 
 ### 1. Inventory & Triage Comments
 Run the triage helper script to fetch and classify all open review comments on the PR:
 
 ```bash
-python3 .agents/skills/pr-coderabbit-triage-and-merge/scripts/triage_pr_comments.py --pr <pr_number>
+python3 .agents/skills/pr-coderabbit-triage-and-merge/scripts/triage_pr_comments.py --pr 116  # replace 116 with the target PR number
 ```
 
 *For JSON output to programmatically parse items:*
