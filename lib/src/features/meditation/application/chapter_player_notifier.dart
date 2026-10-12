@@ -146,7 +146,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       final pStateStr = playerState.processingState.toString().split('.').last;
       state = state.copyWith(isPlaying: playerState.playing, processingStateName: pStateStr);
 
-      if (playerState.processingState == ProcessingState.completed && state.isPlaying) {
+      if (playerState.processingState == ProcessingState.completed && !state.isPausedInGap) {
         AppLogger.info('Chapter completed iteration ${state.currentIteration}');
         _handleChapterPlaybackComplete();
       }
@@ -167,9 +167,14 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
               'audio_mode': state.audioMode.name,
             },
           );
-          _switchToTtsFallback(
-            'Audio stream blocked or unavailable. Switched to Text-to-Speech (TTS).',
-          );
+          if (state.currentChapter.audioStreamUrl.startsWith('assets/')) {
+            AppLogger.info('Attempting recovery of bundled narrator asset after playback error');
+            loadChapter(state.currentChapter);
+          } else {
+            _switchToTtsFallback(
+              'Audio stream blocked or unavailable. Switched to Text-to-Speech (TTS).',
+            );
+          }
         }
       },
     );
@@ -698,6 +703,13 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     AppLogger.logEvent('change_setting', {'setting': 'repetitions', 'value': reps});
   }
 
+  void cycleRepetitions() {
+    const repsList = [1, 3, 7, -1];
+    final currentIdx = repsList.indexOf(state.repetitions);
+    final nextReps = repsList[(currentIdx + 1) % repsList.length];
+    setRepetitions(nextReps);
+  }
+
   void setPauseGap(int seconds) {
     state = state.copyWith(pauseGapSeconds: seconds);
     AppLogger.logEvent('change_setting', {'setting': 'pauseGapSeconds', 'value': seconds});
@@ -756,6 +768,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     state = state.copyWith(isPausedInGap: true, highlightStart: 0, highlightEnd: 0);
     AppLogger.info('Entering silent reflection gap (${state.pauseGapSeconds}s)...');
 
+    _gapTimer?.cancel();
     if (state.pauseGapSeconds == 0) {
       _startNextIteration();
     } else {
@@ -784,9 +797,11 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   Future<void> _startNextIteration() async {
-    AppLogger.info('Starting repetition ${state.currentIteration + 1}');
+    final nextIteration = state.currentIteration + 1;
+    final repLabel = state.repetitions == -1 ? '∞' : '${state.repetitions}';
+    AppLogger.info('Starting repetition $nextIteration (loop $nextIteration of $repLabel)');
     state = state.copyWith(
-      currentIteration: state.currentIteration + 1,
+      currentIteration: nextIteration,
       isPausedInGap: false,
       isPlaying: true,
     );
@@ -797,17 +812,18 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
 
     if (state.audioMode == AudioMode.narrator) {
-      final window = PassageExcerpt.forChapter(
-        state.currentChapter.bookCode,
-        state.currentChapter.chapterNumber,
-      )?.clipWindow(_currentTimestamps);
-
-      if (window != null) {
-        _clipOffset = window.start;
-        await _audioPlayer.setClip(start: window.start, end: window.end);
+      try {
+        AppLogger.info('Seeking narrator player to Duration.zero for loop $nextIteration of $repLabel');
+        await _audioPlayer.seek(Duration.zero);
+        await _audioPlayer.play();
+      } catch (e, stack) {
+        AppLogger.error(
+          'Failed to seek/play next iteration $nextIteration, recovering audio source',
+          error: e,
+          stackTrace: stack,
+        );
+        await loadChapter(state.currentChapter);
       }
-      await _audioPlayer.seek(Duration.zero);
-      _audioPlayer.play();
     } else {
       await _flutterTts.speak(state.currentChapter.textContent);
     }
