@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/feedback/feedback_service.dart';
+import 'emoji_feedback_dialog.dart';
 
 class FeatureVotingSheet extends ConsumerStatefulWidget {
   const FeatureVotingSheet({super.key});
@@ -406,6 +408,7 @@ class _DirectFeedbackSection extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
+            key: const Key('submit_doorbell_feedback_button'),
             onPressed: isSubmitting ? null : onSubmit,
             icon: isSubmitting
                 ? const SizedBox(
@@ -422,6 +425,62 @@ class _DirectFeedbackSection extends StatelessWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const Key('open_emoji_feedback_from_sheet_button'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Text('🕊️', style: TextStyle(fontSize: 14)),
+                label: const Text('Emoji Reflection', style: TextStyle(fontSize: 11)),
+                onPressed: () {
+                  final rootNav = Navigator.of(context, rootNavigator: true);
+                  rootNav.pop();
+                  EmojiFeedbackDialog.show(rootNav.context);
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const Key('copy_email_neil_button'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFFBBF24),
+                  side: BorderSide(color: const Color(0xFFFBBF24).withValues(alpha: 0.4)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(Icons.email_outlined, size: 14, color: Color(0xFFFBBF24)),
+                label: const Text('Email Neil Directly', style: TextStyle(fontSize: 11)),
+                onPressed: () {
+                  final feedbackText = feedbackController.text.trim();
+                  Clipboard.setData(ClipboardData(
+                    text: 'To: ${FeedbackService.defaultFeedbackEmail}\n'
+                        'Subject: [Selah Feedback] Experience / Suggestion\n\n'
+                        'Sentiment: $selectedSentiment\n'
+                        'NPS: $selectedNps/10\n\n'
+                        'Feedback:\n${feedbackText.isNotEmpty ? feedbackText : "(Enter your reflection/prayer here)"}',
+                  ));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Email copied! Send to neilwarner+selah@gmail.com',
+                      ),
+                      backgroundColor: Color(0xFF4338CA),
+                      duration: Duration(seconds: 4),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ],
     );

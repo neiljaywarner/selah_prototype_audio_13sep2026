@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/chapter_player_notifier.dart';
 import '../../domain/bible_translation.dart';
+import 'emoji_feedback_dialog.dart';
 
 class SettingsBottomSheet extends ConsumerWidget {
   const SettingsBottomSheet({super.key});
@@ -171,6 +172,34 @@ class SettingsBottomSheet extends ConsumerWidget {
             onChanged: (val) {
               notifier.toggleKaraoke(val);
             },
+          ),
+          const Divider(color: Colors.white12),
+          const SizedBox(height: 8),
+
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              key: const Key('open_feedback_dialog_button'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFFBBF24),
+                side: const BorderSide(color: Color(0xFFFBBF24)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              icon: const Text('🕊️', style: TextStyle(fontSize: 16)),
+              label: const Text('Prayer, Reflection & Feedback'),
+              onPressed: () {
+                final refStr = state.currentChapter.reference;
+                final transCode = state.translation.code;
+                final rootNav = Navigator.of(context, rootNavigator: true);
+                rootNav.pop();
+                EmojiFeedbackDialog.show(
+                  rootNav.context,
+                  currentChapter: refStr,
+                  translation: transCode,
+                );
+              },
+            ),
           ),
         ],
       ),

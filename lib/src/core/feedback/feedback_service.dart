@@ -84,4 +84,47 @@ class FeedbackService {
       return false;
     }
   }
+
+  static const String defaultFeedbackEmail = 'neilwarner+selah@gmail.com';
+
+  static Future<bool> submitFeedback({
+    required int rating,
+    required String emoji,
+    String? message,
+    String? email,
+    String? currentChapter,
+    String? translation,
+    Dio? dioClient,
+  }) async {
+    final sanitizedMessage = (message != null && message.trim().isNotEmpty)
+        ? message.trim()
+        : 'Meditation reflection ($rating / 5 $emoji)';
+
+    AppLogger.logEvent('feedback_submitted', {
+      'rating': rating,
+      'emoji': emoji,
+      'has_comment': message != null && message.trim().isNotEmpty,
+      'chapter': ?currentChapter,
+      'translation': ?translation,
+    });
+
+    if (hasDoorbellConfig) {
+      await submitDoorbellFeedback(
+        message: sanitizedMessage,
+        email: email,
+        sentiment: rating >= 4 ? 'positive' : (rating >= 3 ? 'neutral' : 'negative'),
+        nps: rating * 2,
+        properties: {
+          'emoji': emoji,
+          'chapter': ?currentChapter,
+          'translation': ?translation,
+        },
+        dioClient: dioClient,
+      );
+    } else {
+      AppLogger.info('Feedback cached locally ($rating/5 $emoji). Thank you! 🙏');
+    }
+
+    return true;
+  }
 }
