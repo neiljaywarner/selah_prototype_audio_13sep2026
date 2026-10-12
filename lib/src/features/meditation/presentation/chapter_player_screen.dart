@@ -940,10 +940,17 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                           GestureDetector(
                             key: const Key('cycle_repetitions_chip'),
                             onTap: () {
-                              const repsList = [1, 3, 7, -1];
+                              final repsList = remoteConfig.parsedKnobOptions;
                               final currentIdx = repsList.indexOf(playerState.repetitions);
-                              final nextReps = repsList[(currentIdx + 1) % repsList.length];
+                              final nextReps = currentIdx >= 0
+                                  ? repsList[(currentIdx + 1) % repsList.length]
+                                  : repsList.first;
                               notifier.setRepetitions(nextReps);
+                              AppLogger.logEvent('select_knob_value', {
+                                'selected_repetitions': nextReps,
+                                'knob_variant_group': repsList.length > 5 ? 'slider_1_to_25' : 'curated_1_3_7_inf',
+                                'source': 'player_screen_loop_chip',
+                              });
                               final label = nextReps == -1 ? 'Continuous ∞ Loop' : '${nextReps}x Repeat';
                               ScaffoldMessenger.of(context).removeCurrentSnackBar();
                               ScaffoldMessenger.of(context).showSnackBar(

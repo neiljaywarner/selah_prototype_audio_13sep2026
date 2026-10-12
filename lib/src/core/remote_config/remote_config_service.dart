@@ -20,6 +20,7 @@ class SelahRemoteConfig {
   final bool enableEmojiFeedback;
   final bool feedbackBoardEnabled;
   final bool featureVotingEnabled;
+  final String knobOptions;
 
   const SelahRemoteConfig({
     this.enableTopicTabs = kEnableTopicTabsEnv,
@@ -30,7 +31,22 @@ class SelahRemoteConfig {
     this.enableEmojiFeedback = true,
     this.feedbackBoardEnabled = true,
     this.featureVotingEnabled = false,
+    this.knobOptions = '1,3,7,-1',
   });
+
+  List<int> get parsedKnobOptions {
+    try {
+      final list = knobOptions
+          .split(',')
+          .map((s) => s.trim().toLowerCase())
+          .where((s) => s.isNotEmpty)
+          .map((s) => (s == 'infinite' || s == '∞') ? -1 : int.tryParse(s) ?? 1)
+          .toList();
+      return list.isNotEmpty ? list : [1, 3, 7, -1];
+    } catch (_) {
+      return [1, 3, 7, -1];
+    }
+  }
 
   SelahRemoteConfig copyWith({
     bool? enableTopicTabs,
@@ -41,6 +57,7 @@ class SelahRemoteConfig {
     bool? enableEmojiFeedback,
     bool? feedbackBoardEnabled,
     bool? featureVotingEnabled,
+    String? knobOptions,
   }) {
     return SelahRemoteConfig(
       enableTopicTabs: enableTopicTabs ?? this.enableTopicTabs,
@@ -51,6 +68,7 @@ class SelahRemoteConfig {
       enableEmojiFeedback: enableEmojiFeedback ?? this.enableEmojiFeedback,
       feedbackBoardEnabled: feedbackBoardEnabled ?? this.feedbackBoardEnabled,
       featureVotingEnabled: featureVotingEnabled ?? this.featureVotingEnabled,
+      knobOptions: knobOptions ?? this.knobOptions,
     );
   }
 
@@ -63,6 +81,7 @@ class SelahRemoteConfig {
         'enable_emoji_feedback': enableEmojiFeedback,
         'feedback_board_enabled': feedbackBoardEnabled,
         'feature_voting_enabled': featureVotingEnabled,
+        'knob_options': knobOptions,
       };
 
   factory SelahRemoteConfig.fromJson(Map<String, dynamic> json) {
@@ -76,6 +95,7 @@ class SelahRemoteConfig {
       enableEmojiFeedback: (json['enable_emoji_feedback'] as bool?) ?? true,
       feedbackBoardEnabled: (json['feedback_board_enabled'] as bool?) ?? true,
       featureVotingEnabled: (json['feature_voting_enabled'] as bool?) ?? false,
+      knobOptions: (json['knob_options'] as String?) ?? '1,3,7,-1',
     );
   }
 }

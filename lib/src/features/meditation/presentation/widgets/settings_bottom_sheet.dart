@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/preferences/user_preferences.dart';
+import '../../../../core/logging/app_logger.dart';
+import '../../../../core/remote_config/remote_config_service.dart';
 import '../../application/chapter_player_notifier.dart';
 import '../../domain/bible_translation.dart';
 import 'emoji_feedback_dialog.dart';
@@ -13,6 +15,9 @@ class SettingsBottomSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(chapterPlayerProvider);
     final notifier = ref.read(chapterPlayerProvider.notifier);
+    final remoteConfig = ref.watch(remoteConfigProvider);
+    final knobOptions = remoteConfig.parsedKnobOptions;
+    final variantGroup = knobOptions.length > 5 ? 'slider_1_to_25' : 'curated_1_3_7_inf';
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -97,34 +102,85 @@ class SettingsBottomSheet extends ConsumerWidget {
             style: TextStyle(fontSize: 11, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [1, 3, 7, -1].map((r) {
-              final isSel = state.repetitions == r;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => notifier.setRepetitions(r),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSel ? const Color(0xFF6366F1) : const Color(0xFF0F0E26),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(
-                      child: Text(
-                        r == -1 ? '∞' : '${r}x',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: isSel ? Colors.white : Colors.white60,
+          if (knobOptions.length <= 5)
+            Row(
+              children: knobOptions.map((r) {
+                final isSel = state.repetitions == r;
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      notifier.setRepetitions(r);
+                      AppLogger.logEvent('select_knob_value', {
+                        'selected_repetitions': r,
+                        'knob_variant_group': variantGroup,
+                        'source': 'settings_bottom_sheet',
+                      });
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSel ? const Color(0xFF6366F1) : const Color(0xFF0F0E26),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Text(
+                          r == -1 ? '∞' : '${r}x',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: isSel ? Colors.white : Colors.white60,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
-          ),
+                );
+              }).toList(),
+            )
+          else
+            SizedBox(
+              height: 38,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: knobOptions.length,
+                separatorBuilder: (_, index) => const SizedBox(width: 6),
+                itemBuilder: (context, idx) {
+                  final r = knobOptions[idx];
+                  final isSel = state.repetitions == r;
+                  return GestureDetector(
+                    onTap: () {
+                      notifier.setRepetitions(r);
+                      AppLogger.logEvent('select_knob_value', {
+                        'selected_repetitions': r,
+                        'knob_variant_group': variantGroup,
+                        'source': 'settings_bottom_sheet_slider',
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSel ? const Color(0xFF6366F1) : const Color(0xFF0F0E26),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isSel ? const Color(0xFF818CF8) : Colors.white12,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          r == -1 ? '∞' : '${r}x',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: isSel ? Colors.white : Colors.white60,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           const SizedBox(height: 16),
 
           const Text(
