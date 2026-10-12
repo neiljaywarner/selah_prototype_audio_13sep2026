@@ -1,3 +1,4 @@
+import 'package:feedback/feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -469,6 +470,31 @@ class _EmojiFeedbackDialogState extends State<EmojiFeedbackDialog> {
                     padding: const EdgeInsets.symmetric(vertical: 10),
                   ),
                   onPressed: _handleEmailDirect,
+                ),
+                const SizedBox(height: 6),
+
+                // Screenshot annotation via BetterFeedback
+                TextButton.icon(
+                  key: const Key('screenshot_feedback_button'),
+                  icon: const Icon(Icons.draw_rounded, size: 15, color: Color(0xFFFBBF24)),
+                  label: const Text(
+                    'Draw on Screenshot & Send',
+                    style: TextStyle(color: Color(0xFFFBBF24), fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                  onPressed: () {
+                    final rating = _selectedRating;
+                    final face = _selectedFace;
+                    final email = _emailController.text.trim().isNotEmpty ? _emailController.text.trim() : null;
+                    Navigator.of(context).pop();
+                    BetterFeedback.of(context).show((UserFeedback feedback) async {
+                      await FeedbackService.submitBetterFeedback(
+                        feedback: feedback,
+                        rating: rating,
+                        face: face,
+                        email: email,
+                      );
+                    });
+                  },
                 ),
               ],
             ),

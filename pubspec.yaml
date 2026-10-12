@@ -40,6 +40,7 @@ dependencies:
   google_fonts: ^8.2.1
   just_audio: ^0.10.6
   audio_session: ^0.1.25
+  just_audio_background: ^0.0.1-beta.17
   aptabase_flutter: ^0.5.0
   talker_flutter: ^5.1.20
   marionette_flutter: ^0.7.0

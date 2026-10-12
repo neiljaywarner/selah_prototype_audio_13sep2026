@@ -111,4 +111,37 @@ class FeatureVotingNotifier extends Notifier<FeatureVotingState> {
       AppLogger.info('Vote persistence notice: $e');
     }
   }
+
+  Future<void> proposeFeature({
+    required String title,
+    required String description,
+  }) async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final newItem = await _service.proposeFeature(
+        title: title,
+        description: description,
+      );
+      final currentList = List<RoadmapFeatureItem>.from(state.features);
+      currentList.insert(0, newItem);
+      currentList.sort((a, b) => b.votes.compareTo(a.votes));
+
+      state = state.copyWith(
+        features: currentList,
+        isLoading: false,
+        statusMessage: 'Thank you! Your feature suggestion has been added to the community roadmap. 🙏',
+      );
+
+      AppLogger.logEvent('feature_proposed', {
+        'feature_id': newItem.id,
+        'title': newItem.title,
+      });
+    } catch (e) {
+      AppLogger.info('Propose feature notice: $e');
+      state = state.copyWith(
+        isLoading: false,
+        statusMessage: 'Suggestion saved locally. Thank you! 🙏',
+      );
+    }
+  }
 }

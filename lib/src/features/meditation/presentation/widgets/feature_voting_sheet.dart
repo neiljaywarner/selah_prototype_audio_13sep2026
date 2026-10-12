@@ -14,16 +14,60 @@ class FeatureVotingSheet extends ConsumerStatefulWidget {
 class _FeatureVotingSheetState extends ConsumerState<FeatureVotingSheet> {
   final TextEditingController _feedbackController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _suggestTitleController = TextEditingController();
+  final TextEditingController _suggestDescController = TextEditingController();
   bool _isSubmitting = false;
+  bool _isSuggesting = false;
+  bool _showSuggestForm = false;
   String? _statusMessage;
   String _selectedSentiment = 'positive';
   int _selectedNps = 10;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(featureVotingProvider.notifier).loadFeatures();
+    });
+  }
+
+  @override
   void dispose() {
     _feedbackController.dispose();
     _emailController.dispose();
+    _suggestTitleController.dispose();
+    _suggestDescController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submitSuggestFeature() async {
+    final title = _suggestTitleController.text.trim();
+    final desc = _suggestDescController.text.trim();
+    if (title.isEmpty) return;
+
+    setState(() {
+      _isSuggesting = true;
+    });
+
+    await ref.read(featureVotingProvider.notifier).proposeFeature(
+      title: title,
+      description: desc.isNotEmpty ? desc : 'Community proposed feature',
+    );
+
+    if (mounted) {
+      setState(() {
+        _isSuggesting = false;
+        _showSuggestForm = false;
+        _suggestTitleController.clear();
+        _suggestDescController.clear();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✨ Feature idea added! Thank you for co-building Selah. 🙏'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Future<void> _submitFeedback() async {
@@ -103,15 +147,121 @@ class _FeatureVotingSheetState extends ConsumerState<FeatureVotingSheet> {
                   'COMMUNITY FEATURE VOTING',
                   style: TextStyle(fontSize: 11, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
                 ),
-                if (votingState.isLoading)
-                  const SizedBox(
-                    width: 12,
-                    height: 12,
-                    child: CircularProgressIndicator(strokeWidth: 1.5, color: Color(0xFF6366F1)),
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (votingState.isLoading)
+                      const Padding(
+                        padding: EdgeInsets.only(right: 8),
+                        child: SizedBox(
+                          width: 12,
+                          height: 12,
+                          child: CircularProgressIndicator(strokeWidth: 1.5, color: Color(0xFF6366F1)),
+                        ),
+                      ),
+                    InkWell(
+                      onTap: () => setState(() => _showSuggestForm = !_showSuggestForm),
+                      borderRadius: BorderRadius.circular(6),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        child: Row(
+                          children: [
+                            Icon(
+                              _showSuggestForm ? Icons.remove_circle_outline : Icons.add_circle_outline,
+                              size: 13,
+                              color: const Color(0xFFFBBF24),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _showSuggestForm ? 'Cancel' : 'Suggest Feature',
+                              style: const TextStyle(fontSize: 11, color: Color(0xFFFBBF24), fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
+
+            if (_showSuggestForm) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F0E26),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFBBF24).withValues(alpha: 0.4)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'PROPOSE A NEW FEATURE FOR SELAH',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFFBBF24)),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _suggestTitleController,
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText: 'Feature name (e.g., Audio Sleep Timer)',
+                        hintStyle: const TextStyle(color: Colors.white38, fontSize: 12),
+                        filled: true,
+                        fillColor: const Color(0xFF1E1B4B),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _suggestDescController,
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        hintText: 'Brief description of how it helps your meditation...',
+                        hintStyle: const TextStyle(color: Colors.white38, fontSize: 11),
+                        filled: true,
+                        fillColor: const Color(0xFF1E1B4B),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ElevatedButton.icon(
+                        onPressed: _isSuggesting ? null : _submitSuggestFeature,
+                        icon: _isSuggesting
+                            ? const SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.black),
+                              )
+                            : const Icon(Icons.send_rounded, size: 14, color: Colors.black),
+                        label: Text(
+                          _isSuggesting ? 'Submitting...' : 'Submit to Roadmap',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFBBF24),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
 
             ...votingState.features.map(
               (feature) => _FeatureVotingTile(

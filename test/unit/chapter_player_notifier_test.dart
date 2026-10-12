@@ -143,6 +143,30 @@ void main() {
       expect(userPrefs.savedChapters.contains('Chapter 15'), isFalse);
       expect(userPrefs.savedChapters.length, equals(9));
     });
+
+    test('cycleRepetitions transitions from 1 -> 3 -> 7 -> infinite (-1) -> 1', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final notifier = container.read(chapterPlayerProvider.notifier);
+      expect(container.read(chapterPlayerProvider).repetitions, equals(3));
+
+      // 3 -> 7
+      notifier.cycleRepetitions();
+      expect(container.read(chapterPlayerProvider).repetitions, equals(7));
+
+      // 7 -> -1 (infinite)
+      notifier.cycleRepetitions();
+      expect(container.read(chapterPlayerProvider).repetitions, equals(-1));
+
+      // -1 -> 1
+      notifier.cycleRepetitions();
+      expect(container.read(chapterPlayerProvider).repetitions, equals(1));
+
+      // 1 -> 3
+      notifier.cycleRepetitions();
+      expect(container.read(chapterPlayerProvider).repetitions, equals(3));
+    });
   });
 }
 

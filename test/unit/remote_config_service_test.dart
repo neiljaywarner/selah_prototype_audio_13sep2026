@@ -14,6 +14,7 @@ void main() {
       expect(config.feedbackEmailRecipient, equals('neilwarner+selah@gmail.com'));
       expect(config.enableEmojiFeedback, isTrue);
       expect(config.feedbackBoardEnabled, isTrue);
+      expect(config.featureVotingEnabled, isFalse);
       expect(config.announcementBannerText, isEmpty);
     });
 
@@ -25,6 +26,7 @@ void main() {
         announcementBannerText: 'Welcome to Selah v0.3.0!',
         feedbackEmailRecipient: 'neilwarner+selah@gmail.com',
         enableEmojiFeedback: true,
+        featureVotingEnabled: true,
       );
 
       final json = config.toJson();
@@ -35,6 +37,7 @@ void main() {
       expect(restored.defaultTranslation, equals('WEB'));
       expect(restored.announcementBannerText, equals('Welcome to Selah v0.3.0!'));
       expect(restored.feedbackEmailRecipient, equals('neilwarner+selah@gmail.com'));
+      expect(restored.featureVotingEnabled, isTrue);
     });
 
     test('RemoteConfigService initializes with defaults when cache is empty', () async {
