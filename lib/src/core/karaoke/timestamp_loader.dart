@@ -27,6 +27,27 @@ class VerseTimestamp {
 }
 
 class TimestampLoaderService {
+  /// Set of chapters with pre-compiled WhisperX verse timestamps in assets/timestamps/
+  static const Set<String> _knownTimestampChapters = {
+    'MRK_5',
+    'MAT_11',
+    'PSA_62',
+    'PSA_23',
+    'ROM_8',
+    '1CO_13',
+    '1COR_13',
+    'COL_1',
+  };
+
+  /// Returns true if the requested book and chapter have local WhisperX timestamps.
+  static bool hasTimestampsFor({
+    required String bookCode,
+    required int chapterNumber,
+  }) {
+    final key = '${bookCode.toUpperCase()}_$chapterNumber';
+    return _knownTimestampChapters.contains(key);
+  }
+
   static Future<List<VerseTimestamp>?> loadChapterTimestamps({
     required String translation,
     required String bookCode,
@@ -44,6 +65,11 @@ class TimestampLoaderService {
         AppLogger.info(
           'WhisperX timestamp asset not present for $translation.$bookCode.$chapterNumber (falling back to standard playback)',
         );
+        AppLogger.logEvent('timestamps_missing', {
+          'translation': translation,
+          'book_code': bookCode,
+          'chapter': chapterNumber,
+        });
       } else {
         AppLogger.error(
           'Unexpected error loading/parsing WhisperX timestamps for $translation.$bookCode.$chapterNumber',
@@ -56,6 +82,12 @@ class TimestampLoaderService {
             'asset_path': assetPath,
           },
         );
+        AppLogger.logEvent('timestamps_load_error', {
+          'translation': translation,
+          'book_code': bookCode,
+          'chapter': chapterNumber,
+          'error': errStr,
+        });
       }
       return null;
     }

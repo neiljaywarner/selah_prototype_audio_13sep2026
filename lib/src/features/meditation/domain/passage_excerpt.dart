@@ -34,6 +34,24 @@ class PassageExcerpt {
     return null;
   }
 
+  /// Creates a custom or dynamic passage excerpt for any arbitrary verse range.
+  static PassageExcerpt? customExcerpt({
+    required String bookCode,
+    required int chapterNumber,
+    required int startVerse,
+    required int endVerse,
+    String? displayTitle,
+  }) {
+    if (startVerse <= 0 || endVerse < startVerse) return null;
+    return PassageExcerpt(
+      bookCode: bookCode.toUpperCase(),
+      chapterNumber: chapterNumber,
+      startVerse: startVerse,
+      endVerse: endVerse,
+      displayTitle: displayTitle,
+    );
+  }
+
   /// Computes the audio window from the first verse's start to the last
   /// verse's end, or `null` if no timestamps fall inside this excerpt.
   ClipWindow? clipWindow(List<VerseTimestamp>? timestamps) {

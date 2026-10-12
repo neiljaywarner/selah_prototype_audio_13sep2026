@@ -113,7 +113,7 @@ void main() {
       expect(richTextFinder, findsOneWidget, reason: 'Verse 4 should be highlighted with gold background Color(0xFFFBBF24)');
     });
 
-    testWidgets('Searching non-curated verse range (e.g. "col 1:17-20") shows "Sorry, please request this passage with the devs" SnackBar', (WidgetTester tester) async {
+    testWidgets('Searching unaligned verse range (e.g. "john 3:16-17") shows Verse Timing Unaligned modal with Request Passage option', (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -126,12 +126,13 @@ void main() {
       await tester.pumpAndSettle();
 
       final searchField = find.byType(TextField);
-      await tester.enterText(searchField, 'col 1:17-20');
+      await tester.enterText(searchField, 'john 3:16-17');
       await tester.testTextInput.receiveAction(TextInputAction.done);
-      await tester.pump();
+      await tester.pumpAndSettle();
 
-      expect(find.textContaining('Sorry, please request this passage with the devs!'), findsOneWidget);
-      expect(find.text('Request'), findsOneWidget);
+      expect(find.text('Verse Timing Unaligned'), findsOneWidget);
+      expect(find.text('Request Passage from Devs'), findsOneWidget);
+      expect(find.textContaining('Play Full Chapter'), findsOneWidget);
     });
   });
 }

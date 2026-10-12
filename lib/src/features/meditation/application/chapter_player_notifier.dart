@@ -234,12 +234,13 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     required String bookCode,
     required int chapterNumber,
     required String bookName,
+    PassageExcerpt? excerpt,
   }) async {
     await stopAllPlayback();
     if (!ref.mounted) return;
 
     final fallbackText = _fallbackChapterText(bookCode, chapterNumber, bookName);
-    final excerpt = PassageExcerpt.forChapter(bookCode, chapterNumber);
+    final effectiveExcerpt = excerpt ?? PassageExcerpt.forChapter(bookCode, chapterNumber);
 
     state = state.copyWith(
       currentChapter: ChapterInfo(
@@ -248,8 +249,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         chapterNumber: chapterNumber,
         audioStreamUrl: '',
         textContent: fallbackText,
-        displayTitle: excerpt?.displayTitle,
+        displayTitle: effectiveExcerpt?.displayTitle,
       ),
+      activeExcerpt: effectiveExcerpt,
       isLoading: true,
       clearLastError: true,
       clearInfoNotice: true,
@@ -277,7 +279,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         chapterNumber: chapterNumber,
         audioStreamUrl: bundledAudioPath,
         textContent: fetchedText,
-        displayTitle: excerpt?.displayTitle,
+        displayTitle: effectiveExcerpt?.displayTitle,
       );
 
       state = state.copyWith(
@@ -286,7 +288,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         clearInfoNotice: true,
       );
 
-      await loadChapter(dynamicChapter);
+      await loadChapter(dynamicChapter, excerpt: effectiveExcerpt);
       return;
     }
 
@@ -322,7 +324,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         chapterNumber: chapterNumber,
         audioStreamUrl: '',
         textContent: chapterText,
-        displayTitle: excerpt?.displayTitle,
+        displayTitle: effectiveExcerpt?.displayTitle,
       );
 
       final testament = BibleCanon.isOldTestament(bookCode) ? 'OT' : 'NT';
@@ -364,7 +366,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
             chapterNumber: chapterNumber,
             audioStreamUrl: streamUrl,
             textContent: fetchedText,
-            displayTitle: excerpt?.displayTitle,
+            displayTitle: effectiveExcerpt?.displayTitle,
           );
 
           state = state.copyWith(
@@ -373,7 +375,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
             clearInfoNotice: true,
           );
 
-          await loadChapter(dynamicChapter);
+          await loadChapter(dynamicChapter, excerpt: effectiveExcerpt);
           return;
         }
       }
@@ -567,7 +569,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     _playTts(text);
   }
 
-  Future<void> loadChapter(ChapterInfo chapter) async {
+  Future<void> loadChapter(ChapterInfo chapter, {PassageExcerpt? excerpt}) async {
     await stopAllPlayback();
     if (!ref.mounted) return;
 
@@ -576,15 +578,23 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       bookCode: chapter.bookCode,
       chapterNumber: chapter.chapterNumber,
     );
-    if (_currentTimestamps != null && _currentTimestamps!.isNotEmpty) {
+    final hasTimestamps = _currentTimestamps != null && _currentTimestamps!.isNotEmpty;
+    if (hasTimestamps) {
       AppLogger.info(
         'WhisperX timestamps loaded for ${chapter.reference}: ${_currentTimestamps!.length} verses.',
       );
     }
 
+    final effectiveExcerpt = excerpt ?? PassageExcerpt.forChapter(
+      chapter.bookCode,
+      chapter.chapterNumber,
+    );
+
     state = state.copyWith(
       currentChapter: chapter,
       audioMode: AudioMode.narrator,
+      hasTimestamps: hasTimestamps,
+      activeExcerpt: effectiveExcerpt,
       isLoading: true,
       isPlaying: false,
       isPausedInGap: false,
@@ -599,6 +609,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       'book': chapter.bookCode,
       'chapter': chapter.chapterNumber,
       'audio_url': chapter.audioStreamUrl,
+      'has_timestamps': hasTimestamps,
+      'has_excerpt': effectiveExcerpt != null,
     });
 
     if (chapter.audioStreamUrl.isEmpty) {
@@ -606,16 +618,13 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         bookCode: chapter.bookCode,
         chapterNumber: chapter.chapterNumber,
         bookName: chapter.bookName,
+        excerpt: effectiveExcerpt,
       );
       return;
     }
 
     try {
       final isAsset = chapter.audioStreamUrl.startsWith('assets/');
-      final excerpt = PassageExcerpt.forChapter(
-        chapter.bookCode,
-        chapter.chapterNumber,
-      );
       final mediaItem = MediaItem(
         id: chapter.audioStreamUrl,
         album: 'Selah Scripture Audio',
@@ -627,8 +636,15 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
           ? AudioSource.asset(chapter.audioStreamUrl, tag: mediaItem)
           : AudioSource.uri(Uri.parse(chapter.audioStreamUrl), tag: mediaItem);
 
-      final window = excerpt?.clipWindow(_currentTimestamps);
+      final window = effectiveExcerpt?.clipWindow(_currentTimestamps);
       _clipOffset = window?.start ?? Duration.zero;
+
+      if (effectiveExcerpt != null && window == null) {
+        AppLogger.logEvent('custom_passage_unaligned', {
+          'passage': effectiveExcerpt.displayTitle ?? chapter.reference,
+          'translation': state.activeTranslation,
+        });
+      }
 
       final AudioSource finalSource = window == null
           ? baseSource
@@ -642,7 +658,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       final dur = await _audioPlayer.setAudioSource(finalSource);
       if (window != null) {
         AppLogger.info(
-          'Clipped ${chapter.reference} to curated excerpt ${window.start.inMilliseconds}–${window.end.inMilliseconds}ms with MediaItem notification tag',
+          'Clipped ${chapter.reference} to excerpt ${window.start.inMilliseconds}–${window.end.inMilliseconds}ms with MediaItem notification tag',
         );
       }
       if (!ref.mounted) return;

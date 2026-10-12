@@ -1,6 +1,7 @@
 import '../domain/audio_mode.dart';
 import '../domain/bible_translation.dart';
 import '../domain/chapter_info.dart';
+import '../domain/passage_excerpt.dart';
 
 class ChapterPlayerState {
   final ChapterInfo currentChapter;
@@ -22,6 +23,8 @@ class ChapterPlayerState {
   final String processingStateName;
   final bool shuffleTranslations;
   final bool isOffline;
+  final bool hasTimestamps;
+  final PassageExcerpt? activeExcerpt;
 
   const ChapterPlayerState({
     required this.currentChapter,
@@ -43,6 +46,8 @@ class ChapterPlayerState {
     this.processingStateName = 'idle',
     this.shuffleTranslations = false,
     this.isOffline = false,
+    this.hasTimestamps = false,
+    this.activeExcerpt,
   });
 
   ChapterPlayerState copyWith({
@@ -67,6 +72,9 @@ class ChapterPlayerState {
     String? processingStateName,
     bool? shuffleTranslations,
     bool? isOffline,
+    bool? hasTimestamps,
+    PassageExcerpt? activeExcerpt,
+    bool clearActiveExcerpt = false,
   }) => ChapterPlayerState(
     currentChapter: currentChapter ?? this.currentChapter,
     isLoading: isLoading ?? this.isLoading,
@@ -87,6 +95,8 @@ class ChapterPlayerState {
     processingStateName: processingStateName ?? this.processingStateName,
     shuffleTranslations: shuffleTranslations ?? this.shuffleTranslations,
     isOffline: isOffline ?? this.isOffline,
+    hasTimestamps: hasTimestamps ?? this.hasTimestamps,
+    activeExcerpt: clearActiveExcerpt ? null : (activeExcerpt ?? this.activeExcerpt),
   );
 
   bool get isBundledAsset => currentChapter.audioStreamUrl.startsWith('assets/');
