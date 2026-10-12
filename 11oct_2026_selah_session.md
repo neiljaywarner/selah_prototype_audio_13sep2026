@@ -42,20 +42,34 @@ During this session, we completed the final review, hardening, and verification 
 | **M13: Matthew 11 & Romans 8 RCA & Recalibration** | Root-cause analysis of naive segment loop, recalibrated true silence boundaries for BSB & WEB | 2026-10-11 18:35:00 | 2026-10-11 18:58:10 | ✅ Complete | [MAT_11.json](assets/timestamps/BSB/MAT_11.json), [ROM_8.json](assets/timestamps/BSB/ROM_8.json) |
 | **M14: Calibration Engine & Safe API.Bible CLI** | Authored `verify_and_calibrate_timestamps.py` and `api_bible_fetch.sh` with strict copyright guard | 2026-10-11 18:53:00 | 2026-10-11 18:57:30 | ✅ Complete | [verify_and_calibrate_timestamps.py](scripts/verify_and_calibrate_timestamps.py), [api_bible_fetch.sh](scripts/api_bible_fetch.sh) |
 | **M15: Alignment Runbook, Wiki ADR & AI Skill** | Created README runbook, Wiki ADR & user guide, and AI skills for WhisperX and API.Bible | 2026-10-11 18:58:30 | 2026-10-11 19:01:00 | ✅ Complete | [README_WHISPERX_AND_TIMESTAMPS.md](README_WHISPERX_AND_TIMESTAMPS.md), [.agents/skills/whisperx-timestamp-alignment](.agents/skills/whisperx-timestamp-alignment/SKILL.md) |
+| **M16: PostHog Runtime & Analytics Runbooks** | Authored `README_POSTHOG.md` & `README_ANALYTICS.md`, codified MCP protocol in `GEMINI.md`, filed Issues #41, #42, #43 | 2026-10-11 19:02:00 | 2026-10-11 19:12:00 | ✅ Complete | [PR #44](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/44) merged |
+| **M17: About Selah Dialog & Credits Screen** | Built `AboutSelahDialog` with credits to Neil Jay Warner, friends, brothers and sisters in Christ, release notes, and licensing navigation | 2026-10-11 19:13:00 | 2026-10-11 19:28:40 | ✅ Complete | [PR #47](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/47) merged; Issue #45 closed |
+| **M18: Curated Passages Expansion & Devs Fallback** | Added Psalm 62:1–2 and Col 1:1–2 timestamps; wired uncurated range notice to "Sorry, please request this passage with the devs!" with `Request` action | 2026-10-11 19:14:00 | 2026-10-11 19:28:40 | ✅ Complete | Verified in 63/63 passing unit and widget tests |
+| **M19: Release Checklist & Firebase Web Verification** | Authored `RELEASE_CHECKLIST.md` and verified `flutter build web` compiles with 0 errors | 2026-10-11 19:28:00 | 2026-10-11 19:30:30 | ✅ Complete | [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md); Issue #46 tracked |
 
 ---
 
 ## 📍 Where We Are Right Now & Next 3 Priorities
 
 ### Current State
-* **Working Tree:** Calibrated, verified, 61/61 tests passing green, zero static analysis issues.
-* **Audio Engine:** Excerpt clipping active with sub-millisecond precision on 4 curated passages across BSB and WEB.
-* **Timestamp Engine:** Automated acoustic silence profiling and speech velocity validation active.
+* **Main Branch:** 100% up-to-date with PRs #30, #32, #35, #44, and #47 merged cleanly.
+* **Test Suite:** 63/63 tests passing green (`flutter test`), 0 static analysis errors (`flutter analyze`).
+* **Hardware & Platforms:**
+  - **Android:** Running natively on physical Google Pixel 9a (`56091JEBF14039`, Android 17 / API 37) with hot reload active.
+  - **Web / Chrome / Android PWA:** Production bundle `build/web` compiled cleanly.
+* **Curated Passages (6 Passages × 2 Translations + 1 Arbitrary):**
+  - 1 Cor 13:4–7 (BSB & WEB): Calibrated & verified.
+  - Matt 11:28–30 (BSB & WEB): Fixed 100s drift (starts at true v28 pause ~257.5s).
+  - Rom 8:31–39 (BSB & WEB): Calibrated all 9 verses to true v31 pause (~301.1s).
+  - Psalm 23 (BSB & WEB): Calibrated & verified.
+  - Psalm 62:1–2 (BSB & WEB): Calibrated & verified.
+  - Col 1:1–2 (BSB & WEB): Calibrated & verified.
+  - Arbitrary Verse Range: Displays friendly notice *"Sorry, please request this passage with the devs!"* with interactive `Request` button opening feature voting.
 
 ### Next 3 Tactical Priorities
-1. **Submit PR for Issue #33 & Merge**: Package calibrated assets, tools, runbooks, and tests into PR #35 for Issue #33.
-2. **Lockscreen & Background Media Notification Controls**: Implement background notification actions via `just_audio_background` (Issue #6).
-3. **Investigate NIV & Proprietary Passage Clipping Feasibility**: Evaluate ephemeral slicing compliance with Biblica (Issue #34).
+1. **Firebase Web Hosting Soft-Launch Deployment**: Execute `firebase deploy --only hosting` to publish the production web app for community testing (Issue #46).
+2. **Lockscreen & Background Audio Service Verification**: Test audio session background transitions on physical Pixel 9a (Issue #6).
+3. **PostHog Telemetry POC Verification**: Test initial PostHog capture ping via local MCP server integration (Issue #41).
 
 ---
 
