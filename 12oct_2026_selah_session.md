@@ -88,14 +88,18 @@ Tonight's session focused on elevating Selah to a production-grade soft launch f
 | **M47: Screenshot Upload & IP Discovery (#107, #113)** | Implemented `uploadScreenshotAsset` via GitHub Contents API, public IP discovery in `AppDeviceInfoService`, and connected `EmojiFeedbackDialog._handleSubmit` | 2026-10-12 11:32:00 | 2026-10-12 11:42:00 | ✅ Complete | 87/87 tests green; 0 analyzer warnings |
 | **M48: Cross-Platform Feedback Proof in njwandroid/selahfeedback** | Generated live verification issues with embedded high-res screenshots and public IP (redacted) from Chrome Web (#2) and iOS Simulator (#3) | 2026-10-12 11:42:30 | 2026-10-12 11:43:20 | ✅ Complete | [selahfeedback Issue #2](https://github.com/njwandroid/selahfeedback/issues/2), [selahfeedback Issue #3](https://github.com/njwandroid/selahfeedback/issues/3) |
 | **M49: PR #114 Merged & CodeRabbit Wait Protocol** | Merged PR #114 into `main` (`ede31d8`), closed Issues #113 & #107, added Memory Hygiene rule, and enforced 3-minute CodeRabbit wait in triage skill | 2026-10-12 11:46:00 | 2026-10-12 11:48:30 | ✅ Complete | PR #114 merged; [.agents/rules/stale_process_and_memory_hygiene.md](.agents/rules/stale_process_and_memory_hygiene.md) |
+| **M50: PR #116 Merged & Readiness Scorecard Live** | Merged PR #116 (`ff65780`), closed Issue #115, enforced unconditional 180s review buffer, and added readiness scorecard & release checklist | 2026-10-12 11:49:00 | 2026-10-12 11:53:00 | ✅ Complete | PR #116 merged; Issue #115 closed |
+| **M51: Low-Resource Hardware Protocol & Proof Audit (#117)** | Codified anti-beachball sequential task execution in GEMINI.md, labeled automated testing issues in selahfeedback, and published Wiki Soft Launch checklist | 2026-10-12 11:54:00 | 2026-10-12 12:04:00 | ✅ Complete | [Issue #117](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/117); Wiki Soft Launch Checklist live |
 
 ---
 
 ## 📍 Where We Are Right Now & Next 3 Priorities
 
 ### Current State
-- `main` branch is at commit `ede31d8` containing all hotfixes, analytics, layout fixes, and the private feedback pipeline with screenshot upload.
+- `main` branch is at commit `ff65780` containing the codified 3-minute CodeRabbit wait buffer and Soft Launch Readiness Scorecard.
+- Branch `docs/#117-hardware-rules-and-feedback-proofs` contains low-resource Mac rules, anti-beachball protocols, and proof provenance documentation.
 - Live web app at `https://selahword.web.app` has verified Google Analytics 4 tracking (`G-7LFS54TTFM`).
+- Private feedback hub at `https://github.com/njwandroid/selahfeedback/issues` is labeled (`automated_testing`, `archive`) and 404 image links are fixed.
 - Private feedback hub at `https://github.com/njwandroid/selahfeedback/issues` is verified live with automated issue creation, client public IP address (redacted), and high-res screenshot attachments from both **Chrome Web** and **iOS Simulator** (iPhone 16 Pro).
 - Zero background memory leaks: ephemeral servers and test runners terminated. Stale process hygiene codified in workspace rules and `GEMINI.md`.
 - CodeRabbit triage skill updated with mandatory 3-minute wait buffer to prevent premature merges before bot review posts.
