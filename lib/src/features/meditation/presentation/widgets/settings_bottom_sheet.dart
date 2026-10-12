@@ -19,12 +19,13 @@ class SettingsBottomSheet extends ConsumerWidget {
     final knobOptions = remoteConfig.parsedKnobOptions;
     final variantGroup = knobOptions.length > 5 ? 'slider_1_to_25' : 'curated_1_3_7_inf';
 
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -273,6 +274,7 @@ class SettingsBottomSheet extends ConsumerWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

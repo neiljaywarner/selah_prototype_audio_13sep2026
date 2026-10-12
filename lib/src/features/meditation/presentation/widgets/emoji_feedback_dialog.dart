@@ -192,7 +192,10 @@ class _EmojiFeedbackDialogState extends ConsumerState<EmojiFeedbackDialog> {
       ),
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 440, maxHeight: 680),
+        constraints: BoxConstraints(
+          maxWidth: 440,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+        ),
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: SingleChildScrollView(

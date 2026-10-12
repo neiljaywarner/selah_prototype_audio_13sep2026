@@ -238,6 +238,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
 
   void _openSettingsModal() => showModalBottomSheet(
     context: context,
+    isScrollControlled: true,
     backgroundColor: const Color(0xFF1E1B4B),
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
