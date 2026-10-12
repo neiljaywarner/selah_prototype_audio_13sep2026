@@ -122,8 +122,9 @@ void main() {
       expect(TimestampLoaderService.hasTimestampsFor(bookCode: 'MAT', chapterNumber: 11), isTrue);
       expect(TimestampLoaderService.hasTimestampsFor(bookCode: '1CO', chapterNumber: 13), isTrue);
       expect(TimestampLoaderService.hasTimestampsFor(bookCode: 'COL', chapterNumber: 1), isTrue);
+      expect(TimestampLoaderService.hasTimestampsFor(bookCode: 'JHN', chapterNumber: 3), isTrue);
       expect(TimestampLoaderService.hasTimestampsFor(bookCode: 'GEN', chapterNumber: 1), isFalse);
-      expect(TimestampLoaderService.hasTimestampsFor(bookCode: 'JHN', chapterNumber: 3), isFalse);
+      expect(TimestampLoaderService.hasTimestampsFor(bookCode: 'REV', chapterNumber: 21), isFalse);
     });
 
     test('PassageExcerpt.customExcerpt computes accurate clip window', () {

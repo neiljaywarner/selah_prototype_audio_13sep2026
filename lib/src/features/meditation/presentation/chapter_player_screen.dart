@@ -84,9 +84,11 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
             final start = int.tryParse(m.group(1) ?? '') ?? 1;
             final end = int.tryParse(m.group(2) ?? '') ?? start;
 
-            final hasTimestamps = TimestampLoaderService.hasTimestampsFor(
+            final hasTimestamps = TimestampLoaderService.hasCoverageForRange(
               bookCode: match.book.code,
               chapterNumber: match.chapter,
+              startVerse: start,
+              endVerse: end,
             );
 
             final displayTitle = '${match.book.name} ${match.chapter}:$start–$end';
@@ -348,6 +350,34 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     ),
     builder: (ctx) => const SettingsBottomSheet(),
   );
+
+  void _openTestedPassagesModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF1E1B4B),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => _TestedPassagesBottomSheet(
+        onSelectPassage: (query) {
+          Navigator.of(ctx).pop();
+          _handleSearchSubmit(query);
+        },
+        onRequestPassage: () {
+          Navigator.of(ctx).pop();
+          _showUnalignedPassageOptions(
+            rawPassage: 'Custom Passage',
+            bookCode: 'PSA',
+            chapterNumber: 91,
+            bookName: 'Psalm',
+            startVerse: 1,
+            endVerse: 4,
+          );
+        },
+      ),
+    );
+  }
 
   void _openLicensingAttribution(BibleTranslation translation) =>
       LicensingAttributionSheet.show(context, translation: translation);
@@ -659,9 +689,17 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                       return ListView.separated(
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
-                        itemCount: allChips.length,
+                        itemCount: allChips.length + 1,
                         separatorBuilder: (context, index) => const SizedBox(width: 8),
                         itemBuilder: (context, index) {
+                          if (index == allChips.length) {
+                            return _PresetChip(
+                              label: '+ More (12)',
+                              icon: Icons.library_books_rounded,
+                              isSelected: false,
+                              onTap: _openTestedPassagesModal,
+                            );
+                          }
                           final item = allChips[index];
                           final isSelected = playerState.currentChapter.reference.toLowerCase().trim() ==
                                   item.label.toLowerCase().trim() ||
@@ -1261,12 +1299,14 @@ class _PresetChip extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     this.isBookmarked = false,
+    this.icon,
   });
 
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
   final bool isBookmarked;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -1294,7 +1334,14 @@ class _PresetChip extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (isBookmarked) ...[
+              if (icon != null) ...[
+                Icon(
+                  icon,
+                  size: 14,
+                  color: isSelected ? Colors.white : const Color(0xFFFBBF24),
+                ),
+                const SizedBox(width: 6),
+              ] else if (isBookmarked) ...[
                 const Icon(
                   Icons.bookmark_rounded,
                   size: 14,
@@ -1377,4 +1424,181 @@ class _KaraokeTextDisplay extends StatelessWidget {
     );
   }
 }
+
+class _TestedPassagesBottomSheet extends StatelessWidget {
+  const _TestedPassagesBottomSheet({
+    required this.onSelectPassage,
+    required this.onRequestPassage,
+  });
+
+  final void Function(String query) onSelectPassage;
+  final VoidCallback onRequestPassage;
+
+  static const List<({String title, String reference, String query, String description})> testedPassages = [
+    (
+      title: 'Psalm 91:1–4',
+      reference: 'PSA 91:1-4',
+      query: 'Psalm 91:1-4',
+      description: 'Shelter of the Most High (Calibrated Level 2)',
+    ),
+    (
+      title: 'John 3:16–17',
+      reference: 'JHN 3:16-17',
+      query: 'John 3:16-17',
+      description: 'For God So Loved the World (Calibrated Level 2)',
+    ),
+    (
+      title: 'Philippians 4:4–8',
+      reference: 'PHP 4:4-8',
+      query: 'Philippians 4:4-8',
+      description: 'Rejoice in the Lord Always (Calibrated Level 2)',
+    ),
+    (
+      title: 'Proverbs 3:5–6',
+      reference: 'PRO 3:5-6',
+      query: 'Proverbs 3:5-6',
+      description: 'Trust in the Lord with All Your Heart (Calibrated Level 2)',
+    ),
+    (
+      title: 'Isaiah 40:28–31',
+      reference: 'ISA 40:28-31',
+      query: 'Isaiah 40:28-31',
+      description: 'Those Who Wait on the Lord (Calibrated Level 2)',
+    ),
+    (
+      title: 'Romans 12:1–2',
+      reference: 'ROM 12:1-2',
+      query: 'Romans 12:1-2',
+      description: 'Living Sacrifice (Calibrated Level 2)',
+    ),
+    (
+      title: '1 Corinthians 13:4–8',
+      reference: '1CO 13:4-8',
+      query: '1 Corinthians 13:4-8',
+      description: 'Love is Patient, Love is Kind (Verified)',
+    ),
+    (
+      title: 'Psalm 23:1–6',
+      reference: 'PSA 23',
+      query: 'Psalm 23',
+      description: 'The Lord is My Shepherd (Verified Full Chapter)',
+    ),
+    (
+      title: 'Matthew 6:9–13',
+      reference: 'MAT 6:9-13',
+      query: 'Matthew 6:9-13',
+      description: 'The Lord’s Prayer (Verified)',
+    ),
+    (
+      title: 'Matthew 11:28–30',
+      reference: 'MAT 11:28-30',
+      query: 'Matthew 11:28-30',
+      description: 'Come to Me, All Who Labor (Verified)',
+    ),
+    (
+      title: 'Romans 8:38–39',
+      reference: 'ROM 8:38-39',
+      query: 'Romans 8:38-39',
+      description: 'More Than Conquerors (Verified)',
+    ),
+    (
+      title: 'Lamentations 3:22–24',
+      reference: 'LAM 3:22-24',
+      query: 'Lamentations 3:22-24',
+      description: 'His Mercies Are New Every Morning (Verified)',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.65,
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Icon(Icons.verified_rounded, color: Color(0xFFFBBF24), size: 22),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Tested & Verified Passages',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Colors.white54),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+              Text(
+                'Top 12 contemplative passages with Level 2 WhisperX acoustic alignment & verified timing.',
+                style: TextStyle(fontSize: 12, color: Colors.indigo.shade200),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: ListView.separated(
+                  controller: scrollController,
+                  itemCount: testedPassages.length,
+                  separatorBuilder: (_, __) => const Divider(color: Colors.white10, height: 1),
+                  itemBuilder: (context, index) {
+                    final item = testedPassages[index];
+                    return ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      title: Text(
+                        item.title,
+                        style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 15),
+                      ),
+                      subtitle: Text(
+                        item.description,
+                        style: const TextStyle(color: Colors.white60, fontSize: 12),
+                      ),
+                      trailing: const Icon(Icons.play_circle_fill_rounded, color: Color(0xFF6366F1), size: 28),
+                      onTap: () => onSelectPassage(item.query),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.add_rounded, color: Color(0xFFFBBF24)),
+                  label: const Text('Request Another Passage', style: TextStyle(color: Color(0xFFFBBF24))),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFFBBF24)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: onRequestPassage,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 

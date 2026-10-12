@@ -61,6 +61,11 @@ class PassageExcerpt {
       ..sort((a, b) => a.startMs.compareTo(b.startMs));
     if (inRange.isEmpty) return null;
 
+    // Reject incomplete ranges: both startVerse and endVerse must be present
+    final hasStart = inRange.any((t) => t.verse == startVerse);
+    final hasEnd = inRange.any((t) => t.verse == endVerse);
+    if (!hasStart || !hasEnd) return null;
+
     final start = inRange.first.startMs;
     final end = inRange.map((t) => t.endMs).reduce((a, b) => a > b ? a : b);
     if (end <= start) return null;
@@ -111,5 +116,47 @@ const kCuratedExcerpts = [
     startVerse: 1,
     endVerse: 2,
     displayTitle: 'Col 1:1–2',
+  ),
+  PassageExcerpt(
+    bookCode: 'PSA',
+    chapterNumber: 91,
+    startVerse: 1,
+    endVerse: 4,
+    displayTitle: 'Psalm 91:1–4',
+  ),
+  PassageExcerpt(
+    bookCode: 'JHN',
+    chapterNumber: 3,
+    startVerse: 16,
+    endVerse: 17,
+    displayTitle: 'John 3:16–17',
+  ),
+  PassageExcerpt(
+    bookCode: 'PHP',
+    chapterNumber: 4,
+    startVerse: 4,
+    endVerse: 8,
+    displayTitle: 'Phil 4:4–8',
+  ),
+  PassageExcerpt(
+    bookCode: 'PRO',
+    chapterNumber: 3,
+    startVerse: 5,
+    endVerse: 6,
+    displayTitle: 'Prov 3:5–6',
+  ),
+  PassageExcerpt(
+    bookCode: 'ISA',
+    chapterNumber: 40,
+    startVerse: 28,
+    endVerse: 31,
+    displayTitle: 'Isaiah 40:28–31',
+  ),
+  PassageExcerpt(
+    bookCode: 'ROM',
+    chapterNumber: 12,
+    startVerse: 1,
+    endVerse: 2,
+    displayTitle: 'Rom 12:1–2',
   ),
 ];

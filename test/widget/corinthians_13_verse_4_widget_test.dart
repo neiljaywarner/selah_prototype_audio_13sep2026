@@ -113,7 +113,7 @@ void main() {
       expect(richTextFinder, findsOneWidget, reason: 'Verse 4 should be highlighted with gold background Color(0xFFFBBF24)');
     });
 
-    testWidgets('Searching unaligned verse range (e.g. "john 3:16-17") shows Verse Timing Unaligned modal with Request Passage option', (WidgetTester tester) async {
+    testWidgets('Searching unaligned verse range (e.g. "revelation 21:1-4") shows Verse Timing Unaligned modal with Request Passage option', (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -126,7 +126,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final searchField = find.byType(TextField);
-      await tester.enterText(searchField, 'john 3:16-17');
+      await tester.enterText(searchField, 'revelation 21:1-4');
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();
 

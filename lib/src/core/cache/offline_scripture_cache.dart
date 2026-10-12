@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../features/meditation/domain/passage_excerpt.dart';
 import '../logging/app_logger.dart';
 
 /// Offline Disk Cache for Public Domain / Open Source scripture translations (BSB, WEB).
@@ -13,19 +14,51 @@ class OfflineScriptureCache {
   static String _cacheKey(String translation, String bookCode, int chapter) =>
       '$_prefix${translation.toUpperCase()}.${bookCode.toUpperCase()}.$chapter';
 
-  /// Check if a chapter is available offline in local disk storage
-  bool hasOfflineText(String translation, String bookCode, int chapter) {
+  /// Check if a chapter or excerpt is available offline in local disk storage
+  bool hasOfflineText(String translation, String bookCode, int chapter, {int? startVerse, int? endVerse}) {
     final tr = translation.toUpperCase();
     if (tr != 'BSB' && tr != 'WEB') return false; // NIV is licensed, not cached offline
+
+    // Check specific excerpt range if supplied
+    if (startVerse != null && endVerse != null) {
+      if (_embeddedExcerptBank.containsKey('$tr.${bookCode.toUpperCase()}.$chapter.$startVerse-$endVerse')) {
+        return true;
+      }
+    }
+
     final key = _cacheKey(translation, bookCode, chapter);
     if (_prefs?.containsKey(key) ?? false) return true;
-    return _embeddedPublicDomainBank.containsKey('$tr.${bookCode.toUpperCase()}.$chapter');
+    if (_embeddedPublicDomainBank.containsKey('$tr.${bookCode.toUpperCase()}.$chapter')) return true;
+
+    // Fall back to check if this chapter has a known curated excerpt
+    final curated = PassageExcerpt.forChapter(bookCode, chapter);
+    if (curated != null) {
+      return _embeddedExcerptBank.containsKey('$tr.${bookCode.toUpperCase()}.$chapter.${curated.startVerse}-${curated.endVerse}');
+    }
+
+    return false;
   }
 
-  /// Retrieve cached scripture text from disk or bundled offline bank
-  String? getOfflineText(String translation, String bookCode, int chapter) {
+  /// Check if a specific excerpt range is available offline
+  bool hasOfflineExcerpt(String translation, String bookCode, int chapter, int startVerse, int endVerse) {
+    final tr = translation.toUpperCase();
+    if (tr != 'BSB' && tr != 'WEB') return false;
+    return _embeddedExcerptBank.containsKey('$tr.${bookCode.toUpperCase()}.$chapter.$startVerse-$endVerse');
+  }
+
+  /// Retrieve cached scripture text from disk or bundled offline bank.
+  /// If [startVerse] and [endVerse] are provided, prioritizes excerpt-specific text.
+  String? getOfflineText(String translation, String bookCode, int chapter, {int? startVerse, int? endVerse}) {
     final tr = translation.toUpperCase();
     if (tr != 'BSB' && tr != 'WEB') return null;
+
+    if (startVerse != null && endVerse != null) {
+      final excerpt = _embeddedExcerptBank['$tr.${bookCode.toUpperCase()}.$chapter.$startVerse-$endVerse'];
+      if (excerpt != null) {
+        AppLogger.info('Offline Cache Hit (excerpt bank): $tr.${bookCode.toUpperCase()}.$chapter.$startVerse-$endVerse');
+        return excerpt;
+      }
+    }
 
     final key = _cacheKey(translation, bookCode, chapter);
     final diskContent = _prefs?.getString(key);
@@ -40,7 +73,24 @@ class OfflineScriptureCache {
       return embedded;
     }
 
+    // Fall back to curated excerpt text if available for this chapter
+    final curated = PassageExcerpt.forChapter(bookCode, chapter);
+    if (curated != null) {
+      final excerpt = _embeddedExcerptBank['$tr.${bookCode.toUpperCase()}.$chapter.${curated.startVerse}-${curated.endVerse}'];
+      if (excerpt != null) {
+        AppLogger.info('Offline Cache Hit (curated excerpt bank): $tr.${bookCode.toUpperCase()}.$chapter');
+        return excerpt;
+      }
+    }
+
     return null;
+  }
+
+  /// Retrieve specific excerpt text
+  String? getOfflineExcerpt(String translation, String bookCode, int chapter, int startVerse, int endVerse) {
+    final tr = translation.toUpperCase();
+    if (tr != 'BSB' && tr != 'WEB') return null;
+    return _embeddedExcerptBank['$tr.${bookCode.toUpperCase()}.$chapter.$startVerse-$endVerse'];
   }
 
   /// Save public domain text to local disk cache (persists to SharedPreferences / disk storage)
@@ -53,7 +103,7 @@ class OfflineScriptureCache {
     AppLogger.info('Cached public domain scripture to disk: $key (${text.length} chars)');
   }
 
-  /// Bundled offline scripture bank for public domain BSB and WEB
+  /// Bundled offline scripture bank for public domain full chapters
   static final Map<String, String> _embeddedPublicDomainBank = {
     // John 1
     'BSB.JHN.1':
@@ -102,11 +152,50 @@ class OfflineScriptureCache {
         'Love is patient, love is kind. It does not envy, it does not boast, it is not proud. It is not rude, it is not self-seeking, it is not easily angered, it keeps no account of wrongs. Love does not delight in evil but rejoices with the truth. It bears all things, believes all things, hopes all things, endures all things.',
     'WEB.1CO.13':
         'Love is patient, love is kind. Love does not envy. Love does not brag, is not proud, does not behave itself inappropriately, does not seek its own way, is not provoked, takes no account of evil; doesn\'t rejoice in unrighteousness, but rejoices with the truth; bears all things, believes all things, hopes all things, endures all things.',
+  };
 
+  /// Bundled offline scripture bank for public domain verse-range excerpts (#95)
+  static final Map<String, String> _embeddedExcerptBank = {
     // Psalm 62:1–2 (Curated Excerpt)
-    'BSB.PSA.62':
+    'BSB.PSA.62.1-2':
         'My soul finds rest in God alone; my salvation comes from Him. He alone is my rock and my salvation; He is my fortress, I will never be shaken.',
-    'WEB.PSA.62':
+    'WEB.PSA.62.1-2':
         'Truly my soul finds rest in God; my salvation comes from him. Truly he is my rock and my salvation; he is my fortress, I will never be shaken.',
+
+    // Psalm 91:1–4 (Level 2 #95)
+    'BSB.PSA.91.1-4':
+        'He who dwells in the shelter of the Most High will abide in the shadow of the Almighty. I will say of the LORD, "He is my refuge and my fortress, my God, in whom I trust." Surely He will deliver you from the snare of the fowler and from the deadly plague. He will cover you with His feathers, and under His wings you will find refuge; His faithfulness will be your shield and rampart.',
+    'WEB.PSA.91.1-4':
+        'He who dwells in the secret place of the Most High will rest in the shadow of the Almighty. I will say of Yahweh, "He is my refuge and my fortress; my God, in whom I trust." For he will deliver you from the snare of the fowler, and from the deadly pestilence. He will cover you with his feathers. Under his wings you will take refuge. His faithfulness is your shield and rampart.',
+
+    // John 3:16–17 (Level 2 #95)
+    'BSB.JHN.3.16-17':
+        'For God so loved the world that He gave His one and only Son, that everyone who believes in Him shall not perish but have eternal life. For God did not send His Son into the world to condemn the world, but to save the world through Him.',
+    'WEB.JHN.3.16-17':
+        'For God so loved the world, that he gave his one and only Son, that whoever believes in him should not perish, but have eternal life. For God didn\'t send his Son into the world to judge the world, but that the world should be saved through him.',
+
+    // Philippians 4:4–8 (Level 2 #95)
+    'BSB.PHP.4.4-8':
+        'Rejoice in the Lord always. I will say it again: Rejoice! Let your gentleness be evident to all. The Lord is near. Be anxious for nothing, but in everything, by prayer and petition, with thanksgiving, present your requests to God. And the peace of God, which surpasses all understanding, will guard your hearts and your minds in Christ Jesus. Finally, brothers, whatever is true, whatever is honorable, whatever is right, whatever is pure, whatever is lovely, whatever is admirable—if anything is excellent or praiseworthy—think on these things.',
+    'WEB.PHP.4.4-8':
+        'Rejoice in the Lord always! Again I will say, "Rejoice!" Let your gentleness be known to all men. The Lord is at hand. In nothing be anxious, but in everything, by prayer and petition with thanksgiving, let your requests be made known to God. And the peace of God, which surpasses all understanding, will guard your hearts and your thoughts in Christ Jesus. Finally, brothers, whatever things are true, whatever things are honorable, whatever things are just, whatever things are pure, whatever things are lovely, whatever things are of good report; if there is any virtue, and if there is any praise, think about these things.',
+
+    // Proverbs 3:5–6 (Level 2 #95)
+    'BSB.PRO.3.5-6':
+        'Trust in the LORD with all your heart, and lean not on your own understanding; in all your ways acknowledge Him, and He will make your paths straight.',
+    'WEB.PRO.3.5-6':
+        'Trust in Yahweh with all your heart, and don\'t lean on your own understanding. In all your ways acknowledge him, and he will make your paths straight.',
+
+    // Isaiah 40:28–31 (Level 2 #95)
+    'BSB.ISA.40.28-31':
+        'Do you not know? Have you not heard? The LORD is the everlasting God, the Creator of the ends of the earth. He will not grow tired or weary, and His understanding no one can fathom. He gives strength to the weary and increases the power of the weak. Even youths grow tired and weary, and young men stumble and fall; but those who wait upon the LORD will renew their strength. They will soar on wings like eagles; they will run and not grow weary, they will walk and not faint.',
+    'WEB.ISA.40.28-31':
+        'Haven\'t you known? Haven\'t you heard? The everlasting God, Yahweh, the Creator of the ends of the earth, doesn\'t faint. He isn\'t weary. His understanding is unsearchable. He gives power to the weak. He increases the strength of him who has no might. Even the youths faint and get weary, and the young men utterly fall; but those who wait for Yahweh will renew their strength. They will mount up with wings like eagles. They will run, and not be weary. They will walk, and not faint.',
+
+    // Romans 12:1–2 (Level 2 #95)
+    'BSB.ROM.12.1-2':
+        'Therefore I urge you, brothers, on account of God\'s mercy, to present your bodies as living sacrifices, holy and pleasing to God, which is your spiritual service of worship. Do not be conformed to this world, but be transformed by the renewing of your mind. Then you will be able to test and approve what is the good, pleasing, and perfect will of God.',
+    'WEB.ROM.12.1-2':
+        'Therefore I urge you, brothers, by the mercies of God, to present your bodies a living sacrifice, holy, acceptable to God, which is your spiritual service. Don\'t be conformed to this world, but be transformed by the renewing of your mind, so that you may prove what is the good, well-pleasing, and perfect will of God.',
   };
 }
