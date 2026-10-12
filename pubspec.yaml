@@ -39,11 +39,15 @@ dependencies:
   dio: ^5.11.1
   google_fonts: ^8.2.1
   just_audio: ^0.10.6
+  audio_session: ^0.1.25
+  just_audio_background: ^0.0.1-beta.17
   aptabase_flutter: ^0.5.0
   talker_flutter: ^5.1.20
   marionette_flutter: ^0.7.0
   shared_preferences: ^2.5.4
   feedback: ^3.2.0
+  device_info_plus: ^13.3.0
+  package_info_plus: ^10.2.2
 
 dev_dependencies:
   flutter_test:

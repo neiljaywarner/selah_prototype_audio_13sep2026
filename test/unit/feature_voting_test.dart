@@ -102,6 +102,24 @@ void main() {
       expect(unvotedItem.hasVoted, isFalse);
       expect(unvotedItem.votes, equals(baselineVotes));
     });
+
+    test('proposeFeature adds community feature suggestion to list and marks hasVoted true', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final notifier = container.read(featureVotingProvider.notifier);
+      await notifier.proposeFeature(
+        title: 'Binaural Delta Waves',
+        description: 'Layer delta wave frequencies beneath scripture narration for deep sleep.',
+      );
+
+      final state = container.read(featureVotingProvider);
+      final added = state.features.firstWhere((f) => f.title == 'Binaural Delta Waves');
+
+      expect(added.votes, equals(1));
+      expect(added.hasVoted, isTrue);
+      expect(added.description, contains('delta wave'));
+    });
   });
 
   group('FeedbackService Doorbell Unit Tests', () {

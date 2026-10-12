@@ -218,7 +218,42 @@ class FeatureVotingService {
       AppLogger.info('Firestore REST sync notice (using local/cached votes): $e');
     }
 
-    return featureMap.values.toList();
+    final list = featureMap.values.toList();
+    list.sort((a, b) => b.votes.compareTo(a.votes));
+    return list;
+  }
+
+  Future<RoadmapFeatureItem> proposeFeature({
+    required String title,
+    required String description,
+    String targetVersion = 'Community',
+  }) async {
+    final slug = title.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_').trim();
+    final sanitizedSlug = slug.length > 24 ? slug.substring(0, 24) : slug;
+    final id = 'comm_${sanitizedSlug}_${DateTime.now().millisecondsSinceEpoch % 10000}';
+    final newItem = RoadmapFeatureItem(
+      id: id,
+      title: title,
+      description: description,
+      targetVersion: targetVersion,
+      votes: 1,
+      hasVoted: true,
+    );
+
+    // Save voted ID locally
+    final votedIds = await getVotedFeatureIds();
+    final updatedVoted = Set<String>.from(votedIds)..add(id);
+    await saveVotedFeatureIds(updatedVoted);
+
+    // Save cached votes locally
+    final cached = await getCachedVotes();
+    final updatedCached = Map<String, int>.from(cached)..[id] = 1;
+    await saveCachedVotes(updatedCached);
+
+    // Push to Firestore REST
+    await syncVoteToFirestore(newItem);
+
+    return newItem;
   }
 
   Future<void> syncVoteToFirestore(RoadmapFeatureItem item) async {
@@ -232,6 +267,7 @@ class FeatureVotingService {
             'description': {'stringValue': item.description},
             'targetVersion': {'stringValue': item.targetVersion},
             'votes': {'integerValue': '${item.votes}'},
+            'approved': {'booleanValue': true},
           },
         },
       );

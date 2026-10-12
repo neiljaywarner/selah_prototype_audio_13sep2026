@@ -1,5 +1,5 @@
 package com.example.selah_prototype_audio_13sep2026
 
-import io.flutter.embedding.android.FlutterActivity
+import com.ryanheise.audioservice.AudioServiceActivity
 
-class MainActivity : FlutterActivity()
+class MainActivity : AudioServiceActivity()

@@ -19,6 +19,7 @@ class SelahRemoteConfig {
   final String feedbackEmailRecipient;
   final bool enableEmojiFeedback;
   final bool feedbackBoardEnabled;
+  final bool featureVotingEnabled;
 
   const SelahRemoteConfig({
     this.enableTopicTabs = kEnableTopicTabsEnv,
@@ -28,6 +29,7 @@ class SelahRemoteConfig {
     this.feedbackEmailRecipient = 'neilwarner+selah@gmail.com',
     this.enableEmojiFeedback = true,
     this.feedbackBoardEnabled = true,
+    this.featureVotingEnabled = false,
   });
 
   SelahRemoteConfig copyWith({
@@ -38,6 +40,7 @@ class SelahRemoteConfig {
     String? feedbackEmailRecipient,
     bool? enableEmojiFeedback,
     bool? feedbackBoardEnabled,
+    bool? featureVotingEnabled,
   }) {
     return SelahRemoteConfig(
       enableTopicTabs: enableTopicTabs ?? this.enableTopicTabs,
@@ -47,6 +50,7 @@ class SelahRemoteConfig {
       feedbackEmailRecipient: feedbackEmailRecipient ?? this.feedbackEmailRecipient,
       enableEmojiFeedback: enableEmojiFeedback ?? this.enableEmojiFeedback,
       feedbackBoardEnabled: feedbackBoardEnabled ?? this.feedbackBoardEnabled,
+      featureVotingEnabled: featureVotingEnabled ?? this.featureVotingEnabled,
     );
   }
 
@@ -58,6 +62,7 @@ class SelahRemoteConfig {
         'feedback_email_recipient': feedbackEmailRecipient,
         'enable_emoji_feedback': enableEmojiFeedback,
         'feedback_board_enabled': feedbackBoardEnabled,
+        'feature_voting_enabled': featureVotingEnabled,
       };
 
   factory SelahRemoteConfig.fromJson(Map<String, dynamic> json) {
@@ -70,6 +75,7 @@ class SelahRemoteConfig {
           (json['feedback_email_recipient'] as String?) ?? 'neilwarner+selah@gmail.com',
       enableEmojiFeedback: (json['enable_emoji_feedback'] as bool?) ?? true,
       feedbackBoardEnabled: (json['feedback_board_enabled'] as bool?) ?? true,
+      featureVotingEnabled: (json['feature_voting_enabled'] as bool?) ?? false,
     );
   }
 }

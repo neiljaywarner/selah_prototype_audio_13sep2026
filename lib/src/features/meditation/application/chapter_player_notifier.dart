@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
+import 'package:audio_session/audio_session.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 
 import '../../../core/audio/bundled_audio_service.dart';
 import '../../../core/constants/api_constants.dart';
@@ -59,6 +63,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
     _initAudioListeners();
     _initTtsEngine();
+    _initAudioSession();
 
     ref.onDispose(() {
       _posSub?.cancel();
@@ -85,6 +90,23 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       currentChapter: kFeaturedChapters[0],
       activeTranslation: initialTranslation,
     );
+  }
+
+  Future<void> _initAudioSession() async {
+    if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) {
+      return;
+    }
+    try {
+      final session = await AudioSession.instance;
+      await session.configure(const AudioSessionConfiguration.music());
+      session.becomingNoisyEventStream.listen((_) {
+        AppLogger.info('Audio becoming noisy (headphones/BT disconnected); pausing playback');
+        pause();
+      });
+      AppLogger.info('AudioSession configured with Music profile for background audio playback.');
+    } catch (e) {
+      AppLogger.warning('AudioSession configuration notice: $e');
+    }
   }
 
   void _initAudioListeners() {
@@ -129,7 +151,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       final pStateStr = playerState.processingState.toString().split('.').last;
       state = state.copyWith(isPlaying: playerState.playing, processingStateName: pStateStr);
 
-      if (playerState.processingState == ProcessingState.completed && state.isPlaying) {
+      if (playerState.processingState == ProcessingState.completed && !state.isPausedInGap) {
         AppLogger.info('Chapter completed iteration ${state.currentIteration}');
         _handleChapterPlaybackComplete();
       }
@@ -150,9 +172,14 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
               'audio_mode': state.audioMode.name,
             },
           );
-          _switchToTtsFallback(
-            'Audio stream blocked or unavailable. Switched to Text-to-Speech (TTS).',
-          );
+          if (state.currentChapter.audioStreamUrl.startsWith('assets/')) {
+            AppLogger.info('Attempting recovery of bundled narrator asset after playback error');
+            loadChapter(state.currentChapter);
+          } else {
+            _switchToTtsFallback(
+              'Audio stream blocked or unavailable. Switched to Text-to-Speech (TTS).',
+            );
+          }
         }
       },
     );
@@ -557,24 +584,38 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
 
     try {
-      final Duration? fullDuration;
       final isAsset = chapter.audioStreamUrl.startsWith('assets/');
-      if (isAsset) {
-        fullDuration = await _audioPlayer.setAsset(chapter.audioStreamUrl);
-      } else {
-        fullDuration = await _audioPlayer.setUrl(chapter.audioStreamUrl);
-      }
-      final window = PassageExcerpt.forChapter(
+      final excerpt = PassageExcerpt.forChapter(
         chapter.bookCode,
         chapter.chapterNumber,
-      )?.clipWindow(_currentTimestamps);
+      );
+      final mediaItem = MediaItem(
+        id: chapter.audioStreamUrl,
+        album: 'Selah Scripture Audio',
+        title: chapter.displayTitle ?? chapter.reference,
+        artist: 'Human Narrator (${state.activeTranslation})',
+        artUri: Uri.parse('https://selahword.web.app/icons/Icon-192.png'),
+      );
+      final UriAudioSource baseSource = isAsset
+          ? AudioSource.asset(chapter.audioStreamUrl, tag: mediaItem)
+          : AudioSource.uri(Uri.parse(chapter.audioStreamUrl), tag: mediaItem);
+
+      final window = excerpt?.clipWindow(_currentTimestamps);
       _clipOffset = window?.start ?? Duration.zero;
-      final dur = window == null
-          ? fullDuration
-          : await _audioPlayer.setClip(start: window.start, end: window.end);
+
+      final AudioSource finalSource = window == null
+          ? baseSource
+          : ClippingAudioSource(
+              child: baseSource,
+              start: window.start,
+              end: window.end,
+              tag: mediaItem,
+            );
+
+      final dur = await _audioPlayer.setAudioSource(finalSource);
       if (window != null) {
         AppLogger.info(
-          'Clipped ${chapter.reference} to curated excerpt ${window.start.inMilliseconds}–${window.end.inMilliseconds}ms',
+          'Clipped ${chapter.reference} to curated excerpt ${window.start.inMilliseconds}–${window.end.inMilliseconds}ms with MediaItem notification tag',
         );
       }
       if (!ref.mounted) return;
@@ -681,6 +722,13 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     AppLogger.logEvent('change_setting', {'setting': 'repetitions', 'value': reps});
   }
 
+  void cycleRepetitions() {
+    const repsList = [1, 3, 7, -1];
+    final currentIdx = repsList.indexOf(state.repetitions);
+    final nextReps = repsList[(currentIdx + 1) % repsList.length];
+    setRepetitions(nextReps);
+  }
+
   void setPauseGap(int seconds) {
     state = state.copyWith(pauseGapSeconds: seconds);
     AppLogger.logEvent('change_setting', {'setting': 'pauseGapSeconds', 'value': seconds});
@@ -739,6 +787,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     state = state.copyWith(isPausedInGap: true, highlightStart: 0, highlightEnd: 0);
     AppLogger.info('Entering silent reflection gap (${state.pauseGapSeconds}s)...');
 
+    _gapTimer?.cancel();
     if (state.pauseGapSeconds == 0) {
       _startNextIteration();
     } else {
@@ -767,9 +816,11 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   Future<void> _startNextIteration() async {
-    AppLogger.info('Starting repetition ${state.currentIteration + 1}');
+    final nextIteration = state.currentIteration + 1;
+    final repLabel = state.repetitions == -1 ? '∞' : '${state.repetitions}';
+    AppLogger.info('Starting repetition $nextIteration (loop $nextIteration of $repLabel)');
     state = state.copyWith(
-      currentIteration: state.currentIteration + 1,
+      currentIteration: nextIteration,
       isPausedInGap: false,
       isPlaying: true,
     );
@@ -780,17 +831,18 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
 
     if (state.audioMode == AudioMode.narrator) {
-      final window = PassageExcerpt.forChapter(
-        state.currentChapter.bookCode,
-        state.currentChapter.chapterNumber,
-      )?.clipWindow(_currentTimestamps);
-
-      if (window != null) {
-        _clipOffset = window.start;
-        await _audioPlayer.setClip(start: window.start, end: window.end);
+      try {
+        AppLogger.info('Seeking narrator player to Duration.zero for loop $nextIteration of $repLabel');
+        await _audioPlayer.seek(Duration.zero);
+        await _audioPlayer.play();
+      } catch (e, stack) {
+        AppLogger.error(
+          'Failed to seek/play next iteration $nextIteration, recovering audio source',
+          error: e,
+          stackTrace: stack,
+        );
+        await loadChapter(state.currentChapter);
       }
-      await _audioPlayer.seek(Duration.zero);
-      _audioPlayer.play();
     } else {
       await _flutterTts.speak(state.currentChapter.textContent);
     }

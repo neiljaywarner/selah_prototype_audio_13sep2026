@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/preferences/user_preferences.dart';
 import '../../application/chapter_player_notifier.dart';
 import '../../domain/bible_translation.dart';
 import 'emoji_feedback_dialog.dart';
@@ -171,6 +172,19 @@ class SettingsBottomSheet extends ConsumerWidget {
             activeThumbColor: const Color(0xFFFBBF24),
             onChanged: (val) {
               notifier.toggleKaraoke(val);
+            },
+          ),
+          SwitchListTile(
+            key: const Key('settings_wip_features_tile'),
+            title: const Text('Show Work-in-Progress Features', style: TextStyle(fontSize: 14)),
+            subtitle: const Text(
+              'Enable community feature voting and experimental features',
+              style: TextStyle(fontSize: 11, color: Colors.white54),
+            ),
+            value: ref.watch(workInProgressFeaturesProvider),
+            activeThumbColor: const Color(0xFFFBBF24),
+            onChanged: (val) {
+              ref.read(workInProgressFeaturesProvider.notifier).setEnabled(val);
             },
           ),
           const Divider(color: Colors.white12),
