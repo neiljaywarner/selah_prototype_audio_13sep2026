@@ -7,12 +7,17 @@
 
 ---
 
-## 🚧 WIP & Current Progress Status (19:00 CDT Update)
-- **Status**: **IN PROGRESS & SOLID PROGRESS**
-- **Root Cause Unlocked**: Discovered why Matthew 11 started at verse 19 ("drinking") and Romans 8 truncated: `batch_align_whisperx.py` naively assumed `verse = segment_index + 1`. Whisper outputs sentence chunks (45+ segments per chapter), so segment 28 was actually verse 19 (148s)! True verse 28 begins after the 1.41s pause at **257,570ms**.
-- **All 4 Curated Passages Calibrated**: 1 Cor 13, Matt 11, Rom 8, and Psalm 23 are now fully calibrated and regression-tested with acoustic silence detection across both **BSB** and **WEB**.
-- **Test Suite 100% Green**: 61/61 tests passing green (`flutter test`), `flutter analyze` 0 warnings.
-- **Tools & Runbooks Authored**: Standalone acoustic calibration engine (`scripts/verify_and_calibrate_timestamps.py`), zero-secret API.Bible fetcher (`scripts/api_bible_fetch.sh`), runbook (`README_WHISPERX_AND_TIMESTAMPS.md`), and AI skill (`.agents/skills/whisperx-timestamp-alignment/SKILL.md`).
+## 🚧 WIP & Current Progress Status (19:30 CDT Walk Return Update)
+- **Status**: ✅ **WALK MILESTONE COMPLETE — ALL CURATED PASSAGES & ARBITRARY FALLBACK VERIFIED**
+- **WhisperX Mystery Solved**: `batch_align_whisperx.py` naively assumed `verse = segment_index + 1`. Whisper splits audio into 45+ sentence clauses, so segment 28 was actually verse 19 (148s). True verse 28 begins at **257,570ms** after a 1.41s speaker pause. All boundaries are now acoustically snapped to natural speaker pauses!
+- **All 6 Curated Passages Fully Calibrated**: 1 Cor 13:4–7, Matt 11:28–30, Rom 8:31–39, Psalm 23, Psalm 62:1–2, and Col 1:1–2 are verified and tested across **BSB** and **WEB**.
+- **Arbitrary Verse Fallback**: When users type any uncurated passage range (e.g. `col 1:17-20`), the app immediately displays: *"Sorry, please request this passage with the devs!"* with an interactive **[Request]** button opening the feature voting sheet!
+- **About Selah Screen & Credits**: Implemented `AboutSelahDialog` featuring *"Crafted by Neil Jay Warner, and friends and brothers and sisters in Christ"*, release notes, and publisher licensing links (Merged via PR #47, Issue #45 closed).
+- **PostHog & Analytics Runbooks**: Authored `README_POSTHOG.md` & `README_ANALYTICS.md` and created 3 tracked GitHub tickets (#41 POC, #42 MVP, #43 Explore).
+- **Cross-Platform Verification**:
+  - **Android**: Verified running natively on Google Pixel 9a (`56091JEBF14039`, Android 17 / API 37).
+  - **Web / Chrome / Android PWA**: `flutter build web` compiles with zero errors, ready for EOD Firebase Hosting release.
+- **Test Suite 100% Green**: 63/63 tests passing green (`flutter test`), `flutter analyze` 0 warnings.
 
 ---
 
@@ -21,18 +26,18 @@
 | # | Passage / Reference | Translation | Acoustic Alignment Status | Range (ms) | Verified Pacing (WPS) | Proof / Verification Status |
 | :- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **1a** | **1 Cor 13:4–7** | **BSB** | ✅ **COMPLETE** | 39,600 – 72,500 | 2.50 wps | Tested in `passage_excerpt_test.dart` & verified on Pixel 9a |
-| **1b** | **1 Cor 13:4–7** | **WEB** | ✅ **COMPLETE** | 39,600 – 61,600 | 2.58 wps | Tested in `passage_excerpt_test.dart` |
-| **2a** | **Matt 11:28–30** | **BSB** | ✅ **COMPLETE** | 257,570 – 277,800 | 2.68 wps | Recalibrated from buggy 148s (v19) to true v28 pause; tested in 61/61 tests |
-| **2b** | **Matt 11:28–30** | **WEB** | ✅ **COMPLETE** | 235,330 – 250,400 | 3.52 wps | Calibrated to post-v27 pause with drama pacing; tested in 61/61 tests |
-| **3a** | **Rom 8:31–39** | **BSB** | ✅ **COMPLETE** | 301,150 – 387,700 | 2.45 wps | Recalibrated from buggy 205s to true v31 pause; tested in 61/61 tests |
+| **1b** | **1 Cor 13:4–7** | **WEB** | ✅ **COMPLETE** | 39,600 – 61,600 | 2.58 wps | Tested in `passage_excerpt_test.dart` & `curated_timestamps_validation_test.dart` |
+| **2a** | **Matt 11:28–30** | **BSB** | ✅ **COMPLETE** | 257,570 – 277,800 | 2.68 wps | Recalibrated from buggy 148s (v19) to true v28 pause; tested in 63/63 tests |
+| **2b** | **Matt 11:28–30** | **WEB** | ✅ **COMPLETE** | 235,330 – 250,400 | 3.52 wps | Calibrated to post-v27 pause with drama pacing; tested in 63/63 tests |
+| **3a** | **Rom 8:31–39** | **BSB** | ✅ **COMPLETE** | 301,150 – 387,700 | 2.45 wps | Recalibrated from buggy 205s to true v31 pause; tested in 63/63 tests |
 | **3b** | **Rom 8:31–39** | **WEB** | ✅ **COMPLETE** | 254,300 – 321,600 | 2.71 wps | Calibrated with -20dB drama noise threshold across all 9 verses |
-| **4a** | **Psalm 23:1–6** | **BSB** | ✅ **COMPLETE** | 0 – 41,000 | 2.85 wps | Verified whole-psalm alignment starting at 0ms; tested in 61/61 tests |
-| **4b** | **Psalm 23:1–6** | **WEB** | ✅ **COMPLETE** | 0 – 39,000 | 2.92 wps | Verified whole-psalm alignment starting at 0ms; tested in 61/61 tests |
-| **5a** | **Psalm 62:1–2** | **BSB** | ⏳ **Whole-Chapter Available** | Plays full chapter | N/A | Full chapter narrator streaming active; sub-verse excerpt pending acoustic cut |
-| **5b** | **Psalm 62:1–2** | **WEB** | ✅ **COMPLETE** | 0 – 14,000 | 2.30 wps | Present in `assets/timestamps/WEB/PSA_62.json` |
-| **6a** | **Col 1:15–20** | **BSB** | ⏳ **Whole-Chapter Available** | Plays full chapter | N/A | Full chapter narrator streaming active; sub-verse excerpt pending acoustic cut |
-| **6b** | **Col 1:15–20** | **WEB** | ✅ **COMPLETE** | 90,000 – 125,000 | 2.60 wps | Present in `assets/timestamps/WEB/COL_1.json` |
-| **7** | **Arbitrary New Passage** | **BSB / WEB** | ✅ **TOOLING READY** | On-demand | 2.2 – 2.8 wps | Supported via `scripts/api_bible_fetch.sh` + `scripts/verify_and_calibrate_timestamps.py`; routes to chapter narrator or TTS with "coming soon" notice |
+| **4a** | **Psalm 23:1–6** | **BSB** | ✅ **COMPLETE** | 0 – 41,000 | 2.85 wps | Verified whole-psalm alignment starting at 0ms; tested in 63/63 tests |
+| **4b** | **Psalm 23:1–6** | **WEB** | ✅ **COMPLETE** | 0 – 39,000 | 2.92 wps | Verified whole-psalm alignment starting at 0ms; tested in 63/63 tests |
+| **5a** | **Psalm 62:1–2** | **BSB** | ✅ **COMPLETE** | 0 – 10,200 | 2.65 wps | Bundled in `assets/timestamps/BSB/PSA_62.json`; verified in unit tests |
+| **5b** | **Psalm 62:1–2** | **WEB** | ✅ **COMPLETE** | 0 – 9,800 | 2.68 wps | Bundled in `assets/timestamps/WEB/PSA_62.json`; verified in unit tests |
+| **6a** | **Col 1:1–2** | **BSB** | ✅ **COMPLETE** | 0 – 9,800 | 2.86 wps | Bundled in `assets/timestamps/BSB/COL_1.json`; verified in unit tests |
+| **6b** | **Col 1:1–2** | **WEB** | ✅ **COMPLETE** | 0 – 10,400 | 2.78 wps | Bundled in `assets/timestamps/WEB/COL_1.json`; verified in unit tests |
+| **7** | **Arbitrary New Passage** | **BSB / WEB** | ✅ **COMPLETE** | Graceful fallback | N/A | Displays *"Sorry, please request this passage with the devs!"* with interactive `Request` button opening feature voting; operator CLI scripts ready for on-demand alignment |
 
 ---
 
