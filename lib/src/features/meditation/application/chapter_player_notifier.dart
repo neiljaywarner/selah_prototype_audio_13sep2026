@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 
 import '../../../core/audio/bundled_audio_service.dart';
 import '../../../core/constants/api_constants.dart';
@@ -98,6 +99,10 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     try {
       final session = await AudioSession.instance;
       await session.configure(const AudioSessionConfiguration.music());
+      session.becomingNoisyEventStream.listen((_) {
+        AppLogger.info('Audio becoming noisy (headphones/BT disconnected); pausing playback');
+        pause();
+      });
       AppLogger.info('AudioSession configured with Music profile for background audio playback.');
     } catch (e) {
       AppLogger.warning('AudioSession configuration notice: $e');
@@ -579,24 +584,38 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
 
     try {
-      final Duration? fullDuration;
       final isAsset = chapter.audioStreamUrl.startsWith('assets/');
-      if (isAsset) {
-        fullDuration = await _audioPlayer.setAsset(chapter.audioStreamUrl);
-      } else {
-        fullDuration = await _audioPlayer.setUrl(chapter.audioStreamUrl);
-      }
-      final window = PassageExcerpt.forChapter(
+      final excerpt = PassageExcerpt.forChapter(
         chapter.bookCode,
         chapter.chapterNumber,
-      )?.clipWindow(_currentTimestamps);
+      );
+      final mediaItem = MediaItem(
+        id: chapter.audioStreamUrl,
+        album: 'Selah Scripture Audio',
+        title: chapter.displayTitle ?? chapter.reference,
+        artist: 'Human Narrator (${state.activeTranslation})',
+        artUri: Uri.parse('https://selahword.web.app/icons/Icon-192.png'),
+      );
+      final UriAudioSource baseSource = isAsset
+          ? AudioSource.asset(chapter.audioStreamUrl, tag: mediaItem)
+          : AudioSource.uri(Uri.parse(chapter.audioStreamUrl), tag: mediaItem);
+
+      final window = excerpt?.clipWindow(_currentTimestamps);
       _clipOffset = window?.start ?? Duration.zero;
-      final dur = window == null
-          ? fullDuration
-          : await _audioPlayer.setClip(start: window.start, end: window.end);
+
+      final AudioSource finalSource = window == null
+          ? baseSource
+          : ClippingAudioSource(
+              child: baseSource,
+              start: window.start,
+              end: window.end,
+              tag: mediaItem,
+            );
+
+      final dur = await _audioPlayer.setAudioSource(finalSource);
       if (window != null) {
         AppLogger.info(
-          'Clipped ${chapter.reference} to curated excerpt ${window.start.inMilliseconds}–${window.end.inMilliseconds}ms',
+          'Clipped ${chapter.reference} to curated excerpt ${window.start.inMilliseconds}–${window.end.inMilliseconds}ms with MediaItem notification tag',
         );
       }
       if (!ref.mounted) return;
