@@ -3,8 +3,12 @@ import 'package:flutter/services.dart';
 
 import '../../../../core/feedback/feedback_service.dart';
 
-/// Modal dialog allowing users to leave quick emoji or star ratings,
-/// meditative reflections, or send private feedback directly to Neil.
+/// 3-Face App Feedback Dialog (Happy 😊, Neutral 😐, Sad 😞)
+///
+/// Funnel logic:
+/// - 😊 Happy: Encourages rating 4–5 stars and leaving praise/blessing.
+/// - 😐 Neutral: Funnels directly to private feedback on what can be improved.
+/// - 😞 Sad: Funnels directly to private bug/frustration feedback routed to Neil.
 class EmojiFeedbackDialog extends StatefulWidget {
   const EmojiFeedbackDialog({
     super.key,
@@ -38,18 +42,32 @@ class _EmojiFeedbackDialogState extends State<EmojiFeedbackDialog> {
   final TextEditingController _commentController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
 
+  String _selectedFace = 'happy'; // 'happy', 'neutral', 'sad'
   int _selectedRating = 5;
-  String _selectedEmoji = '🕊️';
-  String _selectedLabel = 'Peaceful';
+  String _selectedEmoji = '😊';
+  String _selectedLabel = 'Loving it!';
   bool _isSubmitting = false;
   bool _isSubmitted = false;
 
-  static const List<Map<String, dynamic>> _emojiOptions = [
-    {'emoji': '🕊️', 'label': 'Peaceful', 'rating': 5},
-    {'emoji': '🙏', 'label': 'Grateful', 'rating': 4},
-    {'emoji': '💛', 'label': 'Comforted', 'rating': 3},
-    {'emoji': '😐', 'label': 'Neutral', 'rating': 2},
-    {'emoji': '🌧️', 'label': 'Distracted', 'rating': 1},
+  static const List<Map<String, dynamic>> _faceOptions = [
+    {
+      'face': 'happy',
+      'emoji': '😊',
+      'label': 'Loving it!',
+      'defaultRating': 5,
+    },
+    {
+      'face': 'neutral',
+      'emoji': '😐',
+      'label': 'It is okay',
+      'defaultRating': 3,
+    },
+    {
+      'face': 'sad',
+      'emoji': '😞',
+      'label': 'Needs work',
+      'defaultRating': 1,
+    },
   ];
 
   @override
@@ -59,12 +77,22 @@ class _EmojiFeedbackDialogState extends State<EmojiFeedbackDialog> {
     super.dispose();
   }
 
+  void _onSelectFace(Map<String, dynamic> opt) {
+    setState(() {
+      _selectedFace = opt['face'] as String;
+      _selectedEmoji = opt['emoji'] as String;
+      _selectedLabel = opt['label'] as String;
+      _selectedRating = opt['defaultRating'] as int;
+    });
+  }
+
   Future<void> _handleSubmit() async {
     setState(() => _isSubmitting = true);
 
     await FeedbackService.submitFeedback(
       rating: _selectedRating,
       emoji: _selectedEmoji,
+      face: _selectedFace,
       message: _commentController.text.trim(),
       email: _emailController.text.trim().isNotEmpty ? _emailController.text.trim() : null,
       currentChapter: widget.currentChapter,
@@ -79,19 +107,20 @@ class _EmojiFeedbackDialogState extends State<EmojiFeedbackDialog> {
 
   void _handleEmailDirect() {
     final comment = _commentController.text.trim();
-    final body = 'Rating: $_selectedRating/5 $_selectedEmoji ($_selectedLabel)\n\n'
+    final body = 'Face: $_selectedEmoji ($_selectedLabel) • Rating: $_selectedRating/5\n'
         'Passage: ${widget.currentChapter ?? "N/A"}\n'
         'Translation: ${widget.translation ?? "N/A"}\n\n'
-        'Reflection / Feedback:\n$comment';
+        'Private Reflection / Feedback:\n$comment\n\n'
+        'Private Triage Hub: https://github.com/${FeedbackService.privateGitHubRepo}';
 
     Clipboard.setData(ClipboardData(
-      text: 'To: ${FeedbackService.defaultFeedbackEmail}\nSubject: [Selah Feedback] $_selectedEmoji $_selectedLabel\n\n$body',
+      text: 'To: ${FeedbackService.defaultFeedbackEmail}\nSubject: [Selah App Feedback] $_selectedEmoji $_selectedLabel\n\n$body',
     ));
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
-          'Email template copied to clipboard! You can also email directly to neilwarner+selah@gmail.com',
+          'Private email copied to clipboard! You can send directly to neilwarner+selah@gmail.com',
         ),
         backgroundColor: Color(0xFF4338CA),
         duration: Duration(seconds: 4),
@@ -113,21 +142,25 @@ class _EmojiFeedbackDialogState extends State<EmojiFeedbackDialog> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.greenAccent.withValues(alpha: 0.15),
+                  color: (_selectedFace == 'happy' ? Colors.greenAccent : const Color(0xFFFBBF24))
+                      .withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Text('🕊️', style: TextStyle(fontSize: 40)),
+                child: Text(_selectedEmoji, style: const TextStyle(fontSize: 40)),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Thank You!',
-                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              Text(
+                _selectedFace == 'happy' ? 'Praise God! Thank You!' : 'Thank You for Your Feedback!',
+                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Your prayer and reflection help shape Selah for brothers and sisters around the world.',
+              Text(
+                _selectedFace == 'happy'
+                    ? 'Your encouragement blesses our team and helps shape Selah for believers worldwide.'
+                    : 'Your honest feedback is safely recorded in our private triage inbox. Neil reviews every note personally to make Selah better.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
@@ -146,6 +179,8 @@ class _EmojiFeedbackDialogState extends State<EmojiFeedbackDialog> {
       );
     }
 
+    final isHappy = _selectedFace == 'happy';
+
     return Dialog(
       backgroundColor: const Color(0xFF161536),
       shape: RoundedRectangleBorder(
@@ -154,7 +189,7 @@ class _EmojiFeedbackDialogState extends State<EmojiFeedbackDialog> {
       ),
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 440, maxHeight: 620),
+        constraints: const BoxConstraints(maxWidth: 440, maxHeight: 680),
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: SingleChildScrollView(
@@ -165,14 +200,21 @@ class _EmojiFeedbackDialogState extends State<EmojiFeedbackDialog> {
                 // Header
                 Row(
                   children: [
-                    const Text('🕊️', style: TextStyle(fontSize: 24)),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.rate_review_rounded, color: Color(0xFFFBBF24), size: 20),
+                    ),
                     const SizedBox(width: 10),
                     const Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'How was your meditation?',
+                            'How do you like Selah?',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -180,7 +222,7 @@ class _EmojiFeedbackDialogState extends State<EmojiFeedbackDialog> {
                             ),
                           ),
                           Text(
-                            'Share your reflection or feedback',
+                            'Help us improve your audio meditation',
                             style: TextStyle(color: Colors.white60, fontSize: 11),
                           ),
                         ],
@@ -196,51 +238,55 @@ class _EmojiFeedbackDialogState extends State<EmojiFeedbackDialog> {
                 const Divider(color: Colors.white12, height: 1),
                 const SizedBox(height: 16),
 
-                // Emoji Reaction Row
+                // 3-Face Reaction Row
                 const Text(
-                  'SELECT YOUR EXPERIENCE',
+                  'SELECT YOUR APP EXPERIENCE',
                   style: TextStyle(color: Color(0xFFFBBF24), fontSize: 11, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 Row(
-                  children: _emojiOptions.map((opt) {
-                    final isSel = _selectedRating == opt['rating'];
+                  children: _faceOptions.map((opt) {
+                    final faceKey = opt['face'] as String;
+                    final isSel = _selectedFace == faceKey;
                     return Expanded(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
                         child: InkWell(
-                          key: Key('emoji_rating_${opt['rating']}'),
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () {
-                            setState(() {
-                              _selectedRating = opt['rating'] as int;
-                              _selectedEmoji = opt['emoji'] as String;
-                              _selectedLabel = opt['label'] as String;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
+                          key: Key('face_option_$faceKey'),
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: () => _onSelectFace(opt),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
                               color: isSel
-                                  ? const Color(0xFF6366F1).withValues(alpha: 0.3)
+                                  ? (faceKey == 'happy'
+                                      ? const Color(0xFF10B981).withValues(alpha: 0.2)
+                                      : (faceKey == 'neutral'
+                                          ? const Color(0xFF6366F1).withValues(alpha: 0.25)
+                                          : const Color(0xFFEF4444).withValues(alpha: 0.2)))
                                   : Colors.white.withValues(alpha: 0.04),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: isSel ? const Color(0xFFFBBF24) : Colors.white10,
-                                width: isSel ? 1.5 : 1,
+                                color: isSel
+                                    ? (faceKey == 'happy'
+                                        ? const Color(0xFF10B981)
+                                        : (faceKey == 'neutral'
+                                            ? const Color(0xFFFBBF24)
+                                            : const Color(0xFFF87171)))
+                                    : Colors.white12,
+                                width: isSel ? 2 : 1,
                               ),
                             ),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(opt['emoji'] as String, style: const TextStyle(fontSize: 22)),
-                                const SizedBox(height: 4),
+                                Text(opt['emoji'] as String, style: const TextStyle(fontSize: 28)),
+                                const SizedBox(height: 6),
                                 Text(
                                   opt['label'] as String,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    fontSize: 9,
+                                    fontSize: 11,
                                     color: isSel ? Colors.white : Colors.white60,
                                     fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
                                   ),
@@ -253,43 +299,98 @@ class _EmojiFeedbackDialogState extends State<EmojiFeedbackDialog> {
                     );
                   }).toList(),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
 
-                // Star Rating Representation
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(5, (index) {
-                    final starIndex = index + 1;
-                    return IconButton(
-                      icon: Icon(
-                        starIndex <= _selectedRating ? Icons.star_rounded : Icons.star_outline_rounded,
-                        color: const Color(0xFFFBBF24),
-                        size: 26,
-                      ),
-                      onPressed: () {
-                        final match = _emojiOptions.firstWhere(
-                          (e) => e['rating'] == starIndex,
-                          orElse: () => _emojiOptions.first,
-                        );
-                        setState(() {
-                          _selectedRating = starIndex;
-                          _selectedEmoji = match['emoji'] as String;
-                          _selectedLabel = match['label'] as String;
-                        });
-                      },
-                    );
-                  }),
-                ),
-                const SizedBox(height: 12),
+                // Dynamic Funnel Content
+                if (isHappy) ...[
+                  // HAPPY FUNNEL: Encourage 4 or 5 stars and public praise
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 22),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Glad you love it! Would you rate Selah 4 or 5 stars?',
+                            style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [4, 5].map((star) {
+                      final isStarSel = _selectedRating == star;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                        child: ChoiceChip(
+                          key: Key('rating_star_$star'),
+                          label: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('$star ', style: TextStyle(color: isStarSel ? Colors.black : Colors.white)),
+                              Icon(Icons.star_rounded, size: 16, color: isStarSel ? Colors.black : const Color(0xFFFBBF24)),
+                            ],
+                          ),
+                          selected: isStarSel,
+                          selectedColor: const Color(0xFFFBBF24),
+                          backgroundColor: Colors.white.withValues(alpha: 0.08),
+                          onSelected: (_) => setState(() => _selectedRating = star),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ] else ...[
+                  // NEUTRAL / SAD FUNNEL: Private Feedback Funnel
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4338CA).withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.4)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _selectedFace == 'sad' ? Icons.healing_rounded : Icons.lock_outline_rounded,
+                          color: const Color(0xFFFBBF24),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _selectedFace == 'sad'
+                                ? '🔒 Private Pre-Triage: Tell Neil what felt frustrating or broken.'
+                                : '🔒 Private Pre-Triage: Help us make Selah more peaceful for you.',
+                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 14),
 
-                // Reflection comment input
+                // Comment input
                 TextField(
                   key: const Key('feedback_comment_field'),
                   controller: _commentController,
                   maxLines: 3,
                   style: const TextStyle(color: Colors.white, fontSize: 13),
                   decoration: InputDecoration(
-                    hintText: 'Share a prayer request, suggestion, or request a passage...',
+                    hintText: isHappy
+                        ? 'What do you love most about Selah? (optional reflection)'
+                        : (_selectedFace == 'sad'
+                            ? 'What went wrong or felt broken? (private note to devs)'
+                            : 'What could we improve or add? (private note to devs)'),
                     hintStyle: const TextStyle(color: Colors.white38, fontSize: 12),
                     filled: true,
                     fillColor: Colors.white.withValues(alpha: 0.05),
@@ -301,22 +402,22 @@ class _EmojiFeedbackDialogState extends State<EmojiFeedbackDialog> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: Color(0xFF6366F1)),
                     ),
-                    contentPadding: const EdgeInsets.all(12),
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
 
-                // Email field
+                // Email input
                 TextField(
                   key: const Key('feedback_email_field'),
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   style: const TextStyle(color: Colors.white, fontSize: 13),
                   decoration: InputDecoration(
-                    hintText: 'Your email (optional, if you want a reply)',
+                    hintText: 'Your email (optional, for follow-up reply)',
                     hintStyle: const TextStyle(color: Colors.white38, fontSize: 12),
                     filled: true,
                     fillColor: Colors.white.withValues(alpha: 0.05),
+                    prefixIcon: const Icon(Icons.email_outlined, color: Colors.white38, size: 18),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: Colors.white12),
@@ -325,41 +426,48 @@ class _EmojiFeedbackDialogState extends State<EmojiFeedbackDialog> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: Color(0xFF6366F1)),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   ),
                 ),
                 const SizedBox(height: 16),
 
-                // Action buttons
+                // Action Buttons
                 ElevatedButton(
                   key: const Key('submit_feedback_button'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6366F1),
+                    backgroundColor: isHappy ? const Color(0xFF10B981) : const Color(0xFF6366F1),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: _isSubmitting ? null : _handleSubmit,
                   child: _isSubmitting
                       ? const SizedBox(
-                          height: 16,
-                          width: 16,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
-                      : const Text('Submit Reflection', style: TextStyle(fontWeight: FontWeight.bold)),
+                      : Text(
+                          isHappy
+                              ? 'Submit $_selectedRating-Star Rating & Praise'
+                              : 'Submit Private Feedback',
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
                 ),
                 const SizedBox(height: 8),
 
+                // Secondary direct action for private funnel
                 OutlinedButton.icon(
                   key: const Key('email_direct_button'),
+                  icon: const Icon(Icons.mark_email_read_outlined, size: 16, color: Colors.indigoAccent),
+                  label: Text(
+                    isHappy ? 'Share Review via Email' : 'Email Neil Directly (Private)',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white70,
-                    side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                    side: const BorderSide(color: Colors.white12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     padding: const EdgeInsets.symmetric(vertical: 10),
                   ),
-                  icon: const Icon(Icons.email_outlined, size: 16, color: Color(0xFFFBBF24)),
-                  label: const Text('Copy Email to Neil Warner', style: TextStyle(fontSize: 12)),
                   onPressed: _handleEmailDirect,
                 ),
               ],

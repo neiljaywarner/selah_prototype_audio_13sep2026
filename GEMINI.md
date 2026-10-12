@@ -57,12 +57,14 @@ Under NO circumstances may any changes be pushed directly to the `main` branch. 
 
 ### Command Execution Permissions & MCP-First Protocol
 1. **MCP Server Precedence (MANDATORY)**:
-   - Always prefer and use MCP tools (`github` MCP via `call_mcp_tool`, `marionette` MCP, `patrol` MCP) over local CLI commands.
+   - Always prefer and use MCP tools (`github` MCP, `adb` MCP via `call_mcp_tool`, `marionette` MCP, `patrol` MCP) over local CLI commands.
    - For all GitHub operations (issue creation, PR creation, PR merging, comments, issue inspection), execute via the **`github` MCP server**, NEVER CLI `gh`.
+   - For all Android device operations (device inspection, shell commands, activity management, UI inspection, screenshots, logcat), execute via the **`adb` MCP server** (`adb_devices`, `adb_shell`, `inspect_ui`, `dump_image`, `adb_activity_manager`, `adb_package_manager`).
 2. **Permitted Autonomous Commands**:
    - `git commit` (on dedicated ticket/feature branches with conventional commit syntax).
    - `git push origin <ticket-branch>` (pushing to feature/ticket branches is fully authorized).
    - `git status`, `git diff`, `git branch`, `git checkout`, `git add`.
+   - Android & Device CLI: `adb devices`, `adb shell`, `adb install`, `adb exec-out`, `flutter install`, `flutter build apk`, `flutter run -d <device>`.
    - Python review triage and auto-defer scripts:
      - `python3 .agents/skills/pr-coderabbit-triage-and-merge/scripts/triage_pr_comments.py`
      - `python3 .agents/skills/pr-coderabbit-triage-and-merge/scripts/defer_comments_to_issues.py`

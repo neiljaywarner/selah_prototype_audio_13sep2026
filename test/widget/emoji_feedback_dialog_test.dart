@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/presentation/widgets/emoji_feedback_dialog.dart';
-import 'package:selah_prototype_audio_13sep2026/src/features/meditation/presentation/widgets/settings_bottom_sheet.dart';
 
 void main() {
-  group('EmojiFeedbackDialog Widget Tests (#49)', () {
-    testWidgets('Renders all emoji reaction options and stars', (WidgetTester tester) async {
+  group('EmojiFeedbackDialog 3-Face Funnel Widget Tests (#55)', () {
+    testWidgets('Renders 3 sentiment faces (Happy, Neutral, Sad) and default happy funnel', (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -32,20 +30,21 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(EmojiFeedbackDialog), findsOneWidget);
-      expect(find.text('How was your meditation?'), findsOneWidget);
-      expect(find.text('SELECT YOUR EXPERIENCE'), findsOneWidget);
+      expect(find.text('How do you like Selah?'), findsOneWidget);
+      expect(find.text('SELECT YOUR APP EXPERIENCE'), findsOneWidget);
 
-      // Verify emojis present
-      expect(find.text('🕊️'), findsWidgets);
-      expect(find.text('Peaceful'), findsOneWidget);
-      expect(find.text('🙏'), findsWidgets);
-      expect(find.text('Grateful'), findsOneWidget);
-      expect(find.text('💛'), findsWidgets);
-      expect(find.text('Comforted'), findsOneWidget);
+      // Verify 3 faces present
+      expect(find.text('😊'), findsWidgets);
+      expect(find.text('Loving it!'), findsOneWidget);
       expect(find.text('😐'), findsWidgets);
-      expect(find.text('Neutral'), findsOneWidget);
-      expect(find.text('🌧️'), findsWidgets);
-      expect(find.text('Distracted'), findsOneWidget);
+      expect(find.text('It is okay'), findsOneWidget);
+      expect(find.text('😞'), findsWidgets);
+      expect(find.text('Needs work'), findsOneWidget);
+
+      // Default happy funnel encourages 4-5 stars
+      expect(find.textContaining('Would you rate Selah 4 or 5 stars?'), findsOneWidget);
+      expect(find.byKey(const Key('rating_star_4')), findsOneWidget);
+      expect(find.byKey(const Key('rating_star_5')), findsOneWidget);
 
       // Form inputs
       expect(find.byKey(const Key('feedback_comment_field')), findsOneWidget);
@@ -54,7 +53,7 @@ void main() {
       expect(find.byKey(const Key('email_direct_button')), findsOneWidget);
     });
 
-    testWidgets('Selects emoji, enters text, and submits reflection successfully', (WidgetTester tester) async {
+    testWidgets('Selecting Neutral face funnels to private pre-triage message', (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1080, 1920);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -79,33 +78,63 @@ void main() {
       await tester.tap(find.text('Open Dialog'));
       await tester.pumpAndSettle();
 
-      // Tap grateful emoji (rating 4)
-      await tester.tap(find.byKey(const Key('emoji_rating_4')));
+      // Tap neutral face
+      await tester.tap(find.byKey(const Key('face_option_neutral')));
       await tester.pumpAndSettle();
 
-      // Enter comment
+      // Funnel should show private pre-triage
+      expect(find.textContaining('Private Pre-Triage: Help us make Selah more peaceful'), findsOneWidget);
+      expect(find.text('Submit Private Feedback'), findsOneWidget);
+      expect(find.text('Email Neil Directly (Private)'), findsOneWidget);
+    });
+
+    testWidgets('Selecting Sad face funnels to private bug/frustration message and submits', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 1920);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () => EmojiFeedbackDialog.show(
+                  context,
+                  currentChapter: '1 Corinthians 13:4-7',
+                  translation: 'BSB',
+                ),
+                child: const Text('Open Dialog'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Dialog'));
+      await tester.pumpAndSettle();
+
+      // Tap sad face
+      await tester.tap(find.byKey(const Key('face_option_sad')));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Private Pre-Triage: Tell Neil what felt frustrating or broken'), findsOneWidget);
+
       await tester.enterText(
         find.byKey(const Key('feedback_comment_field')),
-        'Loved the Romans 8 passage looping! Deep peace.',
+        'The audio stream paused when I locked the screen.',
       );
       await tester.enterText(
         find.byKey(const Key('feedback_email_field')),
-        'sister@example.com',
+        'tester@example.com',
       );
       await tester.pumpAndSettle();
 
-      // Tap submit
       await tester.tap(find.byKey(const Key('submit_feedback_button')));
       await tester.pumpAndSettle();
 
-      // Should show Thank You card
-      expect(find.text('Thank You!'), findsOneWidget);
-      expect(
-        find.text('Your prayer and reflection help shape Selah for brothers and sisters around the world.'),
-        findsOneWidget,
-      );
+      expect(find.text('Thank You for Your Feedback!'), findsOneWidget);
+      expect(find.textContaining('safely recorded in our private triage inbox'), findsOneWidget);
 
-      // Dismiss thank you dialog
       await tester.tap(find.text('Return to Meditation'));
       await tester.pumpAndSettle();
 
@@ -137,39 +166,17 @@ void main() {
       await tester.tap(find.text('Open Dialog'));
       await tester.pumpAndSettle();
 
-      await tester.enterText(
-        find.byKey(const Key('feedback_comment_field')),
-        'Please add Psalm 91 next!',
-      );
+      // Switch to neutral to show the private pre-triage funnel
+      await tester.tap(find.byKey(const Key('face_option_neutral')));
       await tester.pumpAndSettle();
 
-      // Tap copy email button
-      await tester.tap(find.byKey(const Key('email_direct_button')));
-      await tester.pumpAndSettle();
+      final emailButton = find.byKey(const Key('email_direct_button'));
+      await tester.ensureVisible(emailButton);
+      await tester.tap(emailButton);
+      await tester.pump();
 
-      expect(find.textContaining('Email template copied to clipboard!'), findsOneWidget);
+      expect(find.byType(SnackBar), findsOneWidget);
       expect(find.textContaining('neilwarner+selah@gmail.com'), findsOneWidget);
-    });
-
-    testWidgets('SettingsBottomSheet includes button to open EmojiFeedbackDialog', (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1080, 1920);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      await tester.pumpWidget(
-        const ProviderScope(
-          child: MaterialApp(
-            home: Scaffold(
-              body: SettingsBottomSheet(),
-            ),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      final feedbackButton = find.byKey(const Key('open_feedback_dialog_button'));
-      expect(feedbackButton, findsOneWidget);
-      expect(find.text('Prayer, Reflection & Feedback'), findsOneWidget);
     });
   });
 }

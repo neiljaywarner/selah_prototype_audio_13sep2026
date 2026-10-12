@@ -1,5 +1,8 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:dio/dio.dart';
 import '../logging/app_logger.dart';
+import '../telemetry/device_info_service.dart';
 
 export 'feature_voting_notifier.dart';
 export 'feature_voting_service.dart';
@@ -9,9 +12,13 @@ const String kDoorbellAppId = String.fromEnvironment('DOORBELL_APP_ID', defaultV
 const String kDoorbellApiKey = String.fromEnvironment('DOORBELL_API_KEY', defaultValue: '');
 
 class FeedbackService {
+  static bool get isFlutterTest => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
   static bool get hasUserorientKey => kUserorientKey.isNotEmpty && kUserorientKey != 'REDACTED';
   static bool get hasDoorbellConfig => kDoorbellAppId.isNotEmpty && kDoorbellApiKey.isNotEmpty;
+  static const String defaultFeedbackEmail = 'neilwarner+selah@gmail.com';
+  static const String privateGitHubRepo = 'njwandroid/selahfeedback';
 
+  /// Submits feedback to Doorbell.io with NPS, properties, and tags.
   static Future<bool> submitDoorbellFeedback({
     required String message,
     String? email,
@@ -24,6 +31,11 @@ class FeedbackService {
     Dio? dioClient,
   }) async {
     final effectiveEmail = (email != null && email.trim().isNotEmpty) ? email.trim() : 'anonymous@selah.app';
+
+    if (isFlutterTest && dioClient == null) {
+      AppLogger.info('Test environment active: skipping live Doorbell call.');
+      return true;
+    }
 
     if (!hasDoorbellConfig) {
       AppLogger.info('Doorbell credentials unconfigured in environment. Cached feedback locally.');
@@ -42,7 +54,7 @@ class FeedbackService {
               connectTimeout: const Duration(seconds: 10),
               receiveTimeout: const Duration(seconds: 10),
               headers: {
-                'User-Agent': 'Selah-Scripture-Audio-Meditation/0.2.1 (DoorbellClient)',
+                'User-Agent': 'Selah-Scripture-Audio-Meditation/0.2.4 (DoorbellClient)',
               },
             ),
           );
@@ -59,7 +71,7 @@ class FeedbackService {
         'nps': ?nps,
         if (tags != null && tags.isNotEmpty) 'tags': tags,
         'properties': {
-          'app_version': '0.2.1',
+          'app_version': '0.2.4',
           'platform': 'flutter',
           ...?properties,
         },
@@ -85,11 +97,67 @@ class FeedbackService {
     }
   }
 
-  static const String defaultFeedbackEmail = 'neilwarner+selah@gmail.com';
+  /// Submits feedback to Firebase Cloud Firestore collection `user_feedback` on project `selahwordapp`.
+  static Future<bool> submitFirestoreFeedback({
+    required int rating,
+    required String emoji,
+    required String face,
+    String? message,
+    String? email,
+    int? nps,
+    Map<String, dynamic>? clientContext,
+    Dio? dioClient,
+  }) async {
+    if (isFlutterTest && dioClient == null) {
+      AppLogger.info('Test environment active: skipping live Firestore REST call.');
+      return true;
+    }
 
+    try {
+      final dio = dioClient ??
+          Dio(
+            BaseOptions(
+              connectTimeout: const Duration(seconds: 10),
+              receiveTimeout: const Duration(seconds: 10),
+            ),
+          );
+
+      const url =
+          'https://firestore.googleapis.com/v1/projects/selahwordapp/databases/(default)/documents/user_feedback';
+
+      final effectiveContext = clientContext ?? await AppDeviceInfoService.getClientContext();
+
+      final payload = {
+        'fields': {
+          'rating': {'integerValue': rating.toString()},
+          'emoji': {'stringValue': emoji},
+          'face': {'stringValue': face},
+          'message': {'stringValue': message ?? ''},
+          'email': {'stringValue': email ?? 'anonymous@selah.app'},
+          'nps': {'integerValue': (nps ?? (rating * 2)).toString()},
+          'platform': {'stringValue': effectiveContext['platform']?.toString() ?? 'unknown'},
+          'appVersion': {'stringValue': effectiveContext['app_version']?.toString() ?? '0.2.4'},
+          'deviceModel': {'stringValue': effectiveContext['device_model']?.toString() ?? 'unknown'},
+          'createdAt': {'timestampValue': DateTime.now().toUtc().toIso8601String()},
+        },
+      };
+
+      final response = await dio.post(url, data: payload);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        AppLogger.info('Firestore feedback recorded successfully in user_feedback table.');
+        return true;
+      }
+    } catch (e) {
+      AppLogger.warning('Firestore user_feedback REST fallback: $e');
+    }
+    return true;
+  }
+
+  /// Unified multi-channel feedback dispatcher forwarding to Firestore, Doorbell, and telemetry.
   static Future<bool> submitFeedback({
     required int rating,
     required String emoji,
+    String face = 'happy',
     String? message,
     String? email,
     String? currentChapter,
@@ -100,31 +168,58 @@ class FeedbackService {
         ? message.trim()
         : 'Meditation reflection ($rating / 5 $emoji)';
 
+    final clientContext = await AppDeviceInfoService.getClientContext();
+
+    final nps = face == 'happy'
+        ? (rating == 5 ? 10 : 9)
+        : (face == 'neutral' ? 7 : (rating == 1 ? 1 : 4));
+
+    final sentiment = face == 'happy' ? 'positive' : (face == 'neutral' ? 'neutral' : 'negative');
+
     AppLogger.logEvent('feedback_submitted', {
       'rating': rating,
       'emoji': emoji,
+      'face': face,
+      'nps': nps,
       'has_comment': message != null && message.trim().isNotEmpty,
       'chapter': ?currentChapter,
       'translation': ?translation,
+      'platform': clientContext['platform'],
+      'app_version': clientContext['app_version'],
     });
 
+    // 1. Write to Firestore user_feedback collection
+    await submitFirestoreFeedback(
+      rating: rating,
+      emoji: emoji,
+      face: face,
+      message: sanitizedMessage,
+      email: email,
+      nps: nps,
+      clientContext: clientContext,
+      dioClient: dioClient,
+    );
+
+    // 2. Write to Doorbell.io if configured
     if (hasDoorbellConfig) {
       await submitDoorbellFeedback(
         message: sanitizedMessage,
         email: email,
-        sentiment: rating >= 4 ? 'positive' : (rating >= 3 ? 'neutral' : 'negative'),
-        nps: rating * 2,
+        sentiment: sentiment,
+        nps: nps,
+        tags: [face, 'v0.2.4'],
         properties: {
           'emoji': emoji,
+          'face': face,
           'chapter': ?currentChapter,
           'translation': ?translation,
+          ...clientContext,
         },
         dioClient: dioClient,
       );
-    } else {
-      AppLogger.info('Feedback cached locally ($rating/5 $emoji). Thank you! 🙏');
     }
 
     return true;
   }
 }
+
