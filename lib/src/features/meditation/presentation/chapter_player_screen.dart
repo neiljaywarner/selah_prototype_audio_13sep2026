@@ -15,6 +15,7 @@ import '../domain/chapter_info.dart';
 import '../domain/passage_excerpt.dart';
 import '../domain/scripture_topic.dart';
 import 'widgets/chapter_picker_dialog.dart';
+import 'widgets/emoji_feedback_dialog.dart';
 import 'widgets/feature_voting_sheet.dart';
 import 'widgets/licensing_attribution_sheet.dart';
 import 'widgets/offline_indicator.dart';
@@ -115,11 +116,22 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
             backgroundColor: const Color(0xFF312E81),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            duration: const Duration(seconds: 4),
             action: SnackBarAction(
               label: 'Request',
               textColor: const Color(0xFFFBBF24),
-              onPressed: _openFeatureVoting,
+              onPressed: () {
+                final isVoting = ref.read(remoteConfigProvider).featureVotingEnabled ||
+                    ref.read(workInProgressFeaturesProvider);
+                if (isVoting) {
+                  _openFeatureVoting();
+                } else {
+                  EmojiFeedbackDialog.show(
+                    context,
+                    currentChapter: raw,
+                    translation: ref.read(chapterPlayerProvider).translation.code,
+                  );
+                }
+              },
             ),
           ),
         );
@@ -242,6 +254,8 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     final notifier = ref.read(chapterPlayerProvider.notifier);
     final userPrefs = ref.watch(userPreferencesProvider);
     final remoteConfig = ref.watch(remoteConfigProvider);
+    final showWip = ref.watch(workInProgressFeaturesProvider);
+    final isFeatureVotingEnabled = remoteConfig.featureVotingEnabled || showWip;
 
     return Scaffold(
       appBar: AppBar(
@@ -286,11 +300,12 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
               isBundled: playerState.isBundledAsset,
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.how_to_vote_rounded, color: Color(0xFFFBBF24)),
-            tooltip: 'Feature Roadmap & Feedback',
-            onPressed: _openFeatureVoting,
-          ),
+          if (isFeatureVotingEnabled)
+            IconButton(
+              icon: const Icon(Icons.how_to_vote_rounded, color: Color(0xFFFBBF24)),
+              tooltip: 'Feature Roadmap & Feedback',
+              onPressed: _openFeatureVoting,
+            ),
           IconButton(
             icon: const Icon(Icons.info_outline_rounded, color: Colors.indigoAccent),
             tooltip: 'About Selah',

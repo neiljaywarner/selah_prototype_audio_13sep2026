@@ -1,4 +1,6 @@
+import 'dart:convert' show base64Encode;
 import 'dart:io' show Platform;
+import 'package:feedback/feedback.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:dio/dio.dart';
 import '../logging/app_logger.dart';
@@ -220,6 +222,78 @@ class FeedbackService {
     }
 
     return true;
+  }
+
+  /// Submits BetterFeedback visual feedback with screenshot, telemetry, Doorbell, and Firestore persistence.
+  static Future<void> submitBetterFeedback({
+    required UserFeedback feedback,
+    int rating = 4,
+    String face = 'neutral',
+    String? email,
+  }) async {
+    final clientContext = await AppDeviceInfoService.getClientContext();
+    final bool hasScreenshot = feedback.screenshot.isNotEmpty;
+    final int screenshotSize = feedback.screenshot.length;
+    final int messageLen = feedback.text.length;
+    final bool hasEmail = email != null && email.trim().isNotEmpty;
+    final int nps = face == 'happy' ? 10 : (face == 'neutral' ? 7 : 3);
+
+    final stopwatch = Stopwatch()..start();
+
+    // 1. Comprehensive Telemetry logging
+    AppLogger.logEvent('better_feedback_submitted', {
+      'message_len': messageLen,
+      'has_screenshot': hasScreenshot,
+      'screenshot_size_bytes': screenshotSize,
+      'has_email': hasEmail,
+      'nps': nps,
+      'face': face,
+      'rating': rating,
+      'platform': clientContext['platform'],
+      'app_version': clientContext['app_version'],
+    });
+
+    // 2. Upload to Firestore
+    final screenshotBase64 = hasScreenshot ? base64Encode(feedback.screenshot) : null;
+    await submitFirestoreFeedback(
+      rating: rating,
+      emoji: face == 'happy' ? '😊' : (face == 'neutral' ? '😐' : '😞'),
+      face: face,
+      message: feedback.text,
+      email: email,
+      nps: nps,
+      clientContext: {
+        ...clientContext,
+        if (screenshotBase64 != null) 'screenshot_len': screenshotSize,
+      },
+    );
+
+    // 3. Forward to Doorbell.io with Doorbell success/failure tracking
+    bool doorbellSuccess = false;
+    if (hasDoorbellConfig) {
+      doorbellSuccess = await submitDoorbellFeedback(
+        message: feedback.text,
+        email: email,
+        sentiment: face == 'happy' ? 'positive' : (face == 'neutral' ? 'neutral' : 'negative'),
+        nps: nps,
+        tags: [face, 'screenshot', 'v0.2.4'],
+        properties: {
+          'has_screenshot': hasScreenshot,
+          'screenshot_bytes': screenshotSize,
+          ...clientContext,
+        },
+      );
+    }
+
+    stopwatch.stop();
+
+    // 4. Log latency and delivery status
+    AppLogger.logEvent('feedback_delivery_completed', {
+      'doorbell_success': doorbellSuccess,
+      'has_doorbell_config': hasDoorbellConfig,
+      'latency_ms': stopwatch.elapsedMilliseconds,
+      'nps': nps,
+    });
   }
 }
 

@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:selah_prototype_audio_13sep2026/src/app.dart';
+import 'package:selah_prototype_audio_13sep2026/src/core/preferences/user_preferences.dart';
+
+class _WipEnabledNotifier extends WorkInProgressFeaturesNotifier {
+  @override
+  bool build() => true;
+}
 
 void main() {
   testWidgets('SelahApp v0.2 UI smoke test renders all essential components', (WidgetTester tester) async {
@@ -10,8 +16,11 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
 
     await tester.pumpWidget(
-      const ProviderScope(
-        child: SelahApp(),
+      ProviderScope(
+        overrides: [
+          workInProgressFeaturesProvider.overrideWith(_WipEnabledNotifier.new),
+        ],
+        child: const SelahApp(),
       ),
     );
     await tester.pumpAndSettle();
@@ -41,7 +50,8 @@ void main() {
 
     // Tap Feature Voting Button and verify bottom sheet appears
     await tester.tap(find.byIcon(Icons.how_to_vote_rounded));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('Feature Roadmap & Feedback'), findsOneWidget);
     expect(find.text('COMMUNITY FEATURE VOTING'), findsOneWidget);

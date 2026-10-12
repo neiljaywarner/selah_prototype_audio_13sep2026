@@ -44,6 +44,14 @@ class UserPreferences {
     list.remove(ref);
     await prefs.setStringList(savedChaptersKey, list);
   }
+  static const showWorkInProgressFeaturesKey = 'selah.show_work_in_progress_features';
+
+  bool get showWorkInProgressFeatures =>
+      _prefs?.getBool(showWorkInProgressFeaturesKey) ?? false;
+
+  Future<void> setShowWorkInProgressFeatures(bool value) async =>
+      _prefs?.setBool(showWorkInProgressFeaturesKey, value);
+
   SharedPreferences? get prefs => _prefs;
 }
 
@@ -59,4 +67,21 @@ final userPreferencesProvider = Provider<UserPreferences>(
 
 final offlineScriptureCacheProvider = Provider<OfflineScriptureCache>(
   (ref) => OfflineScriptureCache(ref.watch(userPreferencesProvider).prefs),
+);
+
+class WorkInProgressFeaturesNotifier extends Notifier<bool> {
+  @override
+  bool build() {
+    return ref.watch(userPreferencesProvider).showWorkInProgressFeatures;
+  }
+
+  Future<void> setEnabled(bool enabled) async {
+    state = enabled;
+    await ref.read(userPreferencesProvider).setShowWorkInProgressFeatures(enabled);
+  }
+}
+
+final workInProgressFeaturesProvider =
+    NotifierProvider<WorkInProgressFeaturesNotifier, bool>(
+  WorkInProgressFeaturesNotifier.new,
 );
