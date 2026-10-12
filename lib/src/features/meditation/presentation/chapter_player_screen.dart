@@ -16,8 +16,10 @@ import '../domain/passage_excerpt.dart';
 import '../domain/scripture_topic.dart';
 import 'widgets/chapter_picker_dialog.dart';
 import 'widgets/feature_voting_sheet.dart';
+import 'widgets/licensing_attribution_sheet.dart';
 import 'widgets/settings_bottom_sheet.dart';
 import 'widgets/topic_tab_bar.dart';
+import 'about_selah_dialog.dart';
 
 const bool kEnableTopicTabs = bool.fromEnvironment('ENABLE_TOPIC_TABS', defaultValue: false);
 
@@ -68,6 +70,62 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
 
     if (raw.contains(':')) {
       // Check for curated passages (1 Cor 13:4-7, Matt 11:28-30, Rom 8:31-39, Psalm 23)
+      // If user typed a verse range (e.g. "col 1:17-20" or "matt 11:28-30")
+      if (raw.contains('-') || raw.contains('–')) {
+        // Check if this matches one of our curated excerpts
+        PassageExcerpt? matchingExcerpt;
+        final parsedList = BibleReferenceParser.getSuggestions(raw);
+        if (parsedList.isNotEmpty) {
+          final match = parsedList.first;
+          final excerpt = PassageExcerpt.forChapter(match.book.code, match.chapter);
+          if (excerpt != null) {
+            final rangePattern = RegExp(r'(\d+)\s*[-–]\s*(\d+)');
+            final m = rangePattern.firstMatch(raw);
+            if (m != null) {
+              final start = int.tryParse(m.group(1) ?? '');
+              final end = int.tryParse(m.group(2) ?? '');
+              if (start == excerpt.startVerse && end == excerpt.endVerse) {
+                matchingExcerpt = excerpt;
+              }
+            }
+          }
+        }
+
+        if (matchingExcerpt != null) {
+          final refStr = matchingExcerpt.displayTitle ??
+              '${matchingExcerpt.bookCode} ${matchingExcerpt.chapterNumber}:${matchingExcerpt.startVerse}-${matchingExcerpt.endVerse}';
+          ref.read(userPreferencesProvider).saveChapter(refStr);
+          ref
+              .read(chapterPlayerProvider.notifier)
+              .routeAndPlayChapter(
+                bookCode: matchingExcerpt.bookCode,
+                chapterNumber: matchingExcerpt.chapterNumber,
+                bookName: matchingExcerpt.bookCode,
+              );
+          setState(() {});
+          return;
+        }
+
+        // Uncurated verse range -> inform user and invite feature request
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Sorry, please request this passage with the devs! Custom verse range "$raw" is coming soon. Enjoy our curated demo passages (1 Cor 13, Matt 11, Rom 8, Psalm 23, Psalm 62, Col 1) or full chapters.',
+            ),
+            backgroundColor: const Color(0xFF312E81),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'Request',
+              textColor: const Color(0xFFFBBF24),
+              onPressed: _openFeatureVoting,
+            ),
+          ),
+        );
+        return;
+      }
+
       final parsedList = BibleReferenceParser.getSuggestions(raw);
       if (parsedList.isNotEmpty) {
         final match = parsedList.first;
@@ -85,22 +143,6 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
           setState(() {});
           return;
         }
-      }
-
-      // If user typed a verse range (e.g. "col 1:17-20") not in curated excerpts
-      if (raw.contains('-')) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Feature coming soon! Custom verse range "$raw" will be supported in v0.3.0. Enjoy our curated demo passages (1 Cor 13, Matt 11, Rom 8, Psalm 23) or full chapters.',
-            ),
-            backgroundColor: const Color(0xFF312E81),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            duration: const Duration(seconds: 4),
-          ),
-        );
-        return;
       }
 
       AppLogger.logEvent('request_single_verse', {'query': raw});
@@ -191,15 +233,8 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     builder: (ctx) => const SettingsBottomSheet(),
   );
 
-  void _openLicensingAttribution(BibleTranslation translation) => showModalBottomSheet(
-    context: context,
-    backgroundColor: const Color(0xFF1E1B4B),
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-    ),
-    isScrollControlled: true,
-    builder: (ctx) => _LicensingAttributionSheet(translation: translation),
-  );
+  void _openLicensingAttribution(BibleTranslation translation) =>
+      LicensingAttributionSheet.show(context, translation: translation);
 
   @override
   Widget build(BuildContext context) {
@@ -266,6 +301,11 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                 ),
               );
             },
+          ),
+          IconButton(
+            icon: const Icon(Icons.info_outline_rounded, color: Colors.indigoAccent),
+            tooltip: 'About Selah',
+            onPressed: () => AboutSelahDialog.show(context),
           ),
           IconButton(
             icon: const Icon(Icons.settings_outlined, color: Colors.white70),
@@ -1078,182 +1118,6 @@ class _KaraokeTextDisplay extends StatelessWidget {
         fontSize: 15,
         height: 1.5,
         color: Colors.white.withValues(alpha: 0.87),
-      ),
-    );
-  }
-}
-
-class _LicensingAttributionSheet extends StatelessWidget {
-  const _LicensingAttributionSheet({required this.translation});
-
-  final BibleTranslation translation;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      decoration: const BoxDecoration(
-        color: Color(0xFF1E1B4B),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Icon(
-                    translation.isLicensed ? Icons.verified_user_rounded : Icons.public_rounded,
-                    color: const Color(0xFFFBBF24),
-                    size: 24,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Scripture & Audio Licensing',
-                      style: GoogleFonts.outfit(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: translation.isLicensed
-                          ? const Color(0xFFFBBF24).withValues(alpha: 0.2)
-                          : Colors.green.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      translation.badgeLabel,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: translation.isLicensed ? const Color(0xFFFBBF24) : Colors.greenAccent,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              const Divider(color: Colors.white12),
-              const SizedBox(height: 12),
-              Text(
-                'Translation: ${translation.fullName} (${translation.code})',
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFFFBBF24),
-                ),
-              ),
-              const SizedBox(height: 12),
-              _AttributionSection(
-                title: 'Text & Scripture Rights',
-                icon: Icons.menu_book_rounded,
-                content: translation.copyright,
-              ),
-              const SizedBox(height: 14),
-              _AttributionSection(
-                title: 'Narrator & Audio Production',
-                icon: Icons.mic_rounded,
-                content: 'Narrator: ${translation.narratorCredit}\n\n${translation.audioLicensingTerms}',
-              ),
-              const SizedBox(height: 14),
-              const _AttributionSection(
-                title: 'API.Bible & FUMS Fair Use Compliance',
-                icon: Icons.cloud_done_rounded,
-                content:
-                    'Selah utilizes API.Bible (American Bible Society) for licensed scripture data and audio delivery. '
-                    'All chapter requests report Fair Use Management System (FUMS) tokens to support publisher compliance and royalties.',
-              ),
-              const SizedBox(height: 14),
-              const _AttributionSection(
-                title: 'Offline Boundaries & Local Cache',
-                icon: Icons.offline_bolt_rounded,
-                content:
-                    'WhisperX word-level timestamp JSON alignments and structural chapter texts are bundled offline. '
-                    'Proprietary audio narrations (e.g., NIV from Biblica) operate strictly as on-demand streams per licensing terms.',
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  key: const Key('close_attribution_details_button'),
-                  onPressed: () => Navigator.of(context).pop(),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF4F46E5),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  child: const Text('Close Details', style: TextStyle(color: Colors.white)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AttributionSection extends StatelessWidget {
-  const _AttributionSection({
-    required this.title,
-    required this.icon,
-    required this.content,
-  });
-
-  final String title;
-  final IconData icon;
-  final String content;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F0E26).withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 16, color: const Color(0xFFFBBF24)),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            content,
-            style: const TextStyle(fontSize: 11, height: 1.45, color: Colors.white70),
-          ),
-        ],
       ),
     );
   }

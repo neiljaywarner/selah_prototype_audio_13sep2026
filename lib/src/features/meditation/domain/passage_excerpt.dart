@@ -80,4 +80,18 @@ const kCuratedExcerpts = [
     endVerse: 6,
     displayTitle: 'Psalm 23',
   ),
+  PassageExcerpt(
+    bookCode: 'PSA',
+    chapterNumber: 62,
+    startVerse: 1,
+    endVerse: 2,
+    displayTitle: 'Psalm 62:1–2',
+  ),
+  PassageExcerpt(
+    bookCode: 'COL',
+    chapterNumber: 1,
+    startVerse: 1,
+    endVerse: 2,
+    displayTitle: 'Col 1:1–2',
+  ),
 ];
