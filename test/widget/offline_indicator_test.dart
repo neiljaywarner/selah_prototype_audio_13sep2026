@@ -4,44 +4,63 @@ import 'package:selah_prototype_audio_13sep2026/src/features/meditation/presenta
 
 void main() {
   group('OfflineIndicator Widget', () {
-    testWidgets('renders offline state correctly with amber styling and icon', (tester) async {
+    testWidgets('renders bundled state correctly with emerald styling and icon', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
             body: Center(
-              child: OfflineIndicator(isOffline: true),
+              child: OfflineIndicator(isOffline: true, isBundled: true),
             ),
           ),
         ),
       );
 
-      expect(find.text('Offline'), findsOneWidget);
+      expect(find.text('Bundled'), findsOneWidget);
+      expect(find.byIcon(Icons.offline_pin_rounded), findsOneWidget);
+      expect(find.text('Streaming'), findsNothing);
+      expect(find.text('Cached'), findsNothing);
+    });
+
+    testWidgets('renders cached offline state correctly with amber styling and icon', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: OfflineIndicator(isOffline: true, isBundled: false),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Cached'), findsOneWidget);
       expect(find.byIcon(Icons.cloud_off_rounded), findsOneWidget);
-      expect(find.text('Online'), findsNothing);
+      expect(find.text('Streaming'), findsNothing);
+      expect(find.text('Bundled'), findsNothing);
     });
 
-    testWidgets('renders online state correctly with green styling and icon', (tester) async {
+    testWidgets('renders streaming online state correctly with indigo styling and icon', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
             body: Center(
-              child: OfflineIndicator(isOffline: false),
+              child: OfflineIndicator(isOffline: false, isBundled: false),
             ),
           ),
         ),
       );
 
-      expect(find.text('Online'), findsOneWidget);
+      expect(find.text('Streaming'), findsOneWidget);
       expect(find.byIcon(Icons.cloud_done_rounded), findsOneWidget);
-      expect(find.text('Offline'), findsNothing);
+      expect(find.text('Cached'), findsNothing);
+      expect(find.text('Bundled'), findsNothing);
     });
 
-    testWidgets('tapping offline indicator triggers SnackBar with explanation', (tester) async {
+    testWidgets('tapping bundled indicator triggers SnackBar with bundled explanation', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
             body: Center(
-              child: OfflineIndicator(isOffline: true),
+              child: OfflineIndicator(isOffline: true, isBundled: true),
             ),
           ),
         ),
@@ -52,7 +71,7 @@ void main() {
 
       expect(find.byType(SnackBar), findsOneWidget);
       expect(
-        find.textContaining('Offline Mode Active: Curated human narrator audio and text are loaded locally'),
+        find.textContaining('Bundled Audio Active: Curated human narrator audio is loaded locally'),
         findsOneWidget,
       );
     });

@@ -281,7 +281,10 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 14),
-            child: OfflineIndicator(isOffline: playerState.isOffline),
+            child: OfflineIndicator(
+              isOffline: playerState.isOffline,
+              isBundled: playerState.isBundledAsset,
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.how_to_vote_rounded, color: Color(0xFFFBBF24)),
