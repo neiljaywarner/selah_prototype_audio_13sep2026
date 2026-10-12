@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.4] - 2026-10-12
+
+### Added
+- **Curated Human Narrator Bundling (#54)**: Pre-bundled zero-key offline human narrator audio for 6 curated passages (Matthew 11:28-30, 1 Cor 13:4-7, Romans 8:31-39, Psalm 23, Psalm 62:1-2, Colossians 1:1-2) in BSB and WEB.
+- **3-State Offline Status Indicator (#65)**: Visible badge in AppBar clearly distinguishing `Bundled` (emerald, zero data), `Cached` (amber, local storage), and `Streaming` (indigo, active Wi-Fi/LTE).
+- **3-Face Feedback Funnel (#55)**: Replaced generic review prompts with a 3-face sentiment funnel (😊/😐/😞) routing positive ratings to public stores while protecting ratings by funneling neutral/critical feedback and prayers directly to the private developer triage hub.
+- **BetterFeedback Screenshot Annotation (#55)**: Interactive on-screen drawing allowing believers and testers to highlight visual alignment issues directly on screenshots before submission.
+- **Remote Config Feature Gating (#67)**: Community feature voting is safely concealed by default (`featureVotingEnabled: false`) to preserve meditative focus, with an opt-in "Show Work-in-Progress Features" toggle in Settings.
+- **Dynamic Knob Repetitions & A/B Telemetry (#71, #79)**: Adaptable repetition controls supporting discrete presets (1, 3, 7, ∞) and granular slider options with `select_knob_value` analytics logging.
+- **Release Verification & Live Web Deploy (#59)**: Deployed to Firebase Web Hosting (`https://selahword.web.app`) and verified on physical Google Pixel 9a (Grade B+ / 88.5%).
+
+### Fixed
+- **Recursive Audio Clipping (#64)**: Resolved nested clipping loops on excerpted passages by resetting position cleanly prior to new interval loops.
+- **Uncurated Passage SnackBar Fallback**: Searching uncurated passage references now always presents an interactive "Request" action, dynamically routing to Feature Voting or private developer feedback.
+- **Top Bar Uncluttering (#54)**: Relocated diagnostic consoles and Talker telemetry into the overflow popup menu.
+
+---
+
 ## [0.2.1] - 2026-10-11
 
 ### Added
