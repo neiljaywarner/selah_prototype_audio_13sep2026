@@ -2,18 +2,19 @@
 
 ## 🏆 Soft Launch Readiness Scorecard & Release Checklist
 
-### 📊 Overall Readiness Grade: **95.2% (Grade A)**
-*Target: Soft launch to 2–3 dozen meditators on Web & PWA with full telemetry and private triage.*
+### 📊 Overall Readiness Grade: **82.0% (Grade B-)**
+*Target: Soft launch readiness held strictly at Grade B- until arbitrary custom passage playback and WhisperX alignment operate cleanly with zero WTFs or crashes.*
 
 | Best-Practice Category | Score | Status | Key Highlights & Verification |
 | :--- | :---: | :---: | :--- |
-| **1. Product & Ministry Foundation** | **96%** | ✅ Ready | Core continuous looping Scripture meditation; 4 curated passages; peaceful silence gap (4s). |
+| **1. Product & Ministry Foundation** | **96%** | ✅ Ready | Core continuous looping Scripture meditation; 6 curated passages; peaceful silence gap (4s). |
 | **2. UI, UX & Visual Polish** | **95%** | ✅ Ready | All RenderFlex yellow/black stripe overflows eliminated; responsive modal heights; dark spiritual aesthetic. |
 | **3. Audio & Repetition Engine** | **96%** | ✅ Ready | Multi-translation support (BSB, WEB); peaceful TTS fallback for NIV excerpts (`VRS`); background audio controls. |
 | **4. Verification & QA Automation** | **98%** | ✅ Ready | **87/87 tests green (100%)**; zero Dart analyzer warnings; cross-platform validation (Web, Android, iOS Simulator). |
 | **5. Private Feedback & Issue Triage** | **97%** | ✅ Ready | Automated issue creation in `njwandroid/selahfeedback` with embedded high-res screenshots and client IP discovery. |
 | **6. Maintainability, Security & Hygiene** | **96%** | ✅ Ready | Zero plaintext keys in git; stale process daemon cleanup codified; mandatory 3-min CodeRabbit wait protocol enforced (#115). |
 | **7. Web Delivery & PWA Infrastructure** | **92%** | 🔄 In Progress | Production live at `https://selahword.web.app` with GA4 (`G-7LFS54TTFM`); PWA install flow and Patrol/Maestro automated test pending. |
+| **8. Scripture Audio Coverage & WhisperX Alignment (Custom & Non-Curated Passages)** | **72%** | 🚧 Release Blocker (In Progress) | 6 curated passages 100% verified; custom verse range clipping enabled for pre-aligned chapters (Mark 5, Matt 11, Psalm 23, Psalm 62, Romans 8, 1 Cor 13, Col 1); unaligned passages offer full chapter audio fallback or 1-tap "Request Passage from Devs" dispatching GitHub issue + GA4 telemetry (#95, #119). Grade capped at **B-** until validated end-to-end. |
 
 ---
 
@@ -36,10 +37,10 @@
 - [x] **Ticket-Driven Commits**: 100% conventional commits with ticket scopes (#71, #89, #93, #107, #113, #114, #115).
 - [x] **CodeRabbit Wait Buffer**: Enforced 3-minute wait buffer in PR triage workflow before running triage or merging (#115, PR #116).
 
-#### Soft Launch Next Tactical Wins
+#### Soft Launch Release Blockers & Next Tactical Wins
+- [ ] **WhisperX Incremental Alignment & Custom Passages ([Issue #95](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/95), [Issue #119](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/119))** *(RELEASE BLOCKER)*: Dynamic verse range clipping for pre-aligned chapters, unaligned passage bottom sheet with "Request from Devs", in-player `PassageTimingFeedbackBar` with 👍 / 👎 timing calibration, and experimental preview info dialog.
 - [ ] **PWA Installation & Flow Recording**: Test PWA install flow and capture automated video artifact via Patrol / Maestro.
 - [ ] **App Store Package Name Migration ([Issue #94](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/94))**: Migrate from `com.example...` to `app.selahword.audio` before native store listing.
-- [ ] **WhisperX Incremental Alignment ([Issue #95](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/95))**: On-demand lazy loading for arbitrary passages.
 
 ---
 
@@ -90,27 +91,26 @@ Tonight's session focused on elevating Selah to a production-grade soft launch f
 | **M49: PR #114 Merged & CodeRabbit Wait Protocol** | Merged PR #114 into `main` (`ede31d8`), closed Issues #113 & #107, added Memory Hygiene rule, and enforced 3-minute CodeRabbit wait in triage skill | 2026-10-12 11:46:00 | 2026-10-12 11:48:30 | ✅ Complete | PR #114 merged; [.agents/rules/stale_process_and_memory_hygiene.md](.agents/rules/stale_process_and_memory_hygiene.md) |
 | **M50: PR #116 Merged & Readiness Scorecard Live** | Merged PR #116 (`ff65780`), closed Issue #115, enforced unconditional 180s review buffer, and added readiness scorecard & release checklist | 2026-10-12 11:49:00 | 2026-10-12 11:53:00 | ✅ Complete | PR #116 merged; Issue #115 closed |
 | **M51: Low-Resource Hardware Protocol & Proof Audit (#117)** | Codified anti-beachball sequential task execution in GEMINI.md, labeled automated testing issues in selahfeedback, and published Wiki Soft Launch checklist | 2026-10-12 11:54:00 | 2026-10-12 12:04:00 | ✅ Complete | [Issue #117](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/117); Wiki Soft Launch Checklist live |
+| **M52: Dynamic Custom Passages & Timing Feedback Pipeline (#119, PR #120)** | Enabled dynamic verse range clipping for pre-aligned chapters, in-player `PassageTimingFeedbackBar` with thumbs up/down calibration, unaligned modal with "Request from Devs", 93/93 tests green | 2026-10-12 14:10:00 | 2026-10-12 14:39:15 | ✅ Complete | [PR #120](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/120) merged (`6aa5935`); Issue #119 closed |
+| **M53: Monday Afternoon Mega Tasks Plan Authored** | Created comprehensive 4–5 hour unattended execution plan across 5 Epics with zero-prompt invariant and RAM scaling | 2026-10-12 14:36:00 | 2026-10-12 14:39:00 | ✅ Complete | [monday_afternoon_mega_tasks.md](monday_afternoon_mega_tasks.md) |
 
 ---
 
 ## 📍 Where We Are Right Now & Next 3 Priorities
 
 ### Current State
-- `main` branch is at commit `ff65780` containing the codified 3-minute CodeRabbit wait buffer and Soft Launch Readiness Scorecard.
-- Branch `docs/#117-hardware-rules-and-feedback-proofs` contains low-resource Mac rules, anti-beachball protocols, and proof provenance documentation.
-- Live web app at `https://selahword.web.app` has verified Google Analytics 4 tracking (`G-7LFS54TTFM`).
-- Private feedback hub at `https://github.com/njwandroid/selahfeedback/issues` is labeled (`automated_testing`, `archive`) and 404 image links are fixed.
-- Private feedback hub at `https://github.com/njwandroid/selahfeedback/issues` is verified live with automated issue creation, client public IP address (redacted), and high-res screenshot attachments from both **Chrome Web** and **iOS Simulator** (iPhone 16 Pro).
-- Zero background memory leaks: ephemeral servers and test runners terminated. Stale process hygiene codified in workspace rules and `GEMINI.md`.
-- CodeRabbit triage skill updated with mandatory 3-minute wait buffer to prevent premature merges before bot review posts.
+- Soft Launch Readiness Scorecard updated with **Category 8: Scripture Audio Coverage & WhisperX Alignment (Custom & Non-Curated Passages)** (Score: 72%). Overall Readiness Grade held strictly at **82.0% (Grade B-)** pending custom passage verification.
+- [PR #120](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/120) created on branch `feat/#119-passage-audio-timing-feedback` targeting `main`. All 93 unit and widget tests pass green with 0 analyzer issues. Currently observing mandatory 180s CodeRabbit review buffer before merge.
+- [monday_afternoon_mega_tasks.md](monday_afternoon_mega_tasks.md) authored with detailed 5-epic roadmap for 4–5 hours of unattended execution.
+- Background caffeinate daemon active (`task-6157`).
 
 ### Next 3 Priorities
-1. **Soft Launch User Onboarding & Feedback Walkthrough**:
-   - Verify non-technical user experience when tapping "Draw on Screenshot & Send" and submitting feedback.
-2. **Phase 1 of WhisperX Expansion (Issue #95)**:
-   - Implement lazy on-demand loading of timestamp assets and align Psalm 91:1–4.
-3. **Package Name Migration (Issue #94)**:
-   - Execute migration from `com.example...` to `app.selahword.audio` across Android, iOS, and Firebase configs.
+1. **Complete PR #120 Merge**:
+   - Triage CodeRabbit feedback and merge PR #120 into `main` via GitHub MCP server.
+2. **Execute Epic 2 (WhisperX Level 2: Top 12 Passages)**:
+   - Generate calibrated timestamps for Psalm 91, John 3:16, Philippians 4, Proverbs 3, Isaiah 40, Romans 12.
+3. **Execute Epic 3 (Audio Loop Caching & PWA Offline)**:
+   - Eliminate audio repetition network latency via local caching and verify PWA standalone manifest.
 
 
 ---
