@@ -61,6 +61,11 @@ class PassageExcerpt {
       ..sort((a, b) => a.startMs.compareTo(b.startMs));
     if (inRange.isEmpty) return null;
 
+    // Reject incomplete ranges: both startVerse and endVerse must be present
+    final hasStart = inRange.any((t) => t.verse == startVerse);
+    final hasEnd = inRange.any((t) => t.verse == endVerse);
+    if (!hasStart || !hasEnd) return null;
+
     final start = inRange.first.startMs;
     final end = inRange.map((t) => t.endMs).reduce((a, b) => a > b ? a : b);
     if (end <= start) return null;

@@ -84,9 +84,11 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
             final start = int.tryParse(m.group(1) ?? '') ?? 1;
             final end = int.tryParse(m.group(2) ?? '') ?? start;
 
-            final hasTimestamps = TimestampLoaderService.hasTimestampsFor(
+            final hasTimestamps = TimestampLoaderService.hasCoverageForRange(
               bookCode: match.book.code,
               chapterNumber: match.chapter,
+              startVerse: start,
+              endVerse: end,
             );
 
             final displayTitle = '${match.book.name} ${match.chapter}:$start–$end';

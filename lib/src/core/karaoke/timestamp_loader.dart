@@ -27,25 +27,26 @@ class VerseTimestamp {
 }
 
 class TimestampLoaderService {
-  /// Set of chapters with pre-compiled WhisperX verse timestamps in assets/timestamps/
-  static const Set<String> _knownTimestampChapters = {
+  /// Map of chapters to the verse range covered in pre-compiled assets.
+  /// If null, the entire chapter is covered.
+  static const Map<String, ({int start, int end})?> _knownTimestampRanges = {
     // Level 1: Soft Launch Baseline (6 Curated)
-    'MRK_5',
-    'MAT_11',
-    'PSA_62',
-    'PSA_23',
-    'ROM_8',
-    '1CO_13',
-    '1COR_13',
-    'COL_1',
+    'MRK_5': null,
+    'MAT_11': null,
+    'PSA_62': (start: 1, end: 2),
+    'PSA_23': null,
+    'ROM_8': null,
+    '1CO_13': null,
+    '1COR_13': null,
+    'COL_1': null,
 
     // Level 2: Top 12 Contemplative Passages (#95)
-    'PSA_91',
-    'JHN_3',
-    'PHP_4',
-    'PRO_3',
-    'ISA_40',
-    'ROM_12',
+    'PSA_91': (start: 1, end: 4),
+    'JHN_3': (start: 16, end: 17),
+    'PHP_4': (start: 4, end: 8),
+    'PRO_3': (start: 5, end: 6),
+    'ISA_40': (start: 28, end: 31),
+    'ROM_12': (start: 1, end: 2),
   };
 
   /// Returns true if the requested book and chapter have local WhisperX timestamps.
@@ -54,7 +55,21 @@ class TimestampLoaderService {
     required int chapterNumber,
   }) {
     final key = '${bookCode.toUpperCase()}_$chapterNumber';
-    return _knownTimestampChapters.contains(key);
+    return _knownTimestampRanges.containsKey(key);
+  }
+
+  /// Returns true only if the requested verse range is fully covered by local WhisperX timestamps.
+  static bool hasCoverageForRange({
+    required String bookCode,
+    required int chapterNumber,
+    required int startVerse,
+    required int endVerse,
+  }) {
+    final key = '${bookCode.toUpperCase()}_$chapterNumber';
+    if (!_knownTimestampRanges.containsKey(key)) return false;
+    final range = _knownTimestampRanges[key];
+    if (range == null) return true; // Full chapter covered
+    return startVerse >= range.start && endVerse <= range.end;
   }
 
   static Future<List<VerseTimestamp>?> loadChapterTimestamps({
