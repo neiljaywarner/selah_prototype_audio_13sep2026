@@ -19,3 +19,10 @@ To ensure predictable performance, prevent port collision, and avoid unnecessary
 
 ## 4. Simulator and Virtual Device Conservation
 - Only keep target devices booted when actively testing. Shut down secondary emulators or simulators when moving to web-only or unit-testing phases.
+
+## 5. Low-Resource Hardware Protocol (Preventing OS Freezes & "Wait or Reopen" Dialogs)
+To support unattended autonomous operation on resource-constrained host machines (e.g., older Macs with high memory compression):
+- **Strictly Sequential Heavy Tasks**: Never execute concurrent compilations, integration tests, or emulator boots simultaneously. Always wait for one command (`flutter test`, `flutter build`) to completely exit before launching another.
+- **Throttled Resource Consumption**: Do not launch unbounded worker threads or parallel emulator instances.
+- **Terminal Buffer Hygiene**: Never dump gigantic unbounded logs, multi-megabyte base64 strings, or raw binary dumps into shell outputs. Truncate outputs or redirect large assets to disk files to prevent Antigravity IDE UI thread freezing.
+- **Immediate Task Teardown Guarantee**: Any temporary helper or background task must be audited and killed immediately via `manage_task(Action='kill')` upon finishing verification.

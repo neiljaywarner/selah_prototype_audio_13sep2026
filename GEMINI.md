@@ -79,6 +79,10 @@ Under NO circumstances may any changes be pushed directly to the `main` branch. 
 1. **Immediate Ephemeral Daemon Termination**: Any background daemon or helper process started for temporary verification (e.g., `http.server`, headless Chrome, test proxies, simulator drivers) MUST be terminated immediately after verification via `manage_task(Action='kill')`.
 2. **Routine Pre-Build Audits**: Before launching memory-intensive compilations (`flutter build`, `flutter test`), verify and terminate any lingering rogue processes (`chromedriver`, `http.server`, headless browsers).
 3. **Mandatory Teardown Guarantees**: All automation and test scripts must encapsulate process lifecycles in `try...finally` blocks to guarantee browsers and servers shut down cleanly even on unhandled exceptions.
+4. **Low-Resource Mac Hardware & Anti-Beachball Protocol**:
+   - **Strictly Sequential Tasks**: Never run simultaneous compilations or heavy test suites; run them one by one to prevent OS swap thrashing.
+   - **Terminal Output Throttling**: Never dump huge stdout logs, binary buffers, or megabyte base64 strings to terminal output to prevent Antigravity IDE UI freeze prompts ("Wait or Reopen").
+   - **Device Conservation**: Shut down unused simulators or emulators when not actively in use.
 
 
 
