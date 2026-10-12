@@ -547,5 +547,153 @@ ${screenshotEmbedUrl != null ? '''
       'nps': nps,
     });
   }
+
+  /// Submits passage audio quality and timing feedback.
+  /// Dispatches telemetry to Firebase Analytics / AppLogger and, if thumbs down,
+  /// opens a tracked issue in `njwandroid/selahfeedback/issues` with label `audio-alignment`.
+  static Future<bool> submitAudioTimingFeedback({
+    required String passageTitle,
+    required String translationCode,
+    required bool isThumbsUp,
+    bool startedWrong = false,
+    bool endedWrong = false,
+    bool audioGlitch = false,
+    bool timestampsMissing = false,
+    String? userNote,
+    String? githubToken,
+    Dio? dioClient,
+  }) async {
+    final clientContext = await AppDeviceInfoService.getClientContext(dioClient: dioClient);
+
+    AppLogger.logEvent('passage_audio_timing_rated', {
+      'passage': passageTitle,
+      'translation': translationCode,
+      'rating': isThumbsUp ? 'thumbs_up' : 'thumbs_down',
+      'started_wrong': startedWrong,
+      'ended_wrong': endedWrong,
+      'audio_glitch': audioGlitch,
+      'timestamps_missing': timestampsMissing,
+      'has_note': userNote != null && userNote.trim().isNotEmpty,
+      'platform': clientContext['platform'],
+    });
+
+    if (isThumbsUp) {
+      return true;
+    }
+
+    final effectiveGhToken = (githubToken != null && githubToken.trim().isNotEmpty)
+        ? githubToken.trim()
+        : kGitHubFeedbackToken;
+
+    if (!hasGitHubConfig(effectiveGhToken) && !(isFlutterTest && dioClient != null)) {
+      AppLogger.info('GitHub token unconfigured; logged audio timing issue locally.');
+      return true;
+    }
+
+    final issueTitle = timestampsMissing
+        ? '[Passage Alignment] 👎 $passageTitle ($translationCode) - Missing Timestamps'
+        : '[Audio Timing] 👎 $passageTitle ($translationCode) - Calibration Report';
+    final issuesList = <String>[];
+    if (startedWrong) issuesList.add('- ⚠️ **Timing Start**: Audio started too early or cut into preceding words.');
+    if (endedWrong) issuesList.add('- ⚠️ **Timing End**: Audio cut off before verse finished speaking.');
+    if (audioGlitch) issuesList.add('- ⚠️ **Acoustics**: Choppy audio, static, or distortion.');
+    if (timestampsMissing) issuesList.add('- ⚠️ **Verse Alignment**: Meditator reported verse timestamps missing or requested WhisperX alignment.');
+
+    final issueBody = '''
+### 🎧 Passage Audio & Timing Calibration Issue
+
+Meditator reported a timing or acoustic quality issue with **$passageTitle** in translation **$translationCode**.
+
+---
+
+### 🔍 Reported Symptoms
+${issuesList.isNotEmpty ? issuesList.join('\n') : '- Meditator indicated audio timing or playback issue.'}
+
+${userNote != null && userNote.trim().isNotEmpty ? '**Meditator Note**:\n> ${userNote.trim()}\n' : ''}
+
+---
+
+### 📱 Client & Device Context
+- **Passage**: $passageTitle
+- **Translation**: $translationCode
+- **Platform**: ${clientContext['platform']}
+- **App Version**: ${clientContext['app_version']}
+- **Device Model**: ${clientContext['device_model'] ?? 'Unknown'}
+- **Timestamp (UTC)**: ${DateTime.now().toUtc().toIso8601String()}
+
+---
+
+### 🛠️ Calibration Task (Issue #95 / #119)
+Please run WhisperX acoustic alignment or calibrate timestamps in `assets/timestamps/` for this passage.
+''';
+
+    return await submitGitHubIssueFeedback(
+      title: issueTitle,
+      body: issueBody,
+      labels: ['audio-alignment', 'user-feedback', 'triage'],
+      token: effectiveGhToken,
+      dioClient: dioClient,
+    );
+  }
+
+  /// Dispatches a passage alignment request from a user to Firebase Analytics
+  /// and opens an audio-alignment tracking issue on GitHub (Issue #95 / #119).
+  static Future<bool> requestPassageAlignment({
+    required String passage,
+    required String translationCode,
+    String? userNote,
+    String? githubToken,
+    Dio? dioClient,
+  }) async {
+    final clientContext = await AppDeviceInfoService.getClientContext(dioClient: dioClient);
+
+    AppLogger.logEvent('passage_requested_from_devs', {
+      'passage': passage,
+      'translation': translationCode,
+      'platform': clientContext['platform'],
+      'has_note': userNote != null && userNote.trim().isNotEmpty,
+    });
+
+    final effectiveGhToken = (githubToken != null && githubToken.trim().isNotEmpty)
+        ? githubToken.trim()
+        : kGitHubFeedbackToken;
+
+    if (!hasGitHubConfig(effectiveGhToken) && !(isFlutterTest && dioClient != null)) {
+      AppLogger.info('GitHub token unconfigured; logged passage request locally.');
+      return true;
+    }
+
+    final issueTitle = '[Passage Request] 🙏 $passage ($translationCode) - WhisperX Alignment Request';
+    final issueBody = '''
+### 📖 Meditator Passage Request
+
+A meditator requested verse-level audio alignment for **$passage** in translation **$translationCode**.
+
+---
+
+### 🔍 Request Details
+- **Requested Passage**: $passage
+- **Translation**: $translationCode
+- **Platform**: ${clientContext['platform']}
+- **App Version**: ${clientContext['app_version']}
+- **Timestamp (UTC)**: ${DateTime.now().toUtc().toIso8601String()}
+${userNote != null && userNote.trim().isNotEmpty ? '\n**Meditator Note**:\n> ${userNote.trim()}\n' : ''}
+
+---
+
+### 🛠️ Developer Action (Issue #95 / #119)
+- Run WhisperX alignment pipeline on this chapter.
+- Extract verse timing intervals to `assets/timestamps/${translationCode.toUpperCase()}/...`.
+- Add excerpt metadata or enable arbitrary verse range clipping.
+''';
+
+    return await submitGitHubIssueFeedback(
+      title: issueTitle,
+      body: issueBody,
+      labels: ['audio-alignment', 'user-feedback', 'passage-request', 'triage'],
+      token: effectiveGhToken,
+      dioClient: dioClient,
+    );
+  }
 }
 

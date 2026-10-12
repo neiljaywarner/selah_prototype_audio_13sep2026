@@ -233,9 +233,22 @@ class SettingsBottomSheet extends ConsumerWidget {
           ),
           SwitchListTile(
             key: const Key('settings_wip_features_tile'),
-            title: const Text('Show Work-in-Progress Features', style: TextStyle(fontSize: 14)),
+            title: Row(
+              children: [
+                const Expanded(
+                  child: Text('Show Work-in-Progress Features', style: TextStyle(fontSize: 14)),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.info_outline, size: 16, color: Color(0xFFFBBF24)),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                  tooltip: 'About Preview & Experimental Features',
+                  onPressed: () => _showPreviewInfoDialog(context),
+                ),
+              ],
+            ),
             subtitle: const Text(
-              'Enable community feature voting and experimental features',
+              'Enable community feature voting, custom passage looping, and preview tools',
               style: TextStyle(fontSize: 11, color: Colors.white54),
             ),
             value: ref.watch(workInProgressFeaturesProvider),
@@ -277,4 +290,65 @@ class SettingsBottomSheet extends ConsumerWidget {
     ),
   );
 }
+
+  void _showPreviewInfoDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF161536),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.science_outlined, color: Color(0xFFFBBF24), size: 24),
+            SizedBox(width: 10),
+            Text('Preview & Beta Features', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Selah is actively expanding acoustic Scripture coverage:',
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            _infoBullet('Curated Passages', '1 Cor 13, Matt 11, Rom 8, Psalm 23, Psalm 62, Col 1 are pre-aligned with millisecond WhisperX precision.'),
+            const SizedBox(height: 8),
+            _infoBullet('Custom Verse Ranges', 'Any custom verse range within aligned chapters loops seamlessly. Other chapters play full narrator audio or TTS.'),
+            const SizedBox(height: 8),
+            _infoBullet('Request from Devs', 'Tapping "Request from Devs" alerts our team via GitHub & Analytics to prioritize aligning that passage next.'),
+            const SizedBox(height: 8),
+            _infoBullet('Community Voting', 'Vote on upcoming features like playlists, offline downloads, and new translations.'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Understood', style: TextStyle(color: Color(0xFFFBBF24), fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoBullet(String title, String description) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('• ', style: TextStyle(color: Color(0xFFFBBF24), fontSize: 13, fontWeight: FontWeight.bold)),
+        Expanded(
+          child: RichText(
+            text: TextSpan(
+              style: const TextStyle(color: Colors.white, fontSize: 12, height: 1.3),
+              children: [
+                TextSpan(text: '$title: ', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFA78BFA))),
+                TextSpan(text: description, style: const TextStyle(color: Colors.white70)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

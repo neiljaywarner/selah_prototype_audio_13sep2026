@@ -15,13 +15,15 @@ import '../domain/chapter_info.dart';
 import '../domain/passage_excerpt.dart';
 import '../domain/scripture_topic.dart';
 import 'widgets/chapter_picker_dialog.dart';
-import 'widgets/emoji_feedback_dialog.dart';
 import 'widgets/feature_voting_sheet.dart';
 import 'widgets/licensing_attribution_sheet.dart';
 import 'widgets/offline_indicator.dart';
+import 'widgets/passage_timing_feedback_bar.dart';
 import 'widgets/settings_bottom_sheet.dart';
 import 'widgets/topic_tab_bar.dart';
 import 'about_selah_dialog.dart';
+import '../../../core/feedback/feedback_service.dart';
+import '../../../core/karaoke/timestamp_loader.dart';
 import '../../../core/remote_config/remote_config_service.dart';
 
 class ChapterPlayerScreen extends ConsumerStatefulWidget {
@@ -73,69 +75,63 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
       // Check for curated passages (1 Cor 13:4-7, Matt 11:28-30, Rom 8:31-39, Psalm 23)
       // If user typed a verse range (e.g. "col 1:17-20" or "matt 11:28-30")
       if (raw.contains('-') || raw.contains('–')) {
-        // Check if this matches one of our curated excerpts
-        PassageExcerpt? matchingExcerpt;
         final parsedList = BibleReferenceParser.getSuggestions(raw);
         if (parsedList.isNotEmpty) {
           final match = parsedList.first;
-          final excerpt = PassageExcerpt.forChapter(match.book.code, match.chapter);
-          if (excerpt != null) {
-            final rangePattern = RegExp(r'(\d+)\s*[-–]\s*(\d+)');
-            final m = rangePattern.firstMatch(raw);
-            if (m != null) {
-              final start = int.tryParse(m.group(1) ?? '');
-              final end = int.tryParse(m.group(2) ?? '');
-              if (start == excerpt.startVerse && end == excerpt.endVerse) {
-                matchingExcerpt = excerpt;
-              }
+          final rangePattern = RegExp(r'(\d+)\s*[-–]\s*(\d+)');
+          final m = rangePattern.firstMatch(raw);
+          if (m != null) {
+            final start = int.tryParse(m.group(1) ?? '') ?? 1;
+            final end = int.tryParse(m.group(2) ?? '') ?? start;
+
+            final hasTimestamps = TimestampLoaderService.hasTimestampsFor(
+              bookCode: match.book.code,
+              chapterNumber: match.chapter,
+            );
+
+            final displayTitle = '${match.book.name} ${match.chapter}:$start–$end';
+            final customExcerpt = PassageExcerpt.customExcerpt(
+              bookCode: match.book.code,
+              chapterNumber: match.chapter,
+              startVerse: start,
+              endVerse: end,
+              displayTitle: displayTitle,
+            );
+
+            // If timestamps exist for this chapter, play the custom excerpt immediately!
+            if (hasTimestamps && customExcerpt != null) {
+              ref.read(userPreferencesProvider).saveChapter(displayTitle);
+              ref.read(chapterPlayerProvider.notifier).routeAndPlayChapter(
+                bookCode: match.book.code,
+                chapterNumber: match.chapter,
+                bookName: match.book.name,
+                excerpt: customExcerpt,
+              );
+              setState(() {});
+              return;
             }
+
+            // Chapter does not have WhisperX timestamps yet -> log demand and present choices
+            AppLogger.logEvent('passage_alignment_requested', {
+              'passage': raw,
+              'book': match.book.code,
+              'chapter': match.chapter,
+              'start_verse': start,
+              'end_verse': end,
+              'translation': ref.read(chapterPlayerProvider).translation.code,
+            });
+
+            _showUnalignedPassageOptions(
+              rawPassage: raw,
+              bookCode: match.book.code,
+              chapterNumber: match.chapter,
+              bookName: match.book.name,
+              startVerse: start,
+              endVerse: end,
+            );
+            return;
           }
         }
-
-        if (matchingExcerpt != null) {
-          final refStr = matchingExcerpt.displayTitle ??
-              '${matchingExcerpt.bookCode} ${matchingExcerpt.chapterNumber}:${matchingExcerpt.startVerse}-${matchingExcerpt.endVerse}';
-          ref.read(userPreferencesProvider).saveChapter(refStr);
-          ref
-              .read(chapterPlayerProvider.notifier)
-              .routeAndPlayChapter(
-                bookCode: matchingExcerpt.bookCode,
-                chapterNumber: matchingExcerpt.chapterNumber,
-                bookName: matchingExcerpt.bookCode,
-              );
-          setState(() {});
-          return;
-        }
-
-        // Uncurated verse range -> inform user and invite feature request
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Sorry, please request this passage with the devs! Custom verse range "$raw" is coming soon. Enjoy our curated demo passages (1 Cor 13, Matt 11, Rom 8, Psalm 23, Psalm 62, Col 1) or full chapters.',
-            ),
-            backgroundColor: const Color(0xFF312E81),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            action: SnackBarAction(
-              label: 'Request',
-              textColor: const Color(0xFFFBBF24),
-              onPressed: () {
-                final isVoting = ref.read(remoteConfigProvider).featureVotingEnabled ||
-                    ref.read(workInProgressFeaturesProvider);
-                if (isVoting) {
-                  _openFeatureVoting();
-                } else {
-                  EmojiFeedbackDialog.show(
-                    context,
-                    currentChapter: raw,
-                    translation: ref.read(chapterPlayerProvider).translation.code,
-                  );
-                }
-              },
-            ),
-          ),
-        );
-        return;
       }
 
       final parsedList = BibleReferenceParser.getSuggestions(raw);
@@ -211,6 +207,113 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
         .read(chapterPlayerProvider.notifier)
         .routeAndPlayChapter(bookCode: bookCode, chapterNumber: chapterNum, bookName: bookName);
     setState(() {});
+  }
+
+  void _requestPassageFromDevs(String passage) async {
+    final translation = ref.read(chapterPlayerProvider).translation.code;
+    AppLogger.logEvent('passage_requested_from_devs', {
+      'passage': passage,
+      'translation': translation,
+    });
+
+    FeedbackService.requestPassageAlignment(
+      passage: passage,
+      translationCode: translation,
+    );
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Requested "$passage" ($translation)! We\'ve notified the devs to align it with WhisperX. 🕊️'),
+        backgroundColor: const Color(0xFF065F46),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
+  void _showUnalignedPassageOptions({
+    required String rawPassage,
+    required String bookCode,
+    required int chapterNumber,
+    required String bookName,
+    required int startVerse,
+    required int endVerse,
+  }) {
+    final translation = ref.read(chapterPlayerProvider).translation.code;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E1B4B),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.access_time_rounded, color: Color(0xFFFBBF24), size: 22),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'Verse Timing Unaligned',
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Verse-level WhisperX timestamps for "$rawPassage" ($translation) are not aligned yet. How would you like to meditate?',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.play_arrow_rounded, color: Color(0xFF10B981), size: 24),
+              ),
+              title: Text('Play Full Chapter ($bookName $chapterNumber)', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+              subtitle: Text('Continuous human narrator audio in $translation', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                ref.read(chapterPlayerProvider.notifier).routeAndPlayChapter(
+                  bookCode: bookCode,
+                  chapterNumber: chapterNumber,
+                  bookName: bookName,
+                );
+              },
+            ),
+            const Divider(color: Colors.white10),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFBBF24).withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.send_rounded, color: Color(0xFFFBBF24), size: 22),
+              ),
+              title: const Text('Request Passage from Devs', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+              subtitle: const Text('Notifies developers to prioritize WhisperX alignment for this passage', style: TextStyle(color: Colors.white54, fontSize: 12)),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                _requestPassageFromDevs(rawPassage);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _openChapterPicker() => showDialog(
@@ -1028,6 +1131,16 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                     ),
                   ],
                 ),
+              ),
+
+              const SizedBox(height: 6),
+
+              /* Passage Timing & Quality Feedback Bar (Issue #95 / #119) */
+              PassageTimingFeedbackBar(
+                key: const Key('passage_timing_feedback_bar'),
+                passageTitle: playerState.currentChapter.displayTitle ?? playerState.currentChapter.reference,
+                translationCode: playerState.activeTranslation,
+                hasTimestamps: playerState.hasTimestamps,
               ),
 
               /* Live Diagnostic Log Console Drawer */
