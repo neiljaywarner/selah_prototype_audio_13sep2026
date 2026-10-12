@@ -20,8 +20,7 @@ import 'widgets/licensing_attribution_sheet.dart';
 import 'widgets/settings_bottom_sheet.dart';
 import 'widgets/topic_tab_bar.dart';
 import 'about_selah_dialog.dart';
-
-const bool kEnableTopicTabs = bool.fromEnvironment('ENABLE_TOPIC_TABS', defaultValue: false);
+import '../../../core/remote_config/remote_config_service.dart';
 
 class ChapterPlayerScreen extends ConsumerStatefulWidget {
   const ChapterPlayerScreen({super.key});
@@ -241,6 +240,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     final playerState = ref.watch(chapterPlayerProvider);
     final notifier = ref.read(chapterPlayerProvider.notifier);
     final userPrefs = ref.watch(userPreferencesProvider);
+    final remoteConfig = ref.watch(remoteConfigProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -320,6 +320,33 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              /* Optional Remote Config Announcement Banner */
+              if (remoteConfig.announcementBannerText.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF312E81), Color(0xFF1E1B4B)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFBBF24).withValues(alpha: 0.4)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.campaign_rounded, color: Color(0xFFFBBF24), size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          remoteConfig.announcementBannerText,
+                          style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+
               /* Search Bar & Browse Button */
               Row(
                 children: [
@@ -425,7 +452,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
               const SizedBox(height: 16),
 
               /* Featured Presets (or Topic Tabs if enabled) - Single-row horizontal scroll */
-              if (kEnableTopicTabs)
+              if (remoteConfig.enableTopicTabs)
                 TopicTabBar(
                   topics: kDefaultMeditationTopics,
                   selectedTopic: _selectedTopic,
