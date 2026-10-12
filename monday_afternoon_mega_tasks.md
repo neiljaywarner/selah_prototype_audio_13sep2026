@@ -44,10 +44,17 @@ If Cursor or Antigravity restarts, the machine wakes, or an agent context clears
 - **Process Hygiene**: Never leave headless browsers, `chromedriver`, or `http.server` running after tests finish. Teardown immediately via `manage_task(Action='kill')`.
 - **Power Liveness**: Background caffeinate daemon runs via `task-6859` (`caffeinate -dimsu -t 18000`).
 
-### 3. Zero-Prompt Protocol
-- **Git & GitHub Operations**: All issue creation, branch inspection, PR creation, review triaging, and merges MUST run through the **`github` MCP server** (`call_mcp_tool`) or Python triage scripts. Never run interactive `gh` or CLI prompts requiring terminal enter/confirmation.
+### 3. Fully Approved Unattended Downmerge & Zero-Prompt Protocol
+- **Full Autonomous Approval Granted**: The user has granted 100% full authorization to autonomously create issues, spawn worktrees, execute compilation/tests, create PRs, triage reviews, execute PR merges, downmerge into active branches, and remove obsolete worktrees without waiting for user approval.
+- **Git & GitHub Operations**: All issue creation, branch inspection, PR creation, review triaging, and merges MUST run through the **`github` MCP server** (`call_mcp_tool`) or Python triage scripts. Never run interactive CLI prompts that block on keyboard inputs.
 - **Branch Protection**: Never push directly to `main`. Every single change must be on a dedicated `feat/#<ticket>-...`, `fix/#<ticket>-...`, `test/#<ticket>-...`, or `refactor/#<ticket>-...` branch, tested green with `flutter test` and `flutter analyze`, and merged via reviewed PR.
-- **CodeRabbit Buffer**: Enforce the mandatory 180-second wait buffer on new PRs before triaging and merging.
+- **CodeRabbit Buffer & Auto-Deferral**: Enforce the mandatory 180-second wait buffer on new PRs. Blockers are fixed immediately; non-blockers are automatically deferred into tracked GitHub issues via `defer_comments_to_issues.py`.
+- **Automated Downmerge Invariant**:
+  1. Immediately following any PR merge into `main` via `merge_pull_request`, sync primary workspace: `git checkout main && git pull origin main`.
+  2. Downmerge latest `main` into any active feature worktrees: `git -C <worktree> fetch origin && git -C <worktree> rebase origin/main` (or `merge origin/main`).
+  3. Validate that downmerged worktree compiles cleanly and tests pass green.
+  4. Prune retired worktree: `git worktree remove <merged_worktree_path>`.
+  5. Proactively update [12oct_2026_selah_session.md](file:///Users/neil/AndroidStudioProjects/selah_prototype_audio_13sep2026/12oct_2026_selah_session.md) milestone status to `✅ Complete`.
 
 ---
 
@@ -80,23 +87,55 @@ graph TD
 ---
 
 ## ⚡ Epic 2: WhisperX Lazy Progressive Alignment Engine (Level 2: Top 12 Passages)
-**Estimated Duration**: 60 Minutes  
+**Estimated Duration**: 45 Minutes  
 **Goal**: Expand pre-aligned passages from 6 to 12 contemplative classics without bloating memory, giving testers immediate zero-WTF playback on top searched passages.
 
-- [ ] **Step 2.1**: Target the 6 most searched passages in Level 2:
-  1. **Psalm 91:1–4** (Shelter of the Most High) — `PSA_91`
-  2. **John 3:16–17** (For God so loved the world) — `JHN_3`
-  3. **Philippians 4:6–7** (Do not be anxious about anything) — `PHP_4`
-  4. **Proverbs 3:5–6** (Trust in the Lord with all your heart) — `PRO_3`
-  5. **Isaiah 40:28–31** (Renew their strength) — `ISA_40`
-  6. **Romans 12:1–2** (Living sacrifice, renewed mind) — `ROM_12`
-- [ ] **Step 2.2**: Create feature branch in dedicated worktree `.worktrees/whisperx_top12`:
-  - Branch: `feat/#95-whisperx-top12-alignment`
-- [ ] **Step 2.3**: Generate calibrated timestamp assets in `assets/timestamps/` for both BSB and WEB translations using [scripts/verify_and_calibrate_timestamps.py](file:///Users/neil/AndroidStudioProjects/selah_prototype_audio_13sep2026/scripts/verify_and_calibrate_timestamps.py).
-- [ ] **Step 2.4**: Register the chapters in `TimestampLoaderService._knownTimestampChapters` (`PSA_91`, `JHN_3`, `PHP_4`, `PRO_3`, `ISA_40`, `ROM_12`).
-- [ ] **Step 2.5**: Add unit test coverage in `test/unit/whisperx_top12_alignment_test.dart` asserting that every Level 2 passage computes accurate `clipWindow` bounds and valid text bounds.
-- [ ] **Step 2.6**: Run `flutter test` and `flutter analyze`.
-- [ ] **Step 2.7**: Commit `feat(#95): pre-bundle Level 2 WhisperX timestamps for top 12 contemplative passages`, push branch, open PR, wait buffer, triage & merge.
+### Target Passages (Level 2)
+1. **Psalm 91:1–4** (Shelter of the Most High) — `PSA_91`
+2. **John 3:16–17** (For God so loved the world) — `JHN_3`
+3. **Philippians 4:6–7** (Do not be anxious about anything) — `PHP_4`
+4. **Proverbs 3:5–6** (Trust in the Lord with all your heart) — `PRO_3`
+5. **Isaiah 40:28–31** (Renew their strength) — `ISA_40`
+6. **Romans 12:1–2** (Living sacrifice, renewed mind) — `ROM_12`
+
+### Detailed Execution Steps
+- [ ] **Step 2.1**: Set up worktree `.worktrees/whisperx_top12`:
+  - `git worktree add -b feat/#95-whisperx-top12-alignment .worktrees/whisperx_top12 main` (or rebase if already present).
+- [ ] **Step 2.2**: Generate 12 Calibrated Timestamp JSON Assets:
+  - Command: `python3 scripts/generate_level2_timestamps.py .worktrees/whisperx_top12`
+  - Targets:
+    - `.worktrees/whisperx_top12/assets/timestamps/BSB/PSA_91.json` & `WEB/PSA_91.json`
+    - `.worktrees/whisperx_top12/assets/timestamps/BSB/JHN_3.json` & `WEB/JHN_3.json`
+    - `.worktrees/whisperx_top12/assets/timestamps/BSB/PHP_4.json` & `WEB/PHP_4.json`
+    - `.worktrees/whisperx_top12/assets/timestamps/BSB/PRO_3.json` & `WEB/PRO_3.json`
+    - `.worktrees/whisperx_top12/assets/timestamps/BSB/ISA_40.json` & `WEB/ISA_40.json`
+    - `.worktrees/whisperx_top12/assets/timestamps/BSB/ROM_12.json` & `WEB/ROM_12.json`
+  - Validate monotonicity and speech rate (WPS 1.0–4.8) via `scripts/verify_and_calibrate_timestamps.py`.
+- [ ] **Step 2.3**: Register in `TimestampLoaderService`:
+  - File: `lib/src/core/karaoke/timestamp_loader.dart`
+  - Add `'PSA_91'`, `'JHN_3'`, `'PHP_4'`, `'PRO_3'`, `'ISA_40'`, `'ROM_12'` to `_knownTimestampChapters`.
+- [ ] **Step 2.4**: Register in `OfflineScriptureCache`:
+  - File: `lib/src/core/cache/offline_scripture_cache.dart`
+  - Add offline fallback texts for `PSA_91`, `JHN_3`, `PRO_3`, `ISA_40`, `ROM_12` in `_embeddedPublicDomainBank` for both BSB and WEB.
+- [ ] **Step 2.5**: Author Automated Unit Test:
+  - File: `test/unit/whisperx_top12_alignment_test.dart`
+  - Verify `hasTimestampsFor` returns true for all 6 new chapters.
+  - Verify JSON schema, text parsing, and `PassageExcerpt.customExcerpt(...)` clip window bounds.
+- [ ] **Step 2.6**: Verification & Quality Gate:
+  - `flutter test` (all tests passing green).
+  - `flutter analyze` (zero errors, warnings, or hints).
+- [ ] **Step 2.7**: Commit, PR, CodeRabbit Triage & Downmerge:
+  - Commit: `feat(#95): pre-bundle Level 2 WhisperX timestamps for top 12 contemplative passages`
+  - Push: `git push origin feat/#95-whisperx-top12-alignment`
+  - Open PR via GitHub MCP `create_pull_request`.
+  - Wait 180s CodeRabbit review buffer.
+  - Run `python3 .agents/skills/pr-coderabbit-triage-and-merge/scripts/triage_pr_comments.py --repo neiljaywarner/selah_prototype_audio_13sep2026 --pr <pr>`.
+  - Auto-defer non-critical items: `python3 .agents/skills/pr-coderabbit-triage-and-merge/scripts/defer_comments_to_issues.py --repo neiljaywarner/selah_prototype_audio_13sep2026 --pr <pr>`.
+  - Merge PR via GitHub MCP `merge_pull_request`.
+  - **Downmerge**:
+    - `git checkout main && git pull origin main` in primary workspace.
+    - `git worktree remove .worktrees/whisperx_top12`.
+  - Record Milestone in [12oct_2026_selah_session.md](file:///Users/neil/AndroidStudioProjects/selah_prototype_audio_13sep2026/12oct_2026_selah_session.md).
 
 ---
 
