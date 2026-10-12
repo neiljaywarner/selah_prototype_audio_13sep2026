@@ -345,6 +345,31 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     final chapterId = '${bookCode.toUpperCase()}.$chapterNumber';
     final url = '/audio-bibles/$bibleId/chapters/$chapterId';
 
+    if (kApiBibleKey == 'REDACTED' || kApiBibleKey.isEmpty) {
+      AppLogger.info(
+        'API.Bible key unconfigured in environment; skipping live stream request for $chapterId and gracefully routing to offline fallback.',
+      );
+      final cachedText = ref.read(offlineScriptureCacheProvider).getOfflineText(
+            translation.code,
+            bookCode,
+            chapterNumber,
+          ) ?? fallbackText;
+      final isWeb = kIsWeb;
+      final noticeMessage = isWeb
+          ? (translation.isLicensed
+              ? 'NIV audio narration requires on-demand API.Bible streaming. Narrating with Text-to-Speech (TTS).'
+              : 'Narrator stream unavailable on web — narrating ${translation.fullName} (${translation.code}) with Text-to-Speech (TTS).')
+          : (translation.isLicensed
+              ? 'NIV audio stream requires online connection. Narrating via Text-to-Speech (TTS).'
+              : 'Offline / Airplane Mode: Narrating ${translation.fullName} (${translation.code}) scripture via Text-to-Speech (TTS).');
+      state = state.copyWith(isOffline: !isWeb);
+      _switchToTtsFallback(
+        noticeMessage,
+        overrideText: cachedText,
+      );
+      return;
+    }
+
     AppLogger.info('Fetching ${translation.code} narrator stream for $chapterId ($bibleId) from API.Bible...');
 
     try {
