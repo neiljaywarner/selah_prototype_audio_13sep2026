@@ -15,6 +15,7 @@
 | **6. Maintainability, Security & Hygiene** | **96%** | ✅ Ready | Zero plaintext keys in git; stale process daemon cleanup codified; mandatory 3-min CodeRabbit wait protocol enforced (#115). |
 | **7. Web Delivery & PWA Infrastructure** | **92%** | 🔄 In Progress | Production live at `https://selahword.web.app` with GA4 (`G-7LFS54TTFM`); PWA install flow and Patrol/Maestro automated test pending. |
 | **8. Scripture Audio Coverage & WhisperX Alignment (Custom & Non-Curated Passages)** | **72%** | 🚧 Release Blocker (In Progress) | 6 curated passages 100% verified; custom verse range clipping enabled for pre-aligned chapters (Mark 5, Matt 11, Psalm 23, Psalm 62, Romans 8, 1 Cor 13, Col 1); unaligned passages offer full chapter audio fallback or 1-tap "Request Passage from Devs" dispatching GitHub issue + GA4 telemetry (#95, #119). Grade capped at **B-** until validated end-to-end. |
+| **9. Maestro E2E & Multi-Channel Web Flows** | **70%** | 🚧 Release Blocker (In Progress) | Automated Maestro test flows targeting ephemeral preview channels and production web (`https://selahword.web.app`) with artifact recording and zero playback errors ([Issue #122](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/122)). |
 
 ---
 
@@ -30,17 +31,21 @@
 - [x] **Client IP & Device Context**: Client public IP ([REDACTED]) and hardware profile attached to every reflection note.
 
 #### Code Quality & Governance
-- [x] **100% Automated Test Suite**: 87/87 unit and widget tests passing green (`flutter test`).
+- [x] **100% Automated Test Suite**: 93/93 unit and widget tests passing green (`flutter test`).
 - [x] **Zero Analyzer Issues**: Clean static analysis with `flutter analyze`.
 - [x] **Zero RenderFlex Overflows**: Resolved in `SettingsBottomSheet` and `EmojiFeedbackDialog`.
 - [x] **Stale Process & RAM Hygiene**: Terminated orphan daemons; codified into `.agents/rules/stale_process_and_memory_hygiene.md` and `GEMINI.md`.
-- [x] **Ticket-Driven Commits**: 100% conventional commits with ticket scopes (#71, #89, #93, #107, #113, #114, #115).
-- [x] **CodeRabbit Wait Buffer**: Enforced 3-minute wait buffer in PR triage workflow before running triage or merging (#115, PR #116).
+- [x] **Ticket-Driven Commits**: 100% conventional commits with ticket scopes (#71, #89, #93, #107, #113, #114, #115, #119).
+- [x] **CodeRabbit Wait Buffer**: Enforced 3-minute wait buffer in PR triage workflow before running triage or merging (#115, PR #116, PR #120).
 
 #### Soft Launch Release Blockers & Next Tactical Wins
-- [ ] **WhisperX Incremental Alignment & Custom Passages ([Issue #95](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/95), [Issue #119](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/119))** *(RELEASE BLOCKER)*: Dynamic verse range clipping for pre-aligned chapters, unaligned passage bottom sheet with "Request from Devs", in-player `PassageTimingFeedbackBar` with 👍 / 👎 timing calibration, and experimental preview info dialog.
-- [ ] **PWA Installation & Flow Recording**: Test PWA install flow and capture automated video artifact via Patrol / Maestro.
+- [ ] **WhisperX Incremental Alignment & Custom Passages ([Issue #95](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/95))** *(RELEASE BLOCKER)*: Dynamic verse range clipping for pre-aligned chapters, unaligned passage bottom sheet with "Request from Devs", in-player `PassageTimingFeedbackBar` with 👍 / 👎 timing calibration, and experimental preview info dialog.
+- [ ] **Maestro E2E Flows on Preview & Production Web ([Issue #122](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/122))** *(RELEASE BLOCKER)*: Automated verification of audio loops, search, unaligned modal, and timing bar across preview and `https://selahword.web.app`.
+- [ ] **Community Feature Voting & Compact Debug Banner ([Issue #124](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/124))**: Feature voting sheet behind feature flags, `kDebugMode` developer audience isolation, and slim top debug mode banner.
+- [ ] **Full Codebase CodeRabbit Triage Audit**: Request full-codebase review before release tag; triage blockers and defer non-blockers to tracked issues.
 - [ ] **App Store Package Name Migration ([Issue #94](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/94))**: Migrate from `com.example...` to `app.selahword.audio` before native store listing.
+- [ ] **Codebase Formatter to 100 Character Line Length ([Issue #91](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/91))**: Standardize line length formatting for readability.
+- [ ] **Modern Dart 3 Syntax & Dot Shorthand ([Issue #123](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/123))**: Adopt fat arrow `=>`, dot shorthand enum/static notation, and switch expressions.
 
 ---
 
