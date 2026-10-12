@@ -427,13 +427,14 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
           ],
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            child: OfflineIndicator(
-              isOffline: playerState.isOffline,
-              isBundled: playerState.isBundledAsset,
+          if (playerState.isOffline)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              child: OfflineIndicator(
+                isOffline: playerState.isOffline,
+                isBundled: playerState.isBundledAsset,
+              ),
             ),
-          ),
           if (isFeatureVotingEnabled)
             IconButton(
               icon: const Icon(Icons.how_to_vote_rounded, color: Color(0xFFFBBF24)),
@@ -515,7 +516,12 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.fromLTRB(
+            20,
+            16,
+            20,
+            40 + MediaQuery.paddingOf(context).bottom,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -1561,7 +1567,7 @@ class _TestedPassagesBottomSheet extends StatelessWidget {
                 child: ListView.separated(
                   controller: scrollController,
                   itemCount: testedPassages.length,
-                  separatorBuilder: (_, __) => const Divider(color: Colors.white10, height: 1),
+                  separatorBuilder: (_, _) => const Divider(color: Colors.white10, height: 1),
                   itemBuilder: (context, index) {
                     final item = testedPassages[index];
                     return ListTile(
