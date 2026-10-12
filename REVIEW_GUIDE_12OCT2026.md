@@ -12,7 +12,7 @@
 Tonight's session achieved the critical milestones required for our **v0.4.0 Public Soft Launch**:
 1. **Production Safety Guaranteed**: Live meditators on `https://selahword.web.app` are protected. All testing now operates on isolated Firebase Hosting preview channels (`preview-v0-3-1`).
 2. **NIV "Airplane Mode" WTF Fixed**: Resolved Issue #89 and merged PR #90 (`51678d2`). Curated verse excerpts route to calm Text-to-Speech (TTS) with clear Biblica streaming notices.
-3. **Private User Feedback Hub Receptive**: Verified private triage hub [njwandroid/selahfeedback](https://github.com/njwandroid/selahfeedback) with Issue #1. Users can draw directly on screen captures, and sensitive prayers remain completely confidential.
+3. **Private User Feedback Hub Receptive**: Verified private triage hub [njwandroid/selahfeedback](https://github.com/njwandroid/selahfeedback) with Issue #1. Users can draw directly on screen captures; submissions are routed to a private GitHub repository accessible only to the development and ministry review team.
 4. **Zero Plaintext Secrets**: The GitHub feedback token is injected at runtime via Firebase Remote Config template `v2`. Zero credentials in git history.
 5. **Quality & Test Automation**: **85/85 tests pass green** (`flutter test`), 0 issues on `flutter analyze`. Automated pre-flight scanner script (`scripts/preview_channel_precheck.py`) guards against regressions.
 6. **Community Wiki Published**: Clean, non-technical Home, Product & Ministry Home, and Engineering Home deployed live to [GitHub Wiki](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/wiki).
@@ -39,7 +39,7 @@ Tonight's session achieved the critical milestones required for our **v0.4.0 Pub
   - **😐 It is okay** (Constructive feedback)
   - **😞 Needs work** (Private help)
 - Tap **"Draw on Screenshot & Send"**. Use your finger or mouse to draw a note or arrow on the app screen.
-- Tap Submit: Notice how your thoughts are sent privately to Neil's confidential triage area without cluttering public trackers.
+- Tap Submit: Your thoughts and annotated screenshots are delivered directly to the private team triage repository (`njwandroid/selahfeedback`) rather than being posted to public bug trackers.
 
 ### 3. Verify the NIV Experience
 - Open the translation selector and choose **NIV**.

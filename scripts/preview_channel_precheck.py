@@ -24,7 +24,9 @@ def fail(msg: str):
 
 def run_command(cmd, desc):
     log(f"Running {desc}...")
-    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    if isinstance(cmd, str):
+        cmd = cmd.split()
+    result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
         fail(f"{desc} failed:\n{result.stderr}\n{result.stdout}")
     return result.stdout
@@ -36,7 +38,10 @@ def check_no_secrets():
         r'ghp_[0-9A-Za-z]{36}',   # GitHub PAT
         r'gho_[0-9A-Za-z]{36}',   # GitHub OAuth Token
     ]
-    git_files = subprocess.run("git ls-files", shell=True, capture_output=True, text=True).stdout.splitlines()
+    ls = subprocess.run(["git", "ls-files"], capture_output=True, text=True)
+    if ls.returncode != 0:
+        fail(f"git ls-files failed: {ls.stderr}")
+    git_files = ls.stdout.splitlines()
     for f in git_files:
         if not os.path.isfile(f) or f.startswith(".worktrees") or f.endswith((".png", ".jpg", ".mp3", ".lock")):
             continue
@@ -50,10 +55,10 @@ def check_no_secrets():
             log(f"Skipping binary/unreadable file: {f}")
 
 def check_flutter_analyze():
-    run_command("flutter analyze", "Static Analysis (flutter analyze)")
+    run_command(["flutter", "analyze"], "Static Analysis (flutter analyze)")
 
 def check_flutter_test():
-    run_command("flutter test", "Test Suite (flutter test)")
+    run_command(["flutter", "test"], "Test Suite (flutter test)")
 
 def check_web_integrity():
     log("Verifying web/index.html tag and manifest...")
