@@ -38,10 +38,10 @@ void main() async {
   await analyticsWrapper.init();
   AppLogger.init(analyticsWrapper);
 
-  final remoteConfig = RemoteConfigService();
-  await remoteConfig.init();
-
   final sharedPreferences = await SharedPreferences.getInstance();
+
+  final remoteConfig = RemoteConfigService(prefs: sharedPreferences);
+  await remoteConfig.init();
 
   AppLogger.info('Selah Scripture Audio Meditation v0.2 Started.');
   AppLogger.info(
@@ -56,6 +56,7 @@ void main() async {
     ProviderScope(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(sharedPreferences),
+        remoteConfigServiceProvider.overrideWithValue(remoteConfig),
       ],
       child: const SelahApp(),
     ),
