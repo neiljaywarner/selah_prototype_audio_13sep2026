@@ -2,31 +2,31 @@
   {
     "verse": 4,
     "text": "Rejoice in the Lord always! Again I will say, Rejoice!",
-    "startMs": 0,
-    "endMs": 4347
+    "startMs": 30587,
+    "endMs": 36100
   },
   {
     "verse": 5,
     "text": "Let your gentleness be known to all men. The Lord is at hand.",
-    "startMs": 4797,
-    "endMs": 10449
+    "startMs": 36700,
+    "endMs": 41800
   },
   {
     "verse": 6,
     "text": "In nothing be anxious, but in everything, by prayer and petition with thanksgiving, let your requests be made known to God.",
-    "startMs": 10899,
-    "endMs": 20029
+    "startMs": 42400,
+    "endMs": 53200
   },
   {
     "verse": 7,
     "text": "And the peace of God, which surpasses all understanding, will guard your hearts and your thoughts in Christ Jesus.",
-    "startMs": 20479,
-    "endMs": 28739
+    "startMs": 53800,
+    "endMs": 64500
   },
   {
     "verse": 8,
     "text": "Finally, brothers, whatever things are true, whatever things are honorable, whatever things are just, whatever things are pure, whatever things are lovely, whatever things are of good report; if there is any virtue, and if there is any praise, think about these things.",
-    "startMs": 29189,
-    "endMs": 47884
+    "startMs": 65200,
+    "endMs": 85413
   }
 ]
