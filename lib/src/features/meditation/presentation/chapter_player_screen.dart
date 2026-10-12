@@ -17,6 +17,7 @@ import '../domain/scripture_topic.dart';
 import 'widgets/chapter_picker_dialog.dart';
 import 'widgets/feature_voting_sheet.dart';
 import 'widgets/licensing_attribution_sheet.dart';
+import 'widgets/offline_indicator.dart';
 import 'widgets/settings_bottom_sheet.dart';
 import 'widgets/topic_tab_bar.dart';
 import 'about_selah_dialog.dart';
@@ -278,29 +279,14 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
           ],
         ),
         actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            child: OfflineIndicator(isOffline: playerState.isOffline),
+          ),
           IconButton(
             icon: const Icon(Icons.how_to_vote_rounded, color: Color(0xFFFBBF24)),
             tooltip: 'Feature Roadmap & Feedback',
             onPressed: _openFeatureVoting,
-          ),
-          IconButton(
-            icon: Icon(
-              _showDebugLogs ? Icons.bug_report : Icons.bug_report_outlined,
-              color: _showDebugLogs ? Colors.greenAccent : Colors.white70,
-            ),
-            tooltip: 'Diagnostic Console',
-            onPressed: () => setState(() => _showDebugLogs = !_showDebugLogs),
-          ),
-          IconButton(
-            icon: const Icon(Icons.monitor_heart_outlined, color: Colors.cyanAccent),
-            tooltip: 'Talker Live Logs',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => TalkerScreen(talker: AppLogger.talker),
-                ),
-              );
-            },
           ),
           IconButton(
             icon: const Icon(Icons.info_outline_rounded, color: Colors.indigoAccent),
@@ -311,6 +297,67 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
             icon: const Icon(Icons.settings_outlined, color: Colors.white70),
             tooltip: 'Settings',
             onPressed: _openSettingsModal,
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded, color: Colors.white70),
+            tooltip: 'More Options',
+            color: const Color(0xFF1E1B4B),
+            onSelected: (value) {
+              switch (value) {
+                case 'about':
+                  AboutSelahDialog.show(context);
+                  break;
+                case 'console':
+                  setState(() => _showDebugLogs = !_showDebugLogs);
+                  break;
+                case 'logs':
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => TalkerScreen(talker: AppLogger.talker),
+                    ),
+                  );
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'about',
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline_rounded, color: Colors.indigoAccent, size: 20),
+                    SizedBox(width: 12),
+                    Text('About Selah', style: TextStyle(color: Colors.white)),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'console',
+                child: Row(
+                  children: [
+                    Icon(
+                      _showDebugLogs ? Icons.bug_report : Icons.bug_report_outlined,
+                      color: _showDebugLogs ? Colors.greenAccent : Colors.white70,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      _showDebugLogs ? 'Hide Diagnostics' : 'Show Diagnostics',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'logs',
+                child: Row(
+                  children: [
+                    Icon(Icons.monitor_heart_outlined, color: Colors.cyanAccent, size: 20),
+                    SizedBox(width: 12),
+                    Text('Talker Live Logs', style: TextStyle(color: Colors.white)),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

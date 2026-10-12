@@ -21,6 +21,7 @@ class ChapterPlayerState {
   final String? infoNotice;
   final String processingStateName;
   final bool shuffleTranslations;
+  final bool isOffline;
 
   const ChapterPlayerState({
     required this.currentChapter,
@@ -41,6 +42,7 @@ class ChapterPlayerState {
     this.infoNotice,
     this.processingStateName = 'idle',
     this.shuffleTranslations = false,
+    this.isOffline = false,
   });
 
   ChapterPlayerState copyWith({
@@ -64,6 +66,7 @@ class ChapterPlayerState {
     bool clearInfoNotice = false,
     String? processingStateName,
     bool? shuffleTranslations,
+    bool? isOffline,
   }) => ChapterPlayerState(
     currentChapter: currentChapter ?? this.currentChapter,
     isLoading: isLoading ?? this.isLoading,
@@ -83,7 +86,10 @@ class ChapterPlayerState {
     infoNotice: clearInfoNotice ? null : (infoNotice ?? this.infoNotice),
     processingStateName: processingStateName ?? this.processingStateName,
     shuffleTranslations: shuffleTranslations ?? this.shuffleTranslations,
+    isOffline: isOffline ?? this.isOffline,
   );
+
+  bool get isBundledAsset => currentChapter.audioStreamUrl.startsWith('assets/');
 
   BibleTranslation get translation => BibleTranslation.fromCode(activeTranslation);
 }
