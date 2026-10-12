@@ -41,25 +41,30 @@ Tonight's session focused on elevating Selah to a production-grade soft launch f
 | **M43: WhisperX Expansion Issue Filed** | Created tracked GitHub issue for on-demand lazy loading and incremental WhisperX alignment subtasks | 2026-10-12 02:07:00 | 2026-10-12 02:07:30 | ✅ Complete | [Issue #95](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/95) |
 | **M44: Production Web v0.3.1 Deployed** | Compiled release web bundle and deployed to main site `https://selahword.web.app` with Google Analytics 4 | 2026-10-12 08:56:00 | 2026-10-12 08:58:15 | ✅ Complete | Live at [selahword.web.app](https://selahword.web.app) (HTTP 200) |
 | **M45: Release Tag v0.3.1 Pushed** | Tagged release `v0.3.1` (Commit `385fde2`) and posted announcement comments to Issue #92 and Issue #71 | 2026-10-12 08:58:19 | 2026-10-12 11:18:40 | ✅ Complete | Git Tag [`v0.3.1`](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/releases/tag/v0.3.1) |
+| **M46: PR #93 Triaged & Merged** | Triaged CodeRabbit review comments on PR #93, resolved security/test blockers, deferred 16 non-critical items (#97–#112), and merged PR #93 | 2026-10-12 11:20:00 | 2026-10-12 11:27:30 | ✅ Complete | PR #93 merged (`5f8e85a`); Issue #71 closed |
+| **M47: Screenshot Upload & IP Discovery (#107, #113)** | Implemented `uploadScreenshotAsset` via GitHub Contents API, public IP discovery in `AppDeviceInfoService`, and connected `EmojiFeedbackDialog._handleSubmit` | 2026-10-12 11:32:00 | 2026-10-12 11:42:00 | ✅ Complete | 87/87 tests green; 0 analyzer warnings |
+| **M48: Cross-Platform Feedback Proof in njwandroid/selahfeedback** | Generated live verification issues with embedded high-res screenshots and public IP (`47.184.34.43`) from Chrome Web (#2) and iOS Simulator (#3) | 2026-10-12 11:42:30 | 2026-10-12 11:43:20 | ✅ Complete | [selahfeedback Issue #2](https://github.com/njwandroid/selahfeedback/issues/2), [selahfeedback Issue #3](https://github.com/njwandroid/selahfeedback/issues/3) |
+| **M49: PR #114 Merged & CodeRabbit Wait Protocol** | Merged PR #114 into `main` (`ede31d8`), closed Issues #113 & #107, added Memory Hygiene rule, and enforced 3-minute CodeRabbit wait in triage skill | 2026-10-12 11:46:00 | 2026-10-12 11:48:30 | ✅ Complete | PR #114 merged; [.agents/rules/stale_process_and_memory_hygiene.md](.agents/rules/stale_process_and_memory_hygiene.md) |
 
 ---
 
 ## 📍 Where We Are Right Now & Next 3 Priorities
 
 ### Current State
-- `main` branch now contains Hotfix `v0.3.1` (`51678d2`).
-- Web preview channel `https://selahword--preview-v0-3-1-a15pcecz.web.app` is live and serving the latest build with `x-robots-tag: noindex`.
-- Branch `feat/#71-firebase-analytics` in the primary workspace has tested analytics and documentation ready for PR.
+- `main` branch is at commit `ede31d8` containing all hotfixes, analytics, layout fixes, and the private feedback pipeline with screenshot upload.
+- Live web app at `https://selahword.web.app` has verified Google Analytics 4 tracking (`G-7LFS54TTFM`).
+- Private feedback hub at `https://github.com/njwandroid/selahfeedback/issues` is verified live with automated issue creation, client public IP address (`47.184.34.43`), and high-res screenshot attachments from both **Chrome Web** and **iOS Simulator** (iPhone 16 Pro).
+- Zero background memory leaks: ephemeral servers and test runners terminated. Stale process hygiene codified in workspace rules and `GEMINI.md`.
+- CodeRabbit triage skill updated with mandatory 3-minute wait buffer to prevent premature merges before bot review posts.
 
 ### Next 3 Priorities
-1. **Merge Analytics PR (Issue #71)**:
-   - Commit and push `feat/#71-firebase-analytics` via GitHub MCP, open PR, and merge into `main`.
-2. **Version & Build Telemetry in About Dialog (v0.4.0)**:
-   - Update `AboutSelahDialog` to dynamically display the SemVer version (`0.4.0`), build number, git commit hash, and build timestamp across Web, PWA, Android, and iOS.
-   - Link the dialog to `README_RELEASES.md` and release notes.
-3. **Publish v0.4.0 Release Notes & Preview**:
-   - Create `README_RELEASES.md` with markdown table linking git tags, commits, milestone issues, and deployment URLs.
-   - Deploy `v0.4.0` to Firebase Hosting preview channel `preview-v0-4-0` for final user walkthrough.
+1. **Soft Launch User Onboarding & Feedback Walkthrough**:
+   - Verify non-technical user experience when tapping "Draw on Screenshot & Send" and submitting feedback.
+2. **Phase 1 of WhisperX Expansion (Issue #95)**:
+   - Implement lazy on-demand loading of timestamp assets and align Psalm 91:1–4.
+3. **Package Name Migration (Issue #94)**:
+   - Execute migration from `com.example...` to `app.selahword.audio` across Android, iOS, and Firebase configs.
+
 
 ---
 
