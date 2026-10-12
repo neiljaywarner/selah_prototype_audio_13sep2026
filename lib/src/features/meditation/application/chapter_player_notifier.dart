@@ -290,6 +290,23 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       return;
     }
 
+    // Rule 0.5: Curated excerpt or single verse without bundled audio (e.g. NIV)
+    if (bookCode.toUpperCase() == 'VRS') {
+      final text = state.currentChapter.textContent.isNotEmpty
+          ? state.currentChapter.textContent
+          : fallbackText;
+      final notice = kIsWeb
+          ? 'NIV audio stream is proprietary to Biblica / API.Bible. Narrating with Text-to-Speech (TTS).'
+          : '${translation.fullName} (${translation.code}) excerpt narration — narrating with Text-to-Speech (TTS).';
+      state = state.copyWith(
+        audioMode: AudioMode.tts,
+        isOffline: false,
+        infoNotice: notice,
+      );
+      await _playTts(text);
+      return;
+    }
+
     // Rule 1: translation has no human narrator for this testament (e.g. WEB OT) -> TTS
     if (!translation.hasNarratorFor(bookCode)) {
       AppLogger.info(
@@ -380,9 +397,19 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
             bookCode,
             chapterNumber,
           ) ?? fallbackText;
-      state = state.copyWith(isOffline: true);
+
+      final isWeb = kIsWeb;
+      final noticeMessage = isWeb
+          ? (translation.isLicensed
+              ? 'NIV audio narration requires on-demand API.Bible streaming. Narrating with Text-to-Speech (TTS).'
+              : 'Narrator stream unavailable on web — narrating ${translation.fullName} (${translation.code}) with Text-to-Speech (TTS).')
+          : (translation.isLicensed
+              ? 'NIV audio stream is proprietary to Biblica. Narrating via Text-to-Speech (TTS).'
+              : 'Offline / Airplane Mode: Narrating ${translation.fullName} (${translation.code}) scripture via Text-to-Speech (TTS).');
+
+      state = state.copyWith(isOffline: !isWeb);
       _switchToTtsFallback(
-        'Offline / Airplane Mode: Narrating ${translation.fullName} (${translation.code}) scripture via Text-to-Speech (TTS).',
+        noticeMessage,
         overrideText: cachedText,
       );
     }
