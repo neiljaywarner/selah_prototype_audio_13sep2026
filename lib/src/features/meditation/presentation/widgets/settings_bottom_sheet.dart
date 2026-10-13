@@ -20,8 +20,14 @@ class SettingsBottomSheet extends ConsumerWidget {
     final variantGroup = knobOptions.length > 5 ? 'slider_1_to_25' : 'curated_1_3_7_inf';
 
     return SafeArea(
+      maintainBottomViewPadding: true,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.fromLTRB(
+          24,
+          24,
+          24,
+          24 + MediaQuery.paddingOf(context).bottom,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

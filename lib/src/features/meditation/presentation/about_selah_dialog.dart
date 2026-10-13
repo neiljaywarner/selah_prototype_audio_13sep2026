@@ -30,17 +30,24 @@ class AboutSelahDialog extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         side: BorderSide(color: Colors.indigo.shade700.withValues(alpha: 0.5)),
       ),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 500,
-          maxHeight: screenHeight * 0.88,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(22.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+      insetPadding: EdgeInsets.fromLTRB(
+        16,
+        20 + MediaQuery.paddingOf(context).top,
+        16,
+        20 + MediaQuery.paddingOf(context).bottom,
+      ),
+      child: SafeArea(
+        maintainBottomViewPadding: true,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 500,
+            maxHeight: screenHeight * 0.88,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(22.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Header with glowing icon and titles
               Row(
@@ -210,8 +217,9 @@ class AboutSelahDialog extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildSectionTitle(String title, IconData icon) {
     return Row(

@@ -140,50 +140,63 @@ class _EmojiFeedbackDialogState extends ConsumerState<EmojiFeedbackDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final mediaPadding = MediaQuery.paddingOf(context);
+
     if (_isSubmitted) {
       return Dialog(
         backgroundColor: const Color(0xFF161536),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Padding(
-          padding: const EdgeInsets.all(28.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: (_selectedFace == 'happy' ? Colors.greenAccent : const Color(0xFFFBBF24))
-                      .withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: Text(_selectedEmoji, style: const TextStyle(fontSize: 40)),
+        insetPadding: EdgeInsets.fromLTRB(
+          20,
+          24 + mediaPadding.top,
+          20,
+          24 + mediaPadding.bottom,
+        ),
+        child: SafeArea(
+          maintainBottomViewPadding: true,
+          child: Padding(
+            padding: const EdgeInsets.all(28.0),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: (_selectedFace == 'happy' ? Colors.greenAccent : const Color(0xFFFBBF24))
+                          .withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(_selectedEmoji, style: const TextStyle(fontSize: 40)),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    _selectedFace == 'happy' ? 'Praise God! Thank You!' : 'Thank You for Your Feedback!',
+                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _selectedFace == 'happy'
+                        ? 'Your encouragement blesses our team and helps shape Selah for believers worldwide.'
+                        : 'Your honest feedback is safely recorded in our private triage inbox. Neil reviews every note personally to make Selah better.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF6366F1),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Return to Meditation'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              Text(
-                _selectedFace == 'happy' ? 'Praise God! Thank You!' : 'Thank You for Your Feedback!',
-                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _selectedFace == 'happy'
-                    ? 'Your encouragement blesses our team and helps shape Selah for believers worldwide.'
-                    : 'Your honest feedback is safely recorded in our private triage inbox. Neil reviews every note personally to make Selah better.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6366F1),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                ),
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Return to Meditation'),
-              ),
-            ],
+            ),
           ),
         ),
       );
@@ -197,16 +210,23 @@ class _EmojiFeedbackDialogState extends ConsumerState<EmojiFeedbackDialog> {
         borderRadius: BorderRadius.circular(24),
         side: BorderSide(color: Colors.indigo.shade700.withValues(alpha: 0.5)),
       ),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 440,
-          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: SingleChildScrollView(
-            child: Column(
+      insetPadding: EdgeInsets.fromLTRB(
+        20,
+        24 + mediaPadding.top,
+        20,
+        24 + mediaPadding.bottom,
+      ),
+      child: SafeArea(
+        maintainBottomViewPadding: true,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 440,
+            maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: SingleChildScrollView(
+              child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -520,6 +540,7 @@ class _EmojiFeedbackDialogState extends ConsumerState<EmojiFeedbackDialog> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
