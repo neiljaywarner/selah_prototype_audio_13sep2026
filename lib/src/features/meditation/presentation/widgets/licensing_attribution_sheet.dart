@@ -20,6 +20,7 @@ class LicensingAttributionSheet extends StatelessWidget {
     return showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xFF1E1B4B),
+      useSafeArea: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -31,12 +32,18 @@ class LicensingAttributionSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        24,
+        20,
+        24 + MediaQuery.paddingOf(context).bottom,
+      ),
       decoration: const BoxDecoration(
         color: Color(0xFF1E1B4B),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SafeArea(
+        maintainBottomViewPadding: true,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,

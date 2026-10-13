@@ -102,15 +102,19 @@ class _FeatureVotingSheetState extends ConsumerState<FeatureVotingSheet> {
     final votingState = ref.watch(featureVotingProvider);
     final votingNotifier = ref.read(featureVotingProvider.notifier);
 
-    return Container(
-      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
-      padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: Color(0xFF1E1B4B),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SingleChildScrollView(
-        child: Column(
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+
+    return SafeArea(
+      maintainBottomViewPadding: true,
+      child: Container(
+        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.85),
+        padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottomInset),
+        decoration: const BoxDecoration(
+          color: Color(0xFF1E1B4B),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -286,8 +290,9 @@ class _FeatureVotingSheetState extends ConsumerState<FeatureVotingSheet> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class _FeatureVotingTile extends StatelessWidget {

@@ -245,74 +245,84 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     final translation = ref.read(chapterPlayerProvider).translation.code;
     showModalBottomSheet(
       context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
       backgroundColor: const Color(0xFF1E1B4B),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.access_time_rounded, color: Color(0xFFFBBF24), size: 22),
-                const SizedBox(width: 10),
-                const Expanded(
-                  child: Text(
-                    'Verse Timing Unaligned',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+      builder: (ctx) => SafeArea(
+        maintainBottomViewPadding: true,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            24,
+            20,
+            24 + MediaQuery.paddingOf(ctx).bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.access_time_rounded, color: Color(0xFFFBBF24), size: 22),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Verse Timing Unaligned',
+                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Verse-level WhisperX timestamps for "$rawPassage" ($translation) are not aligned yet. How would you like to meditate?',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13, height: 1.4),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.play_arrow_rounded, color: Color(0xFF10B981), size: 24),
+                ],
               ),
-              title: Text('Play Full Chapter ($bookName $chapterNumber)', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-              subtitle: Text('Continuous human narrator audio in $translation', style: const TextStyle(color: Colors.white54, fontSize: 12)),
-              onTap: () {
-                Navigator.of(ctx).pop();
-                ref.read(chapterPlayerProvider.notifier).routeAndPlayChapter(
-                  bookCode: bookCode,
-                  chapterNumber: chapterNumber,
-                  bookName: bookName,
-                );
-              },
-            ),
-            const Divider(color: Colors.white10),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFBBF24).withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.send_rounded, color: Color(0xFFFBBF24), size: 22),
+              const SizedBox(height: 8),
+              Text(
+                'Verse-level WhisperX timestamps for "$rawPassage" ($translation) are not aligned yet. How would you like to meditate?',
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13, height: 1.4),
               ),
-              title: const Text('Request Passage from Devs', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-              subtitle: const Text('Notifies developers to prioritize WhisperX alignment for this passage', style: TextStyle(color: Colors.white54, fontSize: 12)),
-              onTap: () {
-                Navigator.of(ctx).pop();
-                _requestPassageFromDevs(rawPassage);
-              },
-            ),
-          ],
+              const SizedBox(height: 16),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.play_arrow_rounded, color: Color(0xFF10B981), size: 24),
+                ),
+                title: Text('Play Full Chapter ($bookName $chapterNumber)', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                subtitle: Text('Continuous human narrator audio in $translation', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  ref.read(chapterPlayerProvider.notifier).routeAndPlayChapter(
+                    bookCode: bookCode,
+                    chapterNumber: chapterNumber,
+                    bookName: bookName,
+                  );
+                },
+              ),
+              const Divider(color: Colors.white10),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFBBF24).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.send_rounded, color: Color(0xFFFBBF24), size: 22),
+                ),
+                title: const Text('Request Passage from Devs', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                subtitle: const Text('Notifies developers to prioritize WhisperX alignment for this passage', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _requestPassageFromDevs(rawPassage);
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -336,6 +346,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
 
   void _openFeatureVoting() => showModalBottomSheet(
     context: context,
+    useSafeArea: true,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (ctx) => const FeatureVotingSheet(),
@@ -343,6 +354,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
 
   void _openSettingsModal() => showModalBottomSheet(
     context: context,
+    useSafeArea: true,
     isScrollControlled: true,
     backgroundColor: const Color(0xFF1E1B4B),
     shape: const RoundedRectangleBorder(
@@ -354,6 +366,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
   void _openTestedPassagesModal() {
     showModalBottomSheet(
       context: context,
+      useSafeArea: true,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF1E1B4B),
       shape: const RoundedRectangleBorder(
@@ -515,12 +528,13 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
         ],
       ),
       body: SafeArea(
+        maintainBottomViewPadding: true,
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
             20,
             16,
             20,
-            40 + MediaQuery.paddingOf(context).bottom,
+            56 + MediaQuery.paddingOf(context).bottom,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -953,7 +967,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                         color: const Color(0xFF0F0E26).withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: SingleChildScrollView(child: _KaraokeTextDisplay(playerState: playerState)),
+                      child: _KaraokeTextDisplay(playerState: playerState),
                     ),
                     const SizedBox(height: 10),
 
@@ -1381,21 +1395,69 @@ class _PresetChip extends StatelessWidget {
   }
 }
 
-class _KaraokeTextDisplay extends StatelessWidget {
+class _KaraokeTextDisplay extends StatefulWidget {
   const _KaraokeTextDisplay({required this.playerState});
 
   final dynamic playerState;
 
   @override
-  Widget build(BuildContext context) {
-    final text = playerState.currentChapter.textContent as String;
-    if (playerState.highlightEnd > playerState.highlightStart &&
-        playerState.highlightEnd <= text.length) {
-      final before = text.substring(0, playerState.highlightStart);
-      final word = text.substring(playerState.highlightStart, playerState.highlightEnd);
-      final after = text.substring(playerState.highlightEnd);
+  State<_KaraokeTextDisplay> createState() => _KaraokeTextDisplayState();
+}
 
-      return RichText(
+class _KaraokeTextDisplayState extends State<_KaraokeTextDisplay> {
+  final ScrollController _scrollController = ScrollController();
+  int _lastHighlightStart = -1;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _KaraokeTextDisplay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final curStart = widget.playerState.highlightStart as int;
+    final curChapter = widget.playerState.currentChapter;
+    final oldChapter = oldWidget.playerState.currentChapter;
+
+    // Reset scroll if chapter changed
+    if (curChapter != oldChapter && _scrollController.hasClients) {
+      _scrollController.jumpTo(0);
+      _lastHighlightStart = -1;
+      return;
+    }
+
+    if (curStart != _lastHighlightStart && curStart > 0 && _scrollController.hasClients) {
+      _lastHighlightStart = curStart;
+      final text = widget.playerState.currentChapter.textContent as String;
+      if (text.isNotEmpty) {
+        final progress = (curStart / text.length).clamp(0.0, 1.0);
+        final maxScroll = _scrollController.position.maxScrollExtent;
+        if (maxScroll > 0) {
+          final targetOffset = (maxScroll * progress).clamp(0.0, maxScroll);
+          _scrollController.animateTo(
+            targetOffset,
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeOutCubic,
+          );
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = widget.playerState.currentChapter.textContent as String;
+    Widget content;
+
+    if (widget.playerState.highlightEnd > widget.playerState.highlightStart &&
+        widget.playerState.highlightEnd <= text.length) {
+      final before = text.substring(0, widget.playerState.highlightStart);
+      final word = text.substring(widget.playerState.highlightStart, widget.playerState.highlightEnd);
+      final after = text.substring(widget.playerState.highlightEnd);
+
+      content = RichText(
         textAlign: TextAlign.center,
         text: TextSpan(
           style: GoogleFonts.newsreader(
@@ -1417,16 +1479,22 @@ class _KaraokeTextDisplay extends StatelessWidget {
           ],
         ),
       );
+    } else {
+      content = Text(
+        text,
+        textAlign: TextAlign.center,
+        style: GoogleFonts.newsreader(
+          fontSize: 15,
+          height: 1.5,
+          color: Colors.white.withValues(alpha: 0.87),
+        ),
+      );
     }
 
-    return Text(
-      text,
-      textAlign: TextAlign.center,
-      style: GoogleFonts.newsreader(
-        fontSize: 15,
-        height: 1.5,
-        color: Colors.white.withValues(alpha: 0.87),
-      ),
+    return SingleChildScrollView(
+      controller: _scrollController,
+      physics: const ClampingScrollPhysics(),
+      child: content,
     );
   }
 }
@@ -1523,83 +1591,91 @@ class _TestedPassagesBottomSheet extends StatelessWidget {
       maxChildSize: 0.9,
       expand: false,
       builder: (context, scrollController) {
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  const Icon(Icons.verified_rounded, color: Color(0xFFFBBF24), size: 22),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Tested & Verified Passages',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+        return SafeArea(
+          maintainBottomViewPadding: true,
+          child: Container(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              16,
+              20,
+              24 + MediaQuery.paddingOf(context).bottom,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded, color: Colors.white54),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-              Text(
-                'Top 12 contemplative passages with Level 2 WhisperX acoustic alignment & verified timing.',
-                style: TextStyle(fontSize: 12, color: Colors.indigo.shade200),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: ListView.separated(
-                  controller: scrollController,
-                  itemCount: testedPassages.length,
-                  separatorBuilder: (_, _) => const Divider(color: Colors.white10, height: 1),
-                  itemBuilder: (context, index) {
-                    final item = testedPassages[index];
-                    return ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                      title: Text(
-                        item.title,
-                        style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 15),
-                      ),
-                      subtitle: Text(
-                        item.description,
-                        style: const TextStyle(color: Colors.white60, fontSize: 12),
-                      ),
-                      trailing: const Icon(Icons.play_circle_fill_rounded, color: Color(0xFF6366F1), size: 28),
-                      onTap: () => onSelectPassage(item.query),
-                    );
-                  },
                 ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  icon: const Icon(Icons.add_rounded, color: Color(0xFFFBBF24)),
-                  label: const Text('Request Another Passage', style: TextStyle(color: Color(0xFFFBBF24))),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFFBBF24)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: onRequestPassage,
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Icon(Icons.verified_rounded, color: Color(0xFFFBBF24), size: 22),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Tested & Verified Passages',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Colors.white54),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+                Text(
+                  'Top 12 contemplative passages with Level 2 WhisperX acoustic alignment & verified timing.',
+                  style: TextStyle(fontSize: 12, color: Colors.indigo.shade200),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: ListView.separated(
+                    controller: scrollController,
+                    itemCount: testedPassages.length,
+                    separatorBuilder: (_, _) => const Divider(color: Colors.white10, height: 1),
+                    itemBuilder: (context, index) {
+                      final item = testedPassages[index];
+                      return ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        title: Text(
+                          item.title,
+                          style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 15),
+                        ),
+                        subtitle: Text(
+                          item.description,
+                          style: const TextStyle(color: Colors.white60, fontSize: 12),
+                        ),
+                        trailing: const Icon(Icons.play_circle_fill_rounded, color: Color(0xFF6366F1), size: 28),
+                        onTap: () => onSelectPassage(item.query),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.add_rounded, color: Color(0xFFFBBF24)),
+                    label: const Text('Request Another Passage', style: TextStyle(color: Color(0xFFFBBF24))),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFFBBF24)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: onRequestPassage,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },

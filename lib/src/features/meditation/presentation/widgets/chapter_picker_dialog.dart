@@ -99,10 +99,18 @@ class _ChapterPickerDialogState extends State<ChapterPickerDialog> {
     return Dialog(
       backgroundColor: const Color(0xFF1E1B4B),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        constraints: const BoxConstraints(maxWidth: 480, maxHeight: 600),
-        child: Column(
+      insetPadding: EdgeInsets.fromLTRB(
+        16,
+        20 + MediaQuery.paddingOf(context).top,
+        16,
+        20 + MediaQuery.paddingOf(context).bottom,
+      ),
+      child: SafeArea(
+        maintainBottomViewPadding: true,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          constraints: const BoxConstraints(maxWidth: 480, maxHeight: 600),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
@@ -334,8 +342,9 @@ class _ChapterPickerDialogState extends State<ChapterPickerDialog> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class _FilterChipItem extends StatelessWidget {
