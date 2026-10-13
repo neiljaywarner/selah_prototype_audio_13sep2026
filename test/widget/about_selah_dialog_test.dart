@@ -30,13 +30,15 @@ void main() {
       // Verify About Dialog content
       expect(find.byType(AboutSelahDialog), findsOneWidget);
       expect(find.text('SELAH'), findsWidgets);
-      expect(find.textContaining('v0.3.0'), findsWidgets);
+      expect(find.textContaining('v0.3.1'), findsWidgets);
       expect(
         find.textContaining('Crafted by Neil Jay Warner, and friends and brothers and sisters in Christ'),
         findsOneWidget,
       );
-      expect(find.text('Release Notes (v0.3.0)'), findsOneWidget);
-      expect(find.textContaining('Curated Passage Audio'), findsOneWidget);
+      expect(find.text('Scripture Copyrights & Attributions'), findsOneWidget);
+      expect(find.text('COPYRIGHTED · NOT PUBLIC DOMAIN'), findsOneWidget);
+      expect(find.textContaining('Biblica, Inc.'), findsOneWidget);
+      expect(find.text('Release Notes (v0.3.1)'), findsOneWidget);
       expect(find.text('View Scripture & Audio Attributions'), findsOneWidget);
 
       // Dismiss dialog
