@@ -2,25 +2,25 @@
   {
     "verse": 4,
     "text": "Love is patient, love is kind. Love does not envy. Love does not brag, is not proud,",
-    "startMs": 25000,
-    "endMs": 32740
-  },
-  {
-    "verse": 5,
-    "text": "does not behave itself inappropriately, does not seek its own way, is not provoked, takes no account of evil;",
-    "startMs": 33600,
-    "endMs": 39740
-  },
-  {
-    "verse": 6,
-    "text": "doesn't rejoice in unrighteousness, but rejoices with the truth;",
     "startMs": 40900,
     "endMs": 47820
   },
   {
-    "verse": 7,
-    "text": "bears all things, believes all things, hopes all things, endures all things.",
+    "verse": 5,
+    "text": "does not behave itself inappropriately, does not seek its own way, is not provoked, takes no account of evil;",
     "startMs": 48800,
     "endMs": 58700
+  },
+  {
+    "verse": 6,
+    "text": "doesn't rejoice in unrighteousness, but rejoices with the truth;",
+    "startMs": 60250,
+    "endMs": 65300
+  },
+  {
+    "verse": 7,
+    "text": "bears all things, believes all things, hopes all things, endures all things.",
+    "startMs": 65850,
+    "endMs": 72150
   }
 ]

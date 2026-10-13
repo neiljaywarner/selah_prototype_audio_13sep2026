@@ -49,7 +49,7 @@ void main() {
       }
     });
 
-    test('WEB timestamps file starts at Verse 4 at exactly 39,600ms boundary', () {
+    test('WEB timestamps file starts at Verse 4 at calibrated 40,900ms boundary', () {
       final file = File('assets/timestamps/WEB/1CO_13.json');
       expect(file.existsSync(), isTrue, reason: 'assets/timestamps/WEB/1CO_13.json must exist');
 
@@ -60,7 +60,7 @@ void main() {
 
       final firstVerse = timestamps.first;
       expect(firstVerse.verse, equals(4));
-      expect(firstVerse.startMs, equals(39600));
+      expect(firstVerse.startMs, equals(40900), reason: 'WEB audio starts at 40.9s narrator pause boundary');
       expect(firstVerse.text, startsWith('Love is patient, love is kind'));
 
       expect(timestamps.map((t) => t.verse).toList(), equals([4, 5, 6, 7]));
