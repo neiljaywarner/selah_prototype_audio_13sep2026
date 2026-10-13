@@ -21,6 +21,7 @@ import 'widgets/offline_indicator.dart';
 import 'widgets/passage_timing_feedback_bar.dart';
 import 'widgets/settings_bottom_sheet.dart';
 import 'widgets/topic_tab_bar.dart';
+import 'widgets/emoji_feedback_dialog.dart';
 import 'about_selah_dialog.dart';
 import '../../../core/feedback/feedback_service.dart';
 import '../../../core/karaoke/timestamp_loader.dart';
@@ -470,6 +471,13 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
             color: const Color(0xFF1E1B4B),
             onSelected: (value) {
               switch (value) {
+                case 'feedback':
+                  EmojiFeedbackDialog.show(
+                    context,
+                    currentChapter: playerState.currentChapter.displayTitle,
+                    translation: playerState.activeTranslation,
+                  );
+                  break;
                 case 'about':
                   AboutSelahDialog.show(context);
                   break;
@@ -486,6 +494,16 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
               }
             },
             itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'feedback',
+                child: Row(
+                  children: [
+                    Icon(Icons.favorite_rounded, color: Color(0xFFFBBF24), size: 20),
+                    SizedBox(width: 12),
+                    Text('Prayer & Feedback', style: TextStyle(color: Colors.white)),
+                  ],
+                ),
+              ),
               const PopupMenuItem(
                 value: 'about',
                 child: Row(
