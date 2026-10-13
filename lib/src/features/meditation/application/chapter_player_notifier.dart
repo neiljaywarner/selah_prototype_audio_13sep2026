@@ -187,10 +187,78 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
   Future<void> _initTtsEngine() async {
     try {
+      // 1. Prioritize Google Text-to-Speech / Speech Services on Android
+      if (!kIsWeb && Platform.isAndroid) {
+        try {
+          final dynamic engines = await _flutterTts.getEngines;
+          if (engines is List && engines.contains('com.google.android.tts')) {
+            await _flutterTts.setEngine('com.google.android.tts');
+            AppLogger.info('TTS: Selected Google Text-to-Speech engine (com.google.android.tts)');
+          }
+        } catch (e) {
+          AppLogger.info('TTS engine query notice: $e');
+        }
+      }
+
       await _flutterTts.setLanguage('en-US');
-      // Gentle meditation speech rate and pitch
-      await _flutterTts.setSpeechRate(0.38);
-      await _flutterTts.setPitch(0.95);
+
+      // 2. Calibrated contemplative prosody:
+      // Pacing calibrated at ~0.44 (avoids mechanical vowel stretching while preserving meditative space)
+      await _flutterTts.setSpeechRate(kIsWeb ? 0.46 : 0.44);
+      await _flutterTts.setPitch(1.0);
+
+      // 3. Intelligent natural / neural voice selection
+      try {
+        final dynamic rawVoices = await _flutterTts.getVoices;
+        if (rawVoices is List && rawVoices.isNotEmpty) {
+          final List<Map<String, String>> voices = [];
+          for (final v in rawVoices) {
+            if (v is Map) {
+              final name = v['name']?.toString() ?? '';
+              final locale = v['locale']?.toString() ?? '';
+              if (name.isNotEmpty) {
+                voices.add({'name': name, 'locale': locale});
+              }
+            }
+          }
+
+          // Preferred natural & neural contemplative voice patterns
+          const preferredPatterns = [
+            'natural',     // Edge / Modern Web Neural Voices
+            'google us',   // Chrome Google US English
+            'samantha',    // iOS / macOS warm narrator
+            'sfg-network', // Android Google TTS Neural Voice
+            'tpd-network', // Android Google TTS Neural Voice
+            'iob-network', // Android Google TTS Neural Voice
+            'sfg-local',   // Android Google TTS Enhanced Local
+            'iol-local',   // Android Google TTS Enhanced Local
+            'en-us-x-',    // Android Google TTS English Family
+          ];
+
+          Map<String, String>? selected;
+          for (final pattern in preferredPatterns) {
+            for (final v in voices) {
+              final vName = v['name']?.toLowerCase() ?? '';
+              final vLocale = v['locale']?.toLowerCase() ?? '';
+              if (vLocale.startsWith('en') && vName.contains(pattern)) {
+                selected = v;
+                break;
+              }
+            }
+            if (selected != null) break;
+          }
+
+          if (selected != null) {
+            await _flutterTts.setVoice({
+              'name': selected['name']!,
+              if (selected['locale']!.isNotEmpty) 'locale': selected['locale']!,
+            });
+            AppLogger.info('TTS: Selected natural contemplative voice: ${selected['name']} (${selected['locale']})');
+          }
+        }
+      } catch (e) {
+        AppLogger.info('TTS voice selection notice: $e');
+      }
 
       _flutterTts.setProgressHandler((String text, int start, int end, String word) {
         if (state.isPlaying && state.audioMode == AudioMode.tts) {
