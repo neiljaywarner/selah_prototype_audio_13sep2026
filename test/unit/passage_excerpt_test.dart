@@ -32,8 +32,8 @@ void main() {
 
     test('WEB clip window uses its own v7 end boundary', () {
       final window = PassageExcerpt.forChapter('1CO', 13)!.clipWindow(_load('assets/timestamps/WEB/1CO_13.json'));
-      expect(window!.start, const Duration(milliseconds: 39600));
-      expect(window.end, const Duration(milliseconds: 61600));
+      expect(window!.start, const Duration(milliseconds: 40900));
+      expect(window.end, const Duration(milliseconds: 72150));
     });
 
     test('Ignores verses outside the excerpt range', () {
