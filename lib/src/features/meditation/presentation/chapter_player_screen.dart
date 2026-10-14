@@ -474,7 +474,8 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                 case 'feedback':
                   EmojiFeedbackDialog.show(
                     context,
-                    currentChapter: playerState.currentChapter.displayTitle,
+                    currentChapter: playerState.currentChapter.displayTitle ??
+                        playerState.currentChapter.reference,
                     translation: playerState.activeTranslation,
                   );
                   break;

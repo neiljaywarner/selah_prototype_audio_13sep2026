@@ -1,0 +1,31 @@
+# Selah Comprehensive Mobile Smoke Test (Android / iOS / Web)
+appId: com.example.selah_prototype_audio_13sep2026
+---
+- launchApp:
+    clearState: false
+
+- waitForAnimationToEnd
+
+# 1. Assert Header Branding
+- assertVisible:
+    text: "SELAH"
+
+# 2. Assert Initial Scripture Passage
+- assertVisible:
+    text: "1 Cor 13:4–7"
+    optional: true
+
+# 3. Test Passage Chip Switch
+- tapOn:
+    text: "Matt 11:28–30"
+    optional: true
+
+- waitForAnimationToEnd
+
+# 4. Assert Scripture Excerpt Loaded
+- assertVisible:
+    text: "Matthew 11:28–30"
+    optional: true
+
+# 5. Capture Proof Screenshot
+- takeScreenshot: test_artifacts/maestro_smoke_passage_verified

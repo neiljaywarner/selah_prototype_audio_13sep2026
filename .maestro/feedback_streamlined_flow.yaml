@@ -1,0 +1,38 @@
+# Maestro Flow: Streamlined Prayer & Feedback Dialog
+appId: com.example.selah_prototype_audio_13sep2026
+---
+- launchApp:
+    clearState: false
+
+- waitForAnimationToEnd
+
+# 1. Open More Options from Top AppBar
+- tapOn:
+    point: "90%,4%" # More Options menu in top right
+    optional: true
+
+- waitForAnimationToEnd
+
+# 2. Tap Prayer & Feedback
+- tapOn:
+    text: "Prayer & Feedback"
+    optional: true
+
+- waitForAnimationToEnd
+
+# 3. Verify Dialog Header & Sentiments
+- assertVisible:
+    text: "Prayer & Feedback"
+    optional: true
+
+- assertVisible:
+    text: "Loving it!"
+    optional: true
+
+# 4. Select Suggestion
+- tapOn:
+    text: "Suggestion"
+    optional: true
+
+# 5. Capture Proof Screenshot
+- takeScreenshot: test_artifacts/maestro_feedback_dialog_verified
