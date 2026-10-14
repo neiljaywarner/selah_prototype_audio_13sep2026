@@ -1,0 +1,34 @@
+# Maestro Flow: Tested Passages Modal (+ More 12)
+appId: com.example.selah_prototype_audio_13sep2026
+---
+- launchApp:
+    clearState: false
+
+- waitForAnimationToEnd
+
+# 1. Tap + More (12) Chip
+- tapOn:
+    text: "+ More (12)"
+    optional: true
+
+- waitForAnimationToEnd
+
+# 2. Assert Tested Passages Sheet
+- assertVisible:
+    text: "Tested Scripture Passages"
+    optional: true
+
+# 3. Select Psalm 23
+- tapOn:
+    text: "Psalm 23"
+    optional: true
+
+- waitForAnimationToEnd
+
+# 4. Verify Excerpt Text
+- assertVisible:
+    text: "The LORD is my shepherd"
+    optional: true
+
+# 5. Capture Proof Screenshot
+- takeScreenshot: test_artifacts/maestro_tested_passages_verified
