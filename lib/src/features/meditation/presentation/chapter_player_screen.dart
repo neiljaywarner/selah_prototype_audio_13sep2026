@@ -364,6 +364,73 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     builder: (ctx) => const SettingsBottomSheet(),
   );
 
+  void _openSleepTimerModal(ChapterPlayerState playerState, ChapterPlayerNotifier notifier) {
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      backgroundColor: const Color(0xFF1E1B4B),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        final options = [null, 15, 30, 45, 60];
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.bedtime_rounded, color: Color(0xFFFBBF24), size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Tranquil Sleep Timer',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Audio gently fades out over 30 seconds before stopping peacefully.',
+                  style: TextStyle(fontSize: 12, color: Colors.white60),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: options.map((mins) {
+                    final isSel = mins == playerState.sleepTimerMinutes;
+                    final label = mins == null ? 'Off' : '$mins min';
+                    return ChoiceChip(
+                      label: Text(label),
+                      selected: isSel,
+                      onSelected: (_) {
+                        notifier.setSleepTimer(mins);
+                        Navigator.of(ctx).pop();
+                      },
+                      selectedColor: const Color(0xFFFBBF24),
+                      labelStyle: TextStyle(
+                        color: isSel ? Colors.black : Colors.white70,
+                        fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                      ),
+                      backgroundColor: const Color(0xFF0F0E26),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _openTestedPassagesModal() {
     showModalBottomSheet(
       context: context,
@@ -1183,10 +1250,62 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                     ),
                     const SizedBox(height: 18),
 
-                    // Play / Pause Button
+                    // Play / Pause & Sleep / Speed Controls
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        // Paced meditation speed button
+                        GestureDetector(
+                          onTap: () {
+                            final current = playerState.playbackSpeed;
+                            final next = current == 0.75
+                                ? 0.85
+                                : current == 0.85
+                                    ? 1.0
+                                    : current == 1.0
+                                        ? 1.1
+                                        : 0.75;
+                            notifier.setPlaybackSpeed(next);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E1B4B),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: playerState.playbackSpeed != 1.0
+                                    ? const Color(0xFFFBBF24)
+                                    : Colors.white12,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.speed_rounded,
+                                  size: 14,
+                                  color: playerState.playbackSpeed != 1.0
+                                      ? const Color(0xFFFBBF24)
+                                      : Colors.white70,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${playerState.playbackSpeed}x',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: playerState.playbackSpeed != 1.0
+                                        ? const Color(0xFFFBBF24)
+                                        : Colors.white70,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 24),
+
+                        // Center Play / Pause
                         playerState.isLoading
                             ? const CircularProgressIndicator(color: Color(0xFFFBBF24))
                             : GestureDetector(
@@ -1216,6 +1335,49 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                                   ),
                                 ),
                               ),
+
+                        const SizedBox(width: 24),
+
+                        // Sleep Timer button
+                        GestureDetector(
+                          onTap: () => _openSleepTimerModal(playerState, notifier),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E1B4B),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: playerState.isSleepTimerActive
+                                    ? const Color(0xFFFBBF24)
+                                    : Colors.white12,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  playerState.isSleepTimerActive
+                                      ? Icons.bedtime_rounded
+                                      : Icons.bedtime_outlined,
+                                  size: 14,
+                                  color: playerState.isSleepTimerActive
+                                      ? const Color(0xFFFBBF24)
+                                      : Colors.white70,
+                                ),
+                                if (playerState.isSleepTimerActive) ...[
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${playerState.sleepTimerMinutes}m',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFFFBBF24),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ],

@@ -25,6 +25,9 @@ class ChapterPlayerState {
   final bool isOffline;
   final bool hasTimestamps;
   final PassageExcerpt? activeExcerpt;
+  final double playbackSpeed;
+  final int? sleepTimerMinutes;
+  final DateTime? sleepTimerEndTime;
 
   const ChapterPlayerState({
     required this.currentChapter,
@@ -48,6 +51,9 @@ class ChapterPlayerState {
     this.isOffline = false,
     this.hasTimestamps = false,
     this.activeExcerpt,
+    this.playbackSpeed = 1.0,
+    this.sleepTimerMinutes,
+    this.sleepTimerEndTime,
   });
 
   ChapterPlayerState copyWith({
@@ -75,6 +81,10 @@ class ChapterPlayerState {
     bool? hasTimestamps,
     PassageExcerpt? activeExcerpt,
     bool clearActiveExcerpt = false,
+    double? playbackSpeed,
+    int? sleepTimerMinutes,
+    bool clearSleepTimer = false,
+    DateTime? sleepTimerEndTime,
   }) => ChapterPlayerState(
     currentChapter: currentChapter ?? this.currentChapter,
     isLoading: isLoading ?? this.isLoading,
@@ -97,9 +107,18 @@ class ChapterPlayerState {
     isOffline: isOffline ?? this.isOffline,
     hasTimestamps: hasTimestamps ?? this.hasTimestamps,
     activeExcerpt: clearActiveExcerpt ? null : (activeExcerpt ?? this.activeExcerpt),
+    playbackSpeed: playbackSpeed ?? this.playbackSpeed,
+    sleepTimerMinutes: clearSleepTimer ? null : (sleepTimerMinutes ?? this.sleepTimerMinutes),
+    sleepTimerEndTime: clearSleepTimer ? null : (sleepTimerEndTime ?? this.sleepTimerEndTime),
   );
 
   bool get isBundledAsset => currentChapter.audioStreamUrl.startsWith('assets/');
 
   BibleTranslation get translation => BibleTranslation.fromCode(activeTranslation);
+
+  bool get isSleepTimerActive =>
+      sleepTimerEndTime != null && sleepTimerEndTime!.isAfter(DateTime.now());
+
+  Duration get sleepTimerRemaining =>
+      isSleepTimerActive ? sleepTimerEndTime!.difference(DateTime.now()) : Duration.zero;
 }

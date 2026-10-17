@@ -21,6 +21,7 @@ import '../domain/audio_mode.dart';
 import '../domain/bible_translation.dart';
 import '../domain/chapter_info.dart';
 import '../domain/passage_excerpt.dart';
+export 'chapter_player_state.dart';
 import 'chapter_player_state.dart';
 
 final chapterPlayerProvider = NotifierProvider<ChapterPlayerNotifier, ChapterPlayerState>(
@@ -32,6 +33,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   late final FlutterTts _flutterTts;
   late final Dio _dio;
   Timer? _gapTimer;
+  Timer? _sleepTimer;
+  Timer? _volumeFadeTimer;
   StreamSubscription? _posSub;
   StreamSubscription? _durSub;
   StreamSubscription? _stateSub;
@@ -88,6 +91,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       _stateSub?.cancel();
       _eventSub?.cancel();
       _gapTimer?.cancel();
+      _sleepTimer?.cancel();
+      _volumeFadeTimer?.cancel();
       _audioPlayer.dispose();
       _flutterTts.stop().catchError((_) => 0);
     });
@@ -910,6 +915,74 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   void toggleKaraoke(bool enabled) {
     state = state.copyWith(karaokeEnabled: enabled);
     AppLogger.logEvent('toggle_karaoke', {'enabled': enabled});
+  }
+
+  void setSleepTimer(int? minutes) {
+    _sleepTimer?.cancel();
+    _volumeFadeTimer?.cancel();
+
+    if (minutes == null || minutes <= 0) {
+      _audioPlayer.setVolume(1.0).catchError((_) => {});
+      state = state.copyWith(clearSleepTimer: true);
+      AppLogger.info('Sleep timer cancelled.');
+      AppLogger.logEvent('sleep_timer_cancelled', {});
+      return;
+    }
+
+    final endTime = DateTime.now().add(Duration(minutes: minutes));
+    state = state.copyWith(
+      sleepTimerMinutes: minutes,
+      sleepTimerEndTime: endTime,
+    );
+
+    AppLogger.info('Sleep timer set for $minutes minutes (ending at $endTime).');
+    AppLogger.logEvent('sleep_timer_set', {'minutes': minutes});
+
+    // Schedule 30s gentle volume fade before timer ends
+    final fadeStartDelay = Duration(minutes: minutes) - const Duration(seconds: 30);
+    if (fadeStartDelay > Duration.zero) {
+      _volumeFadeTimer = Timer(fadeStartDelay, _startSleepVolumeFade);
+    } else {
+      _startSleepVolumeFade();
+    }
+
+    _sleepTimer = Timer(Duration(minutes: minutes), _onSleepTimerExpired);
+  }
+
+  void _startSleepVolumeFade() {
+    AppLogger.info('Sleep timer: Starting gentle 30s volume fade-out.');
+    int step = 0;
+    const totalSteps = 30;
+    Timer.periodic(const Duration(seconds: 1), (timer) {
+      step++;
+      final volume = (1.0 - (step / totalSteps)).clamp(0.0, 1.0);
+      _audioPlayer.setVolume(volume).catchError((_) => {});
+      if (step >= totalSteps || !state.isSleepTimerActive) {
+        timer.cancel();
+      }
+    });
+  }
+
+  void _onSleepTimerExpired() {
+    AppLogger.info('Sleep timer expired. Pausing peaceful playback.');
+    AppLogger.logEvent('sleep_timer_completed', {
+      'minutes': state.sleepTimerMinutes,
+    });
+    pause();
+    _audioPlayer.setVolume(1.0).catchError((_) => {});
+    state = state.copyWith(clearSleepTimer: true);
+  }
+
+  Future<void> setPlaybackSpeed(double speed) async {
+    final clamped = speed.clamp(0.5, 2.0);
+    state = state.copyWith(playbackSpeed: clamped);
+    try {
+      await _audioPlayer.setSpeed(clamped);
+      AppLogger.info('Playback speed set to ${clamped}x');
+      AppLogger.logEvent('change_playback_speed', {'speed': clamped});
+    } catch (e) {
+      AppLogger.info('Notice setting player speed: $e');
+    }
   }
 
   Future<void> _handleChapterPlaybackComplete() async {
