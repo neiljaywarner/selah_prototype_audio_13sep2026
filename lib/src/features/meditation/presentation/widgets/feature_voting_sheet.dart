@@ -22,6 +22,7 @@ class _FeatureVotingSheetState extends ConsumerState<FeatureVotingSheet> {
   String? _statusMessage;
   String _selectedSentiment = 'positive';
   int _selectedNps = 10;
+  int _curatorTapCount = 0;
 
   @override
   void initState() {
@@ -63,7 +64,7 @@ class _FeatureVotingSheetState extends ConsumerState<FeatureVotingSheet> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('✨ Feature idea added! Thank you for co-building Selah. 🙏'),
+          content: Text('✨ Feature idea submitted for curator review! Thank you for co-building Selah. 🙏'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -144,49 +145,103 @@ class _FeatureVotingSheetState extends ConsumerState<FeatureVotingSheet> {
             ),
             const Divider(color: Colors.white12, height: 24),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'COMMUNITY FEATURE VOTING',
-                  style: TextStyle(fontSize: 11, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
+            if (votingState.isCuratorMode) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF312E81),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFFBBF24)),
                 ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: Row(
                   children: [
-                    if (votingState.isLoading)
-                      const Padding(
-                        padding: EdgeInsets.only(right: 8),
-                        child: SizedBox(
-                          width: 12,
-                          height: 12,
-                          child: CircularProgressIndicator(strokeWidth: 1.5, color: Color(0xFF6366F1)),
-                        ),
+                    const Icon(Icons.shield_outlined, color: Color(0xFFFBBF24), size: 16),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        '🛡️ Curator Mode Active — Reviewing Community Submissions',
+                        style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600),
                       ),
-                    InkWell(
-                      onTap: () => setState(() => _showSuggestForm = !_showSuggestForm),
-                      borderRadius: BorderRadius.circular(6),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        child: Row(
-                          children: [
-                            Icon(
-                              _showSuggestForm ? Icons.remove_circle_outline : Icons.add_circle_outline,
-                              size: 13,
-                              color: const Color(0xFFFBBF24),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _showSuggestForm ? 'Cancel' : 'Suggest Feature',
-                              style: const TextStyle(fontSize: 11, color: Color(0xFFFBBF24), fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
+                    ),
+                    TextButton(
+                      onPressed: () => votingNotifier.toggleCuratorMode(),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(40, 24),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
+                      child: const Text('Exit', style: TextStyle(fontSize: 11, color: Color(0xFFFBBF24))),
                     ),
                   ],
                 ),
-              ],
+              ),
+            ],
+
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                _curatorTapCount++;
+                if (_curatorTapCount >= 5) {
+                  _curatorTapCount = 0;
+                  final willBeCurator = !votingState.isCuratorMode;
+                  votingNotifier.toggleCuratorMode();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        willBeCurator
+                            ? '🛡️ Curator Mode Active: Reviewing pending suggestions'
+                            : 'Curator Mode deactivated.',
+                      ),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'COMMUNITY FEATURE VOTING',
+                    style: TextStyle(fontSize: 11, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (votingState.isLoading)
+                        const Padding(
+                          padding: EdgeInsets.only(right: 8),
+                          child: SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(strokeWidth: 1.5, color: Color(0xFF6366F1)),
+                          ),
+                        ),
+                      InkWell(
+                        onTap: () => setState(() => _showSuggestForm = !_showSuggestForm),
+                        borderRadius: BorderRadius.circular(6),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          child: Row(
+                            children: [
+                              Icon(
+                                _showSuggestForm ? Icons.remove_circle_outline : Icons.add_circle_outline,
+                                size: 13,
+                                color: const Color(0xFFFBBF24),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _showSuggestForm ? 'Cancel' : 'Suggest Feature',
+                                style: const TextStyle(fontSize: 11, color: Color(0xFFFBBF24), fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 8),
 
@@ -270,7 +325,10 @@ class _FeatureVotingSheetState extends ConsumerState<FeatureVotingSheet> {
             ...votingState.features.map(
               (feature) => _FeatureVotingTile(
                 feature: feature,
+                isCuratorMode: votingState.isCuratorMode,
                 onVote: () => votingNotifier.toggleVote(feature.id),
+                onApprove: () => votingNotifier.approveFeature(feature.id),
+                onReject: () => votingNotifier.rejectFeature(feature.id),
               ),
             ),
 
@@ -299,13 +357,20 @@ class _FeatureVotingTile extends StatelessWidget {
   const _FeatureVotingTile({
     required this.feature,
     required this.onVote,
+    this.isCuratorMode = false,
+    this.onApprove,
+    this.onReject,
   });
 
   final RoadmapFeatureItem feature;
   final VoidCallback onVote;
+  final bool isCuratorMode;
+  final VoidCallback? onApprove;
+  final VoidCallback? onReject;
 
   @override
   Widget build(BuildContext context) {
+    final isUnapproved = !feature.isApproved;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -313,55 +378,106 @@ class _FeatureVotingTile extends StatelessWidget {
         color: const Color(0xFF0F0E26),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: feature.hasVoted ? const Color(0xFFFBBF24) : Colors.white10,
+          color: isUnapproved
+              ? const Color(0xFFFBBF24).withValues(alpha: 0.6)
+              : (feature.hasVoted ? const Color(0xFFFBBF24) : Colors.white10),
         ),
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _VoteButton(
-            votes: feature.votes,
-            hasVoted: feature.hasVoted,
-            onTap: onVote,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _VoteButton(
+                votes: feature.votes,
+                hasVoted: feature.hasVoted,
+                onTap: onVote,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        feature.title,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            feature.title,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (isUnapproved)
+                          Container(
+                            margin: const EdgeInsets.only(right: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'Pending Review',
+                              style: TextStyle(fontSize: 9, color: Color(0xFFFBBF24), fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.indigo.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            feature.targetVersion,
+                            style: const TextStyle(fontSize: 10, color: Color(0xFFFBBF24)),
+                          ),
+                        ),
+                      ],
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.indigo.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        feature.targetVersion,
-                        style: const TextStyle(fontSize: 10, color: Color(0xFFFBBF24)),
-                      ),
+                    const SizedBox(height: 4),
+                    Text(
+                      feature.description,
+                      style: const TextStyle(fontSize: 11, color: Colors.white60, height: 1.3),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  feature.description,
-                  style: const TextStyle(fontSize: 11, color: Colors.white60, height: 1.3),
+              ),
+            ],
+          ),
+          if (isCuratorMode && isUnapproved) ...[
+            const SizedBox(height: 8),
+            const Divider(color: Colors.white12, height: 1),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: onReject,
+                  icon: const Icon(Icons.close_rounded, size: 14, color: Colors.redAccent),
+                  label: const Text('Decline', style: TextStyle(fontSize: 11, color: Colors.redAccent)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.redAccent),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: const Size(60, 28),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: onApprove,
+                  icon: const Icon(Icons.check_rounded, size: 14, color: Colors.black),
+                  label: const Text('Approve', style: TextStyle(fontSize: 11, color: Colors.black, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    minimumSize: const Size(60, 28),
+                  ),
                 ),
               ],
             ),
-          ),
+          ],
         ],
       ),
     );

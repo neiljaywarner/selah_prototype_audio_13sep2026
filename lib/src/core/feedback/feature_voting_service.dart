@@ -13,6 +13,8 @@ class RoadmapFeatureItem {
   final String targetVersion;
   final int votes;
   final bool hasVoted;
+  final bool isApproved;
+  final String status;
 
   const RoadmapFeatureItem({
     required this.id,
@@ -21,6 +23,8 @@ class RoadmapFeatureItem {
     required this.targetVersion,
     this.votes = 0,
     this.hasVoted = false,
+    this.isApproved = true,
+    this.status = 'approved',
   });
 
   RoadmapFeatureItem copyWith({
@@ -30,6 +34,8 @@ class RoadmapFeatureItem {
     String? targetVersion,
     int? votes,
     bool? hasVoted,
+    bool? isApproved,
+    String? status,
   }) {
     return RoadmapFeatureItem(
       id: id ?? this.id,
@@ -38,6 +44,8 @@ class RoadmapFeatureItem {
       targetVersion: targetVersion ?? this.targetVersion,
       votes: votes ?? this.votes,
       hasVoted: hasVoted ?? this.hasVoted,
+      isApproved: isApproved ?? this.isApproved,
+      status: status ?? this.status,
     );
   }
 
@@ -49,6 +57,8 @@ class RoadmapFeatureItem {
       'targetVersion': targetVersion,
       'votes': votes,
       'hasVoted': hasVoted,
+      'isApproved': isApproved,
+      'status': status,
     };
   }
 
@@ -60,6 +70,8 @@ class RoadmapFeatureItem {
       targetVersion: json['targetVersion'] as String,
       votes: (json['votes'] as num?)?.toInt() ?? 0,
       hasVoted: json['hasVoted'] as bool? ?? false,
+      isApproved: json['isApproved'] as bool? ?? true,
+      status: json['status'] as String? ?? 'approved',
     );
   }
 
@@ -73,6 +85,8 @@ class RoadmapFeatureItem {
     final targetVersion = fields['targetVersion']?['stringValue'] as String? ?? 'v0.3';
     final votesStr = fields['votes']?['integerValue'] as String?;
     final votes = votesStr != null ? int.tryParse(votesStr) ?? 0 : 0;
+    final isApproved = fields['approved']?['booleanValue'] as bool? ?? false;
+    final status = fields['status']?['stringValue'] as String? ?? (isApproved ? 'approved' : 'pending_approval');
 
     return RoadmapFeatureItem(
       id: id,
@@ -81,6 +95,8 @@ class RoadmapFeatureItem {
       targetVersion: targetVersion,
       votes: votes,
       hasVoted: hasVoted,
+      isApproved: isApproved,
+      status: status,
     );
   }
 }
@@ -88,6 +104,8 @@ class RoadmapFeatureItem {
 class FeatureVotingService {
   static const String _prefVotedFeaturesKey = 'selah_user_voted_features';
   static const String _prefCachedVotesKey = 'selah_cached_feature_votes';
+  static const String _prefCuratorModeKey = 'selah_curator_mode_enabled';
+  static const String _prefLocalProposalsKey = 'selah_local_proposals_json';
 
   static final List<RoadmapFeatureItem> defaultFeatures = [
     const RoadmapFeatureItem(
@@ -97,6 +115,8 @@ class FeatureVotingService {
           'Synchronized millisecond word highlighting with narrator audio using Faith Comes By Hearing BibleBrain alignment.',
       targetVersion: 'v0.3',
       votes: 42,
+      isApproved: true,
+      status: 'approved',
     ),
     const RoadmapFeatureItem(
       id: 'gemini_voice_memorization',
@@ -105,6 +125,8 @@ class FeatureVotingService {
           'Listen to user recite verses out loud with gentle pauses, checking recitation accuracy and progress.',
       targetVersion: 'v0.3.5',
       votes: 38,
+      isApproved: true,
+      status: 'approved',
     ),
     const RoadmapFeatureItem(
       id: 'ambient_soundscapes',
@@ -113,6 +135,8 @@ class FeatureVotingService {
           'Background nature audio (gentle rain, temple pads, morning birds) layered softly beneath scripture narration.',
       targetVersion: 'v0.4',
       votes: 29,
+      isApproved: true,
+      status: 'approved',
     ),
     const RoadmapFeatureItem(
       id: 'audio_speed_controls',
@@ -121,6 +145,8 @@ class FeatureVotingService {
           'Slow down audio for deep lectio divina contemplation or speed up for faster listening sessions.',
       targetVersion: 'v0.2.2',
       votes: 19,
+      isApproved: true,
+      status: 'approved',
     ),
     const RoadmapFeatureItem(
       id: 'offline_audio_downloads',
@@ -129,6 +155,8 @@ class FeatureVotingService {
           'Download narrated audio chapters locally for uninterrupted listening in airplane mode or off-grid retreats.',
       targetVersion: 'v0.2.5',
       votes: 15,
+      isApproved: true,
+      status: 'approved',
     ),
   ];
 
@@ -146,6 +174,16 @@ class FeatureVotingService {
 
   String get _firestoreBaseUrl =>
       'https://firestore.googleapis.com/v1/projects/$kFirestoreProjectId/databases/(default)/documents/feature_votes';
+
+  Future<bool> isCuratorModeEnabled() async {
+    final sp = prefs ?? await SharedPreferences.getInstance();
+    return sp.getBool(_prefCuratorModeKey) ?? false;
+  }
+
+  Future<void> setCuratorMode(bool enabled) async {
+    final sp = prefs ?? await SharedPreferences.getInstance();
+    await sp.setBool(_prefCuratorModeKey, enabled);
+  }
 
   Future<Set<String>> getVotedFeatureIds() async {
     final sp = prefs ?? await SharedPreferences.getInstance();
@@ -175,9 +213,30 @@ class FeatureVotingService {
     await sp.setString(_prefCachedVotesKey, jsonEncode(votes));
   }
 
-  Future<List<RoadmapFeatureItem>> fetchFeatures() async {
+  Future<List<RoadmapFeatureItem>> getLocalProposals() async {
+    final sp = prefs ?? await SharedPreferences.getInstance();
+    final raw = sp.getString(_prefLocalProposalsKey);
+    if (raw == null) return [];
+    try {
+      final decoded = jsonDecode(raw) as List<dynamic>;
+      return decoded
+          .map((item) => RoadmapFeatureItem.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> saveLocalProposals(List<RoadmapFeatureItem> items) async {
+    final sp = prefs ?? await SharedPreferences.getInstance();
+    final encoded = jsonEncode(items.map((e) => e.toJson()).toList());
+    await sp.setString(_prefLocalProposalsKey, encoded);
+  }
+
+  Future<List<RoadmapFeatureItem>> fetchFeatures({bool includePending = false}) async {
     final votedIds = await getVotedFeatureIds();
     final cachedVotes = await getCachedVotes();
+    final localProposals = await getLocalProposals();
 
     // 1. Initialize from defaults + local cached adjustments
     final Map<String, RoadmapFeatureItem> featureMap = {};
@@ -189,7 +248,16 @@ class FeatureVotingService {
       );
     }
 
-    // 2. Attempt remote sync from Cloud Firestore REST
+    // 2. Add local proposals
+    for (final prop in localProposals) {
+      final voteCount = cachedVotes[prop.id] ?? prop.votes;
+      featureMap[prop.id] = prop.copyWith(
+        votes: voteCount,
+        hasVoted: votedIds.contains(prop.id),
+      );
+    }
+
+    // 3. Attempt remote sync from Cloud Firestore REST
     try {
       final response = await _dio.get(_firestoreBaseUrl);
       if (response.statusCode == 200 && response.data != null) {
@@ -218,7 +286,10 @@ class FeatureVotingService {
       AppLogger.info('Firestore REST sync notice (using local/cached votes): $e');
     }
 
-    final list = featureMap.values.toList();
+    var list = featureMap.values.toList();
+    if (!includePending) {
+      list = list.where((f) => f.isApproved).toList();
+    }
     list.sort((a, b) => b.votes.compareTo(a.votes));
     return list;
   }
@@ -238,6 +309,8 @@ class FeatureVotingService {
       targetVersion: targetVersion,
       votes: 1,
       hasVoted: true,
+      isApproved: false,
+      status: 'pending_approval',
     );
 
     // Save voted ID locally
@@ -250,10 +323,51 @@ class FeatureVotingService {
     final updatedCached = Map<String, int>.from(cached)..[id] = 1;
     await saveCachedVotes(updatedCached);
 
-    // Push to Firestore REST
+    // Save proposal locally in pending list
+    final localProposals = await getLocalProposals();
+    final updatedProposals = List<RoadmapFeatureItem>.from(localProposals)..add(newItem);
+    await saveLocalProposals(updatedProposals);
+
+    // Push to Firestore REST with approved: false (quarantine)
     await syncVoteToFirestore(newItem);
 
+    AppLogger.info(
+      'Community feature proposed: "${newItem.title}" (ID: ${newItem.id}) queued for curator review (contact: neilwarner+selah@gmail.com)',
+    );
+
     return newItem;
+  }
+
+  Future<void> approveFeature(RoadmapFeatureItem item) async {
+    final approvedItem = item.copyWith(
+      isApproved: true,
+      status: 'approved',
+    );
+
+    // Update local proposal cache
+    final localProposals = await getLocalProposals();
+    final updated = localProposals.map((p) => p.id == item.id ? approvedItem : p).toList();
+    await saveLocalProposals(updated);
+
+    // Push approved state to Cloud Firestore
+    await syncVoteToFirestore(approvedItem);
+    AppLogger.info('Curator approved feature: "${item.title}" (${item.id})');
+  }
+
+  Future<void> rejectFeature(RoadmapFeatureItem item) async {
+    final rejectedItem = item.copyWith(
+      isApproved: false,
+      status: 'declined',
+    );
+
+    // Update local proposal cache
+    final localProposals = await getLocalProposals();
+    final updated = localProposals.map((p) => p.id == item.id ? rejectedItem : p).toList();
+    await saveLocalProposals(updated);
+
+    // Push declined state to Cloud Firestore
+    await syncVoteToFirestore(rejectedItem);
+    AppLogger.info('Curator declined feature: "${item.title}" (${item.id})');
   }
 
   Future<void> syncVoteToFirestore(RoadmapFeatureItem item) async {
@@ -267,11 +381,12 @@ class FeatureVotingService {
             'description': {'stringValue': item.description},
             'targetVersion': {'stringValue': item.targetVersion},
             'votes': {'integerValue': '${item.votes}'},
-            'approved': {'booleanValue': true},
+            'approved': {'booleanValue': item.isApproved},
+            'status': {'stringValue': item.status},
           },
         },
       );
-      AppLogger.info('Pushed vote update for ${item.id} (${item.votes}) to Firestore');
+      AppLogger.info('Pushed vote update for ${item.id} (${item.votes}, approved: ${item.isApproved}) to Firestore');
     } catch (e) {
       AppLogger.info('Firestore vote sync deferred (cached locally): $e');
     }

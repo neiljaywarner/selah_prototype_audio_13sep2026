@@ -5,23 +5,27 @@ import 'feature_voting_service.dart';
 class FeatureVotingState {
   final List<RoadmapFeatureItem> features;
   final bool isLoading;
+  final bool isCuratorMode;
   final String? statusMessage;
 
   const FeatureVotingState({
     required this.features,
     this.isLoading = false,
+    this.isCuratorMode = false,
     this.statusMessage,
   });
 
   FeatureVotingState copyWith({
     List<RoadmapFeatureItem>? features,
     bool? isLoading,
+    bool? isCuratorMode,
     String? statusMessage,
     bool clearStatus = false,
   }) {
     return FeatureVotingState(
       features: features ?? this.features,
       isLoading: isLoading ?? this.isLoading,
+      isCuratorMode: isCuratorMode ?? this.isCuratorMode,
       statusMessage: clearStatus ? null : (statusMessage ?? this.statusMessage),
     );
   }
@@ -45,23 +49,70 @@ class FeatureVotingNotifier extends Notifier<FeatureVotingState> {
     return FeatureVotingState(
       features: FeatureVotingService.defaultFeatures,
       isLoading: false,
+      isCuratorMode: false,
     );
   }
 
   Future<void> loadFeatures() async {
     state = state.copyWith(isLoading: true);
     try {
-      final remoteFeatures = await _service.fetchFeatures();
+      final isCurator = await _service.isCuratorModeEnabled();
+      final remoteFeatures = await _service.fetchFeatures(includePending: isCurator);
       final votedIds = await _service.getVotedFeatureIds();
       final merged = remoteFeatures.map((f) {
         final hasVoted = votedIds.contains(f.id);
         return f.copyWith(hasVoted: hasVoted);
       }).toList();
-      state = state.copyWith(features: merged, isLoading: false);
+      state = state.copyWith(
+        features: merged,
+        isCuratorMode: isCurator,
+        isLoading: false,
+      );
     } catch (e) {
       AppLogger.info('Feature voting loadNotice: $e');
       state = state.copyWith(isLoading: false);
     }
+  }
+
+  Future<void> toggleCuratorMode() async {
+    final nextMode = !state.isCuratorMode;
+    await _service.setCuratorMode(nextMode);
+    state = state.copyWith(isCuratorMode: nextMode);
+    await loadFeatures();
+  }
+
+  Future<void> approveFeature(String featureId) async {
+    final itemIndex = state.features.indexWhere((f) => f.id == featureId);
+    if (itemIndex == -1) return;
+
+    final targetItem = state.features[itemIndex];
+    await _service.approveFeature(targetItem);
+
+    final updatedItem = targetItem.copyWith(isApproved: true, status: 'approved');
+    final updatedList = List<RoadmapFeatureItem>.from(state.features);
+    updatedList[itemIndex] = updatedItem;
+
+    state = state.copyWith(
+      features: updatedList,
+      statusMessage: '✨ Feature "${targetItem.title}" approved for the public roadmap. 🙏',
+    );
+  }
+
+  Future<void> rejectFeature(String featureId) async {
+    final itemIndex = state.features.indexWhere((f) => f.id == featureId);
+    if (itemIndex == -1) return;
+
+    final targetItem = state.features[itemIndex];
+    await _service.rejectFeature(targetItem);
+
+    final updatedItem = targetItem.copyWith(isApproved: false, status: 'declined');
+    final updatedList = List<RoadmapFeatureItem>.from(state.features);
+    updatedList[itemIndex] = updatedItem;
+
+    state = state.copyWith(
+      features: updatedList,
+      statusMessage: 'Feature "${targetItem.title}" marked as declined.',
+    );
   }
 
   Future<void> toggleVote(String featureId) async {
@@ -122,25 +173,26 @@ class FeatureVotingNotifier extends Notifier<FeatureVotingState> {
         title: title,
         description: description,
       );
+
       final currentList = List<RoadmapFeatureItem>.from(state.features);
       currentList.insert(0, newItem);
-      currentList.sort((a, b) => b.votes.compareTo(a.votes));
 
       state = state.copyWith(
         features: currentList,
         isLoading: false,
-        statusMessage: 'Thank you! Your feature suggestion has been added to the community roadmap. 🙏',
+        statusMessage: '✨ Thank you! Your feature idea has been submitted for peaceful curator review before appearing publicly. 🙏',
       );
 
       AppLogger.logEvent('feature_proposed', {
         'feature_id': newItem.id,
         'title': newItem.title,
+        'curator_contact': 'neilwarner+selah@gmail.com',
       });
     } catch (e) {
       AppLogger.info('Propose feature notice: $e');
       state = state.copyWith(
         isLoading: false,
-        statusMessage: 'Suggestion saved locally. Thank you! 🙏',
+        statusMessage: 'Suggestion saved locally for review. Thank you! 🙏',
       );
     }
   }
