@@ -101,34 +101,38 @@ Our focus today:
 | **M87: The Soft Launch 77 Expansion (v0.3.7)** | Expand catalog to 77 contemplative passages (one for each member of the 77-tester soft-launch cohort); add `The 77 Meditations` tier to Advanced Settings; 83/83 unit tests green | 2026-10-16 23:26:00 | 2026-10-16 23:48:20 | ✅ Complete | [PR #203](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/203) merged (`af974ac`); [Issue #202](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/202) closed |
 | **M88: Full Community Feature Voting & Curator Moderation Gate (v0.3.8)** | Sane community defaults; user proposal form submits with `approved: false` / `pending_approval`; in-app curator review sheet + automated notification to `neilwarner+selah@gmail.com`; 91/91 unit tests green | 2026-10-16 23:48:30 | 2026-10-17 00:00:00 | ✅ Complete | [PR #206](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/206) merged (`b2187ae`); [Issue #205](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/205) closed |
 | **M89: Universal Passage Engine, Sleep Timer & Paced Speeds (v0.3.9)** | Heuristic acoustic slicing for arbitrary non-curated passages (syllable & pause calculations); tranquil sleep timer (15-60m with 30s gentle fade); paced speeds (0.75x-1.1x); 97/97 tests green | 2026-10-17 00:02:00 | 2026-10-17 00:10:00 | ✅ Complete | [PR #207](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/207); [Issue #207](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/207); 97/97 tests pass |
-| **M90: Multi-Tier Quality Pyramid & Gated v0.4.0 Release** | Full pre-release QA gate: Tier 1 Mocktail unit (97/97 in <5s) ➔ Tier 2 Widget suite (18/18 in <15s) ➔ Static analysis (0 issues). Version `v0.4.0+51` release to all 77 testers! | 2026-10-17 00:13:00 | PENDING | 🟡 In-Progress | Issue #209; branch `feat/#209-v0.4.0-quality-gate` |
+| **M90: Multi-Tier Quality Pyramid & Gated v0.4.0 Release** | Full pre-release QA gate: Tier 1 Mocktail unit (97/97 in <5s) ➔ Tier 2 Widget suite (18/18 in <15s) ➔ Static analysis (0 issues). Version `v0.4.0+51` compiled (78.3MB) and distributed to `core-testers` (`njwandroid@gmail.com,neilwarner@gmail.com`) via Firebase App Distribution! | 2026-10-17 00:13:00 | 2026-10-17 00:21:15 | ✅ Complete | [PR #210](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/210) merged (`fc0d988`); [Issue #209](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/209) closed; Firebase Release `60j1s7nr7kd28` distributed |
 
 ---
 
 ## 📍 Where We Are Right Now & Next 3 Priorities
 
-### Current State: **95.8% (Solid Grade A)**
+### Current State: **96.8% (Solid Grade A — v0.4.0+51 Distributed)**
 - **All PRs Cleanly Merged into `main`**:
-  - [PR #179](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/179) (`c0ed694`): Marionette, Maestro, and Patrol testing suites & documentation.
-  - [PR #176](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/176) (`552cd38`): Streamlined Prayer & Feedback funnel.
-  - [PR #174](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/174) (`3e26928`): 1 Cor 13 WEB timestamps calibrated (40,900ms–72,150ms).
+  - [PR #210](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/210) (`fc0d988`): Version bump to `0.4.0+51`, Quality Pyramid Gate pass.
+  - [PR #208](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/208) (`992da9d`): Universal Passage Engine (`estimateVerseTimestamps`), Sleep Timer (15–60m), and Paced Speeds (0.75x–1.1x).
+  - [PR #206](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/206) (`b2187ae`): Feature Voting Curator Moderation Gate & Email Relay.
+  - [PR #203](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/203) (`af974ac`): The Soft Launch 77 Meditations cohort catalog.
+  - [PR #201](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/201) (`a85f1c4`): Biblical 40 Curated Passages & Catalog Tier Selector.
+  - [PR #199](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/199) (`4829f61`): Curated 12 Visual Badges & Breath Cadence Aura.
+  - [PR #190](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/pull/190) (`667ea64`): Tactile loop haptics & 150ms audio crossfade.
+- **Firebase App Distribution Verified**:
+  - Release `60j1s7nr7kd28` (v0.4.0+51, 78.3MB) uploaded and distributed to `core-testers` (`njwandroid@gmail.com,neilwarner@gmail.com`).
 - **Automated Testing & QA Verification**:
   - `flutter analyze`: **0 issues**
-  - `flutter test`: **96/96 tests passed (100%)**
-  - Tri-Harness documentation and execution commands live in [`testing/README.md`](testing/README.md).
-- **Physical Device Live Verification (Google Pixel 9a `58221JEBF20835`)**:
-  - App installed with version `0.3.2 (43)`.
-  - Audio playback, looping, and copyright transparently verified.
+  - `flutter test test/unit/`: **97/97 tests passed (100%)**
+  - `flutter test test/widget/`: **18/18 tests passed (100%)**
 - **Secret Hygiene & Security**:
   - Zero plaintext secrets in git diffs or source code.
   - Fallbacks in source code are strictly `defaultValue: ''` or `'REDACTED'`.
 
 ### 🎯 Next 3 Immediate Priorities
-1. **Milestone M84 (v0.3.4+45 Release)**: Implement loop haptics (`HapticFeedback.lightImpact()`), 150ms audio crossfade, bump version to `0.3.4+45`, run fast unit tests, push via GitHub MCP, and distribute release APK to Firebase for `core-testers`.
-2. **Milestone M85 & M86 (Curated 12 Polish & Biblical 40 with Catalog Tier)**: Add breath cadence animation; expand catalog to Biblical 40 (Wilderness, Healing, Anxiety, Psalms); add Catalog Tier Selector in Advanced Settings (`12` vs `40` vs `66`).
-3. **Milestone M87 & M88 (The 77 Cohort & Curator-Moderated Feature Voting)**: Expand catalog to 77 contemplative passages; implement full community feature voting with quarantined user proposals (`approved: false`), in-app curator portal, and automated notification email to `neilwarner+selah@gmail.com`.
-4. **Milestone M89 (v0.3.9 Universal Passages & QOL)**: Heuristic acoustic slicing for arbitrary passages, 30s gentle volume fade Sleep Timer, and paced playback speeds (0.75x–1.1x).
-5. **Milestone M90 (Quality Pyramid Gate for v0.4.0)**: Gate release behind Fast Mocktail (<5s) ➔ Fast Widget (<15s) ➔ Maestro E2E ➔ Patrol Native on Pixel 9a, and distribute to all 77 testers.
+1. **Milestone M91: VCR / HTTP Cassette Architecture ([Issue #211](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/211))**:
+   - Implement deterministic HTTP recording and playback at the JSON layer for API.Bible and audio streams using `http_mock_adapter` or `vcr`.
+2. **Multi-Platform Arbitrary Passage Verification (Web, iOS, Android)**:
+   - Double and triple-check arbitrary passage playback across Chrome web, iOS Simulator, and Google Pixel 9a via unit, widget, isolation, sociable integration, and Maestro/Patrol tests.
+3. **Core-Testers Feedback Ingestion & Community RFC**:
+   - Review incoming telemetry and feedback from `njwandroid/selahfeedback` and advance community RFC ([Issue #192](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/192)).
 
 ---
 
