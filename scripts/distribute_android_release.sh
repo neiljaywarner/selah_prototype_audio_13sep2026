@@ -91,7 +91,12 @@ fi
 
 # 4. Clean & Build Release APK
 echo "--- Compiling Flutter Release APK ---"
-flutter build apk --release
+BUILD_ARGS=()
+if [ -n "${API_BIBLE_KEY:-}" ]; then
+  echo "Found API_BIBLE_KEY in environment; passing via --dart-define"
+  BUILD_ARGS+=(--dart-define=API_BIBLE_KEY="$API_BIBLE_KEY")
+fi
+flutter build apk --release "${BUILD_ARGS[@]}"
 
 if [ ! -f "$APK_PATH" ]; then
   echo "Error: Expected APK file not found at $APK_PATH" >&2
