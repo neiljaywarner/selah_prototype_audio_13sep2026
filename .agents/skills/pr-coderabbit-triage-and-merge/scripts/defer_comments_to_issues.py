@@ -79,6 +79,16 @@ Deferred review comment on [{file_loc}]({url}) from PR review (Comment ID: `{cid
         return None
 
 
+def reply_to_comment(owner, repo, pr_num, cid, body):
+    try:
+        subprocess.run([
+            "gh", "api", f"repos/{owner}/{repo}/pulls/{pr_num}/comments/{cid}/replies",
+            "-f", f"body={body}"
+        ], capture_output=True, text=True)
+    except Exception as e:
+        print(f"Failed to reply to comment {cid}: {e}", file=sys.stderr)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Convert unaddressed non-critical comments to GitHub issues.")
     parser.add_argument("--pr", type=int, help="PR number (default: auto-detected)")
@@ -102,12 +112,24 @@ def main():
     comments = fetch_pr_comments(owner, repo, pr_num)
     parsed = [parse_comment(c) for c in comments]
 
+    # Fetch existing replies to avoid duplicate replies
+    all_comments_raw = subprocess.check_output(
+        ["gh", "api", f"repos/{owner}/{repo}/pulls/{pr_num}/comments"], text=True
+    )
+    all_comments = json.loads(all_comments_raw)
+    replied_ids = {c.get("in_reply_to_id") for c in all_comments if c.get("in_reply_to_id")}
+
     eligible = [c for c in parsed if not c["addressed"] and not c["is_critical"]]
     print(f"Found {len(eligible)} comments eligible for deferral into GitHub issues.")
 
     for c in eligible:
-        create_issue_for_comment(c, dry_run=args.dry_run)
+        issue_url = create_issue_for_comment(c, dry_run=args.dry_run)
+        if not args.dry_run and issue_url and c["id"] not in replied_ids:
+            reply_text = f"Deferred to tracked issue: {issue_url}"
+            reply_to_comment(owner, repo, pr_num, c["id"], reply_text)
+            print(f"   💬 Replied to comment {c['id']}")
 
 
 if __name__ == "__main__":
     main()
+

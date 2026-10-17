@@ -52,8 +52,15 @@ Under NO circumstances may any changes be pushed directly to the `main` branch. 
    - Examples:
      - `feat(#6): add background audio service and lockscreen controls`
      - `fix(#14): preserve iteration count across shuffle translation cycles`
-5. **PR Merge Governance**:
-   - Merge branches into `main` exclusively through Pull Requests audited and triaged using the [.agents/skills/pr-coderabbit-triage-and-merge](.agents/skills/pr-coderabbit-triage-and-merge/README.md) skill, ensuring all critical blockers are fixed and non-critical items are deferred to tracked issues.
+5. **PR Merge Governance & Automated CodeRabbit Triage**:
+   - Merge branches into `main` exclusively through Pull Requests audited and triaged using the [.agents/skills/pr-coderabbit-triage-and-merge](.agents/skills/pr-coderabbit-triage-and-merge/README.md) skill:
+     - Wait at least 180 seconds after PR creation or push before running triage.
+     - Execute `python3 .agents/skills/pr-coderabbit-triage-and-merge/scripts/triage_pr_comments.py --repo <owner/repo> --pr <pr_num>` to classify comments into addressed, critical blockers, and non-critical items.
+     - Execute `python3 .agents/skills/pr-coderabbit-triage-and-merge/scripts/defer_comments_to_issues.py --repo <owner/repo> --pr <pr_num>` to automatically convert unaddressed non-critical comments into tracked GitHub issues.
+   - **Mandatory Review Reply Guarantee**:
+     - Every single review comment on every PR MUST receive an explicit threaded reply via GitHub API:
+       - Either summarizing the resolution/commit if addressed, OR
+       - Providing the direct GitHub issue link (`Deferred to tracked issue: <issue_url>`) so no reviewer finding is ever left unacknowledged or abandoned.
 
 ### Command Execution Permissions & MCP-First Protocol
 1. **MCP Server Precedence (MANDATORY)**:

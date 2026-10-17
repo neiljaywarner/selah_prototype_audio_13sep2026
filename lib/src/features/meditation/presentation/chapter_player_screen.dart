@@ -948,6 +948,38 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                         color: const Color(0xFFFBBF24),
                       ),
                     ),
+                    if (playerState.activeExcerpt != null ||
+                        PassageExcerpt.forChapter(
+                              playerState.currentChapter.bookCode,
+                              playerState.currentChapter.chapterNumber,
+                            ) !=
+                            null) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF064E3B).withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.5)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.spa_rounded, color: Color(0xFF34D399), size: 12),
+                            SizedBox(width: 4),
+                            Text(
+                              'Curated Selah Meditation',
+                              style: TextStyle(
+                                color: Color(0xFF6EE7B7),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 4),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -1091,30 +1123,10 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
-                            child: Row(
-                              children: [
-                                AnimatedContainer(
-                                  duration: const Duration(milliseconds: 300),
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: playerState.isPausedInGap
-                                        ? const Color(0xFFFBBF24)
-                                        : (playerState.isPlaying ? Colors.greenAccent : Colors.grey),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    playerState.isPausedInGap
-                                        ? 'Silent Gap (${playerState.pauseGapSeconds}s)...'
-                                        : (playerState.isPlaying ? 'Meditating...' : 'Ready'),
-                                    style: const TextStyle(fontSize: 12, color: Colors.white70),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
+                            child: _BreathCadenceIndicator(
+                              isPausedInGap: playerState.isPausedInGap,
+                              isPlaying: playerState.isPlaying,
+                              gapSeconds: playerState.pauseGapSeconds,
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -1666,9 +1678,29 @@ class _TestedPassagesBottomSheet extends StatelessWidget {
                       final item = testedPassages[index];
                       return ListTile(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                        title: Text(
-                          item.title,
-                          style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 15),
+                        title: Row(
+                          children: [
+                            Text(
+                              item.title,
+                              style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 15),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF064E3B).withValues(alpha: 0.8),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                '🌿 Curated',
+                                style: TextStyle(
+                                  color: Color(0xFF34D399),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         subtitle: Text(
                           item.description,
@@ -1698,6 +1730,132 @@ class _TestedPassagesBottomSheet extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _BreathCadenceIndicator extends StatefulWidget {
+  const _BreathCadenceIndicator({
+    required this.isPausedInGap,
+    required this.isPlaying,
+    required this.gapSeconds,
+  });
+
+  final bool isPausedInGap;
+  final bool isPlaying;
+  final int gapSeconds;
+
+  @override
+  State<_BreathCadenceIndicator> createState() => _BreathCadenceIndicatorState();
+}
+
+class _BreathCadenceIndicatorState extends State<_BreathCadenceIndicator> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scaleAnimation;
+  late final Animation<double> _glowAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    );
+    _scaleAnimation = Tween<double>(begin: 0.85, end: 1.25).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
+    );
+    _glowAnimation = Tween<double>(begin: 0.4, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
+    );
+    if (widget.isPausedInGap) {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void didUpdateWidget(_BreathCadenceIndicator oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isPausedInGap && !_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    } else if (!widget.isPausedInGap && _controller.isAnimating) {
+      _controller.stop();
+      _controller.reset();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.isPausedInGap) {
+      return AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          final isExhaling = _controller.status == AnimationStatus.reverse;
+          final breathLabel = isExhaling ? 'Exhale stillness...' : 'Inhale peace...';
+          return Row(
+            children: [
+              Transform.scale(
+                scale: _scaleAnimation.value,
+                child: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFFFBBF24).withValues(alpha: _glowAnimation.value.clamp(0.0, 1.0)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFBBF24).withValues(alpha: (0.5 * _glowAnimation.value).clamp(0.0, 1.0)),
+                        blurRadius: 8 * _scaleAnimation.value,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  '🌿 $breathLabel (${widget.gapSeconds}s)',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFFDE68A),
+                    letterSpacing: 0.3,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
+    return Row(
+      children: [
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: widget.isPlaying ? Colors.greenAccent : Colors.grey,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            widget.isPlaying ? 'Meditating...' : 'Ready',
+            style: const TextStyle(fontSize: 12, color: Colors.white70),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 }

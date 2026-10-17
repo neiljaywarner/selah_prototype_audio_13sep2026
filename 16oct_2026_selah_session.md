@@ -70,6 +70,11 @@ Our focus today:
    - [Issue #194](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/194): Android Open Beta & Production Pipeline (`android`, `devops`, `release-readiness`).
    - [Issue #195](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/195): Community Cohort Outreach for BEMA Discipleship, DFW Church & The 77 Meditators (`community`, `documentation`, `product`).
    - [Issue #196](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/196): Retrospective & Learnings from Autonomous Unattended Sessions (Wiki guide & Mac hardware upgrade).
+   - [Issue #198](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/198): Curated 12 Visual Polish, Silence Gap Breath Cadence & WhisperX Scaling Plan (v0.3.5).
+7. **Key Operational Reference Documents**:
+   - [`whisperx_77.md`](whisperx_77.md): WhisperX acoustic alignment scaling roadmap (12 ➔ 40 ➔ 77).
+   - [`Old_machines.md`](Old_machines.md): 2018/2019 Intel Core i9 hardware analysis and Apple Silicon recommendations.
+   - [`unattended_Session_Strategies.md`](unattended_Session_Strategies.md): Zero-Prompt MCP autonomous workflow blueprint.
 
 ---
 
