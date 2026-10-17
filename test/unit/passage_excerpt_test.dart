@@ -20,7 +20,7 @@ void main() {
 
     test('Other chapters play in full', () {
       expect(PassageExcerpt.forChapter('1CO', 12), isNull);
-      expect(PassageExcerpt.forChapter('JHN', 1), isNull);
+      expect(PassageExcerpt.forChapter('LEV', 1), isNull);
     });
 
     test('BSB clip window starts at v4 (39.6s) and ends at v7 (72.5s)', () {

@@ -146,8 +146,10 @@ class SettingsBottomSheet extends ConsumerWidget {
                           tier == CatalogTier.curated12
                               ? '12 Top Passages'
                               : tier == CatalogTier.biblical40
-                                  ? '40 Wilderness & Peace'
-                                  : 'All 66 Books',
+                                  ? '40 Wilderness'
+                                  : tier == CatalogTier.softLaunch77
+                                      ? 'The 77 Cohort'
+                                      : 'All 66 Books',
                           textAlign: TextAlign.center,
                           maxLines: 2,
                           style: TextStyle(
