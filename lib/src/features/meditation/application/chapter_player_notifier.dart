@@ -15,6 +15,7 @@ import '../../../core/constants/bible_canon.dart';
 import '../../../core/karaoke/timestamp_loader.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/preferences/user_preferences.dart';
+import '../../../core/remote_config/remote_config_service.dart';
 import '../domain/audio_mode.dart';
 import '../domain/bible_translation.dart';
 import '../domain/chapter_info.dart';
@@ -40,6 +41,14 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   /// are clip-relative, while timestamps are chapter-absolute.
   Duration _clipOffset = Duration.zero;
 
+  String _getActiveApiKey() {
+    try {
+      final remoteKey = ref.read(remoteConfigServiceProvider).getString('api_bible_key');
+      if (remoteKey.isNotEmpty) return remoteKey;
+    } catch (_) {}
+    return (kApiBibleKey != 'REDACTED' && kApiBibleKey.isNotEmpty) ? kApiBibleKey : '';
+  }
+
   @override
   ChapterPlayerState build() {
     _audioPlayer = AudioPlayer();
@@ -47,13 +56,20 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     _dio = Dio(
       BaseOptions(
         baseUrl: kApiBibleBaseUrl,
-        headers: {'api-key': kApiBibleKey, 'Accept': 'application/json'},
+        headers: {'Accept': 'application/json'},
         connectTimeout: const Duration(seconds: 12),
         receiveTimeout: const Duration(seconds: 12),
       ),
     );
     _dio.interceptors.add(
       InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final activeKey = _getActiveApiKey();
+          if (activeKey.isNotEmpty) {
+            options.headers['api-key'] = activeKey;
+          }
+          return handler.next(options);
+        },
         onError: (DioException e, handler) {
           AppLogger.info('Dio network notice: ${e.message}');
           return handler.next(e);
@@ -412,25 +428,21 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     final bibleId = translation.audioBibleId;
     final chapterId = '${bookCode.toUpperCase()}.$chapterNumber';
     final url = '/audio-bibles/$bibleId/chapters/$chapterId';
+    final activeKey = _getActiveApiKey();
 
-    if (kApiBibleKey == 'REDACTED' || kApiBibleKey.isEmpty) {
+    if (activeKey.isEmpty) {
       AppLogger.info(
-        'API.Bible key unconfigured in environment; skipping live stream request for $chapterId and gracefully routing to offline fallback.',
+        'API.Bible key unconfigured; gracefully routing to contemplative voice for $chapterId.',
       );
       final cachedText = ref.read(offlineScriptureCacheProvider).getOfflineText(
             translation.code,
             bookCode,
             chapterNumber,
           ) ?? fallbackText;
-      final isWeb = kIsWeb;
-      final noticeMessage = isWeb
-          ? (translation.isLicensed
-              ? 'NIV audio narration requires on-demand API.Bible streaming. Narrating with Text-to-Speech (TTS).'
-              : 'Narrator stream unavailable on web — narrating ${translation.fullName} (${translation.code}) with Text-to-Speech (TTS).')
-          : (translation.isLicensed
-              ? 'NIV audio stream requires online connection. Narrating via Text-to-Speech (TTS).'
-              : 'Offline / Airplane Mode: Narrating ${translation.fullName} (${translation.code}) scripture via Text-to-Speech (TTS).');
-      state = state.copyWith(isOffline: !isWeb);
+      final noticeMessage = translation.isLicensed
+          ? 'NIV audio stream currently unavailable. Narrating with contemplative voice.'
+          : 'Narrator stream unavailable — narrating ${translation.fullName} (${translation.code}) with contemplative voice.';
+      state = state.copyWith(isOffline: false);
       _switchToTtsFallback(
         noticeMessage,
         overrideText: cachedText,
@@ -493,16 +505,11 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
             chapterNumber,
           ) ?? fallbackText;
 
-      final isWeb = kIsWeb;
-      final noticeMessage = isWeb
-          ? (translation.isLicensed
-              ? 'NIV audio narration requires on-demand API.Bible streaming. Narrating with Text-to-Speech (TTS).'
-              : 'Narrator stream unavailable on web — narrating ${translation.fullName} (${translation.code}) with Text-to-Speech (TTS).')
-          : (translation.isLicensed
-              ? 'NIV audio stream is proprietary to Biblica. Narrating via Text-to-Speech (TTS).'
-              : 'Offline / Airplane Mode: Narrating ${translation.fullName} (${translation.code}) scripture via Text-to-Speech (TTS).');
+      final noticeMessage = translation.isLicensed
+          ? 'NIV audio stream currently unavailable. Narrating with contemplative voice.'
+          : 'Narrator stream currently unavailable — narrating ${translation.fullName} (${translation.code}) with contemplative voice.';
 
-      state = state.copyWith(isOffline: !isWeb);
+      state = state.copyWith(isOffline: false);
       _switchToTtsFallback(
         noticeMessage,
         overrideText: cachedText,
@@ -540,7 +547,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       }
     } catch (_) {}
 
-    if (kApiBibleKey == 'REDACTED' || kApiBibleKey.isEmpty) return null;
+    final activeKey = _getActiveApiKey();
+    if (activeKey.isEmpty) return null;
     try {
       final textBibleId = state.translation.textBibleId;
       final excerpt = PassageExcerpt.forChapter(bookCode, chapterNumber);
