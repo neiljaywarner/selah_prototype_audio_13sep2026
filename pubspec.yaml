@@ -102,6 +102,7 @@ flutter:
     - assets/timestamps/
     - assets/timestamps/WEB/
     - assets/timestamps/BSB/
+    - assets/timestamps/NIV/
     - assets/audio/BSB/
     - assets/audio/WEB/
 

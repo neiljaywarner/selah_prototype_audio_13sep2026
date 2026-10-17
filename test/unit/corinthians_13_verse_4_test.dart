@@ -66,6 +66,27 @@ void main() {
       expect(timestamps.map((t) => t.verse).toList(), equals([4, 5, 6, 7]));
     });
 
+    test('NIV timestamps file starts at Verse 4 at exactly 14,880ms boundary', () {
+      final file = File('assets/timestamps/NIV/1CO_13.json');
+      expect(file.existsSync(), isTrue, reason: 'assets/timestamps/NIV/1CO_13.json must exist');
+
+      final jsonList = jsonDecode(file.readAsStringSync()) as List<dynamic>;
+      expect(jsonList, isNotEmpty);
+
+      final timestamps = jsonList.map((e) => VerseTimestamp.fromJson(e as Map<String, dynamic>)).toList();
+
+      final firstVerse = timestamps.first;
+      expect(firstVerse.verse, equals(4), reason: 'First timestamp must be verse 4');
+      expect(firstVerse.startMs, equals(14880), reason: 'Audio starts at 14.88s narrator pause boundary');
+      expect(firstVerse.text, startsWith('Love is patient, love is kind'));
+
+      expect(timestamps.map((t) => t.verse).toList(), equals([4, 5, 6, 7]));
+
+      for (final vt in timestamps) {
+        expect(vt.startMs, lessThan(vt.endMs));
+      }
+    });
+
     test('Audio seek boundary (39,600ms) matches Verse 4 karaoke highlight at character index 0', () {
       final corinthiansPreset = kFeaturedChapters.firstWhere(
         (c) => c.bookCode == '1CO' && c.chapterNumber == 13,
