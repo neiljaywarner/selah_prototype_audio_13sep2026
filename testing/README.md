@@ -141,6 +141,22 @@ patrol test -t integration_test/patrol_test.dart
 flutter test integration_test/app_test.dart -d 58221JEBF20835
 ```
 
+### 4. Patrol MCP Server (`patrol_mcp`)
+We configure LeanCode's official **Patrol MCP** server directly in `.agents/mcp_config.json` via package `patrol_mcp`:
+```json
+"patrol": {
+  "command": "dart",
+  "args": ["run", "patrol_mcp"],
+  "env": {
+    "PROJECT_ROOT": ".",
+    "PATROL_FLAGS": "",
+    "SHOW_TERMINAL": "false"
+  }
+}
+```
+* **Interactive Test Control**: Orchestrates live `patrol develop` hot-restart sessions.
+* **Autonomous Error Debugging**: Automatically captures failure screenshots and streams terminal logs back to the AI assistant.
+
 ---
 
 ## ⚡ Harness 4: Fast Unit & Widget Test Suite

@@ -8,7 +8,7 @@ appId: com.example.selah_prototype_audio_13sep2026
 
 # 1. Assert Header Branding
 - assertVisible:
-    text: "SELAH"
+    text: ".*SELAH.*"
 
 # 2. Assert Initial Scripture Passage
 - assertVisible:

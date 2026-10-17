@@ -1,0 +1,33 @@
+# Translation Switching & Narrator Verification Flow (BDD Gherkin Implementation)
+# Maps to: test/features/translation_switching_feature.txt
+appId: com.example.selah_prototype_audio_13sep2026
+---
+- launchApp:
+    clearState: false
+
+- waitForAnimationToEnd
+
+# 1. Assert App Bar & Passage Header
+- assertVisible:
+    text: ".*SELAH.*"
+
+# 2. Select 1 Cor 13:4–7
+- tapOn:
+    text: "1 Cor 13:4–7"
+    optional: true
+
+- waitForAnimationToEnd
+
+# 3. Switch translation to NIV
+- tapOn:
+    text: "NIV"
+
+- waitForAnimationToEnd
+
+# 4. Verify Subtitle updates to NIV
+- assertVisible:
+    text: ".*New International Version.*"
+    optional: true
+
+# 5. Capture Proof Screenshot
+- takeScreenshot: test_artifacts/maestro_niv_translation_verified

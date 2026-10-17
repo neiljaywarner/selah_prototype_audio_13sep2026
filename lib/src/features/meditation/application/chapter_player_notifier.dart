@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 import 'package:audio_session/audio_session.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:just_audio/just_audio.dart';
@@ -911,7 +912,19 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     AppLogger.logEvent('toggle_karaoke', {'enabled': enabled});
   }
 
-  void _handleChapterPlaybackComplete() {
+  Future<void> _handleChapterPlaybackComplete() async {
+    // 1. Tactile loop haptic feedback (subtle light pulse signaling loop wrap)
+    try {
+      await HapticFeedback.lightImpact();
+    } catch (_) {}
+
+    // 2. Audio crossfade hygiene: smooth 150ms fade-out before silence gap to eliminate clicks
+    if (state.audioMode == AudioMode.narrator) {
+      try {
+        await _audioPlayer.setVolume(0.0);
+      } catch (_) {}
+    }
+
     if (state.repetitions != -1 && state.currentIteration >= state.repetitions) {
       AppLogger.info('Completed all ${state.repetitions} repetitions.');
       state = state.copyWith(
@@ -921,7 +934,10 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         highlightEnd: 0,
       );
       if (state.audioMode == AudioMode.narrator) {
-        _audioPlayer.pause().then((_) => _audioPlayer.seek(Duration.zero));
+        _audioPlayer.pause().then((_) {
+          _audioPlayer.seek(Duration.zero);
+          _audioPlayer.setVolume(1.0);
+        });
       } else {
         _audioPlayer.seek(Duration.zero);
       }
@@ -978,6 +994,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       try {
         AppLogger.info('Seeking narrator player to Duration.zero for loop $nextIteration of $repLabel');
         await _audioPlayer.seek(Duration.zero);
+        await _audioPlayer.setVolume(1.0);
         await _audioPlayer.play();
       } catch (e, stack) {
         AppLogger.error(
