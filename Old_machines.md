@@ -53,6 +53,15 @@ To guarantee reliable unattended operation on existing hardware, we enforce thes
 - For rapid autonomous sprints, verify intermediate feature PRs (`v0.3.5`, `v0.3.6`, `v0.3.7`, `v0.3.8`) with fast Unit & Widget test suites (< 15 seconds, negligible heat).
 - Anchor full release APK compilations and Firebase App Distribution to key release anchors: **`v0.3.4` (Done)**, **`v0.3.9`**, and **`v0.4.0`**, saving ~15 minutes of build time and keeping the machine cool.
 
+### F. Non-Blocking Command Protocol (`WaitMsBeforeAsync <= 1000ms`)
+- **Root Cause of "Keep Waiting / Reopen" Dialogs**:
+  When `run_command` executes with a high synchronous wait duration (e.g. 5,000ms–8,000ms), the backend tool call blocks the synchronous IPC channel between the agent process and the Antigravity IDE Electron host. Under heavy system load on older Intel hardware, Electron's renderer watchdog interprets this IPC pause as a frozen UI window and pops up the macOS "Application Not Responding: Reopen / Keep waiting / Close" prompt.
+- **Strict Protocol**:
+  1. Set `WaitMsBeforeAsync` strictly to `<= 1000ms` (default: 500ms) for any build, test, analysis, or compilation command.
+  2. The command automatically detaches to a non-blocking background task, allowing the IDE event loop to remain 100% responsive.
+  3. The agent wakes up reactively via system notification when the task completes—zero CPU polling, zero UI thread blocking, zero popups.
+  4. Always pipe or cap terminal output (`head -n 20`) to prevent megabyte buffer serialization stalls.
+
 ---
 
 ## 🛒 3. Hardware Procurement Recommendations (Upgrading Tomorrow)

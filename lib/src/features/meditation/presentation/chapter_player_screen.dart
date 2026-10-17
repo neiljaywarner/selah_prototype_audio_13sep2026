@@ -1530,7 +1530,7 @@ class _KaraokeTextDisplayState extends State<_KaraokeTextDisplay> {
   }
 }
 
-class _TestedPassagesBottomSheet extends StatelessWidget {
+class _TestedPassagesBottomSheet extends ConsumerStatefulWidget {
   const _TestedPassagesBottomSheet({
     required this.onSelectPassage,
     required this.onRequestPassage,
@@ -1539,87 +1539,23 @@ class _TestedPassagesBottomSheet extends StatelessWidget {
   final void Function(String query) onSelectPassage;
   final VoidCallback onRequestPassage;
 
-  static const List<({String title, String reference, String query, String description})> testedPassages = [
-    (
-      title: 'Psalm 91:1–4',
-      reference: 'PSA 91:1-4',
-      query: 'Psalm 91:1-4',
-      description: 'Shelter of the Most High (Calibrated Level 2)',
-    ),
-    (
-      title: 'John 3:16–17',
-      reference: 'JHN 3:16-17',
-      query: 'John 3:16-17',
-      description: 'For God So Loved the World (Calibrated Level 2)',
-    ),
-    (
-      title: 'Philippians 4:4–8',
-      reference: 'PHP 4:4-8',
-      query: 'Philippians 4:4-8',
-      description: 'Rejoice in the Lord Always (Calibrated Level 2)',
-    ),
-    (
-      title: 'Proverbs 3:5–6',
-      reference: 'PRO 3:5-6',
-      query: 'Proverbs 3:5-6',
-      description: 'Trust in the Lord with All Your Heart (Calibrated Level 2)',
-    ),
-    (
-      title: 'Isaiah 40:28–31',
-      reference: 'ISA 40:28-31',
-      query: 'Isaiah 40:28-31',
-      description: 'Those Who Wait on the Lord (Calibrated Level 2)',
-    ),
-    (
-      title: 'Romans 12:1–2',
-      reference: 'ROM 12:1-2',
-      query: 'Romans 12:1-2',
-      description: 'Living Sacrifice (Calibrated Level 2)',
-    ),
-    (
-      title: '1 Corinthians 13:4–8',
-      reference: '1CO 13:4-8',
-      query: '1 Corinthians 13:4-8',
-      description: 'Love is Patient, Love is Kind (Verified)',
-    ),
-    (
-      title: 'Psalm 23:1–6',
-      reference: 'PSA 23',
-      query: 'Psalm 23',
-      description: 'The Lord is My Shepherd (Verified Full Chapter)',
-    ),
-    (
-      title: 'Matthew 6:9–13',
-      reference: 'MAT 6:9-13',
-      query: 'Matthew 6:9-13',
-      description: 'The Lord’s Prayer (Verified)',
-    ),
-    (
-      title: 'Matthew 11:28–30',
-      reference: 'MAT 11:28-30',
-      query: 'Matthew 11:28-30',
-      description: 'Come to Me, All Who Labor (Verified)',
-    ),
-    (
-      title: 'Romans 8:38–39',
-      reference: 'ROM 8:38-39',
-      query: 'Romans 8:38-39',
-      description: 'More Than Conquerors (Verified)',
-    ),
-    (
-      title: 'Lamentations 3:22–24',
-      reference: 'LAM 3:22-24',
-      query: 'Lamentations 3:22-24',
-      description: 'His Mercies Are New Every Morning (Verified)',
-    ),
-  ];
+  @override
+  ConsumerState<_TestedPassagesBottomSheet> createState() => _TestedPassagesBottomSheetState();
+}
+
+class _TestedPassagesBottomSheetState extends ConsumerState<_TestedPassagesBottomSheet> {
+  CatalogTier? _overrideTier;
 
   @override
   Widget build(BuildContext context) {
+    final activeTier = _overrideTier ?? ref.watch(catalogTierProvider);
+    final isCuratedOnly = activeTier == CatalogTier.curated12;
+    final passages = isCuratedOnly ? kCurated12Excerpts : kBiblical40Excerpts;
+
     return DraggableScrollableSheet(
-      initialChildSize: 0.65,
+      initialChildSize: 0.75,
       minChildSize: 0.4,
-      maxChildSize: 0.9,
+      maxChildSize: 0.95,
       expand: false,
       builder: (context, scrollController) {
         return SafeArea(
@@ -1650,7 +1586,7 @@ class _TestedPassagesBottomSheet extends StatelessWidget {
                     const Icon(Icons.verified_rounded, color: Color(0xFFFBBF24), size: 22),
                     const SizedBox(width: 8),
                     const Text(
-                      'Tested & Verified Passages',
+                      'Scripture Meditation Catalog',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -1665,36 +1601,76 @@ class _TestedPassagesBottomSheet extends StatelessWidget {
                   ],
                 ),
                 Text(
-                  'Top 12 contemplative passages with Level 2 WhisperX acoustic alignment & verified timing.',
+                  '${passages.length} contemplative passages with calibrated verse boundaries & reflective pacing.',
                   style: TextStyle(fontSize: 12, color: Colors.indigo.shade200),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    ChoiceChip(
+                      label: Text('🌿 Curated 12 (${kCurated12Excerpts.length})'),
+                      selected: isCuratedOnly,
+                      selectedColor: const Color(0xFF6366F1),
+                      backgroundColor: const Color(0xFF0F0E26),
+                      labelStyle: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: isCuratedOnly ? Colors.white : Colors.white60,
+                      ),
+                      onSelected: (val) {
+                        if (val) setState(() => _overrideTier = CatalogTier.curated12);
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    ChoiceChip(
+                      label: Text('📜 Biblical 40 (${kBiblical40Excerpts.length})'),
+                      selected: !isCuratedOnly,
+                      selectedColor: const Color(0xFF6366F1),
+                      backgroundColor: const Color(0xFF0F0E26),
+                      labelStyle: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: !isCuratedOnly ? Colors.white : Colors.white60,
+                      ),
+                      onSelected: (val) {
+                        if (val) setState(() => _overrideTier = CatalogTier.biblical40);
+                      },
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Expanded(
                   child: ListView.separated(
                     controller: scrollController,
-                    itemCount: testedPassages.length,
+                    itemCount: passages.length,
                     separatorBuilder: (_, _) => const Divider(color: Colors.white10, height: 1),
                     itemBuilder: (context, index) {
-                      final item = testedPassages[index];
+                      final item = passages[index];
+                      final isFirst12 = index < 12;
+                      final titleStr = item.displayTitle ?? '${item.bookCode} ${item.chapterNumber}:${item.startVerse}–${item.endVerse}';
+                      final descStr = item.theme ?? 'Curated Selah Meditation';
+
                       return ListTile(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                         title: Row(
                           children: [
                             Text(
-                              item.title,
+                              titleStr,
                               style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 15),
                             ),
                             const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF064E3B).withValues(alpha: 0.8),
+                                color: isFirst12
+                                    ? const Color(0xFF064E3B).withValues(alpha: 0.8)
+                                    : const Color(0xFF312E81).withValues(alpha: 0.8),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Text(
-                                '🌿 Curated',
+                              child: Text(
+                                isFirst12 ? '🌿 Curated' : '📜 Biblical 40',
                                 style: TextStyle(
-                                  color: Color(0xFF34D399),
+                                  color: isFirst12 ? const Color(0xFF34D399) : const Color(0xFFA5B4FC),
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -1703,11 +1679,11 @@ class _TestedPassagesBottomSheet extends StatelessWidget {
                           ],
                         ),
                         subtitle: Text(
-                          item.description,
+                          descStr,
                           style: const TextStyle(color: Colors.white60, fontSize: 12),
                         ),
                         trailing: const Icon(Icons.play_circle_fill_rounded, color: Color(0xFF6366F1), size: 28),
-                        onTap: () => onSelectPassage(item.query),
+                        onTap: () => widget.onSelectPassage(titleStr),
                       );
                     },
                   ),
@@ -1722,7 +1698,7 @@ class _TestedPassagesBottomSheet extends StatelessWidget {
                       side: const BorderSide(color: Color(0xFFFBBF24)),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    onPressed: onRequestPassage,
+                    onPressed: widget.onRequestPassage,
                   ),
                 ),
               ],

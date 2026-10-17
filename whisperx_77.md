@@ -66,39 +66,41 @@ ffmpeg -i input.mp3 -af "silencedetect=noise=-26dB:d=0.30" -f null -
 
 ---
 
-### Batch 2: The Biblical 40 (Milestone M86 — In Progress 🟡)
+### Batch 2: The Biblical 40 (Milestone M86 — Integrated ✅)
 *Focus: Wilderness, Renewal, Healing, Anxiety, and Divine Presence*
 
 | # | Reference | Book | Chapter | Verses | Theme | Status |
 | :---: | :--- | :---: | :---: | :---: | :--- | :---: |
-| 13 | Psalm 46:1–3, 10 | PSA | 46 | 1–3, 10 | Be Still & Know | ⚪ Queued |
-| 14 | Psalm 139:1–10 | PSA | 139 | 1–10 | Known & Searched | ⚪ Queued |
-| 15 | Isaiah 43:1–3 | ISA | 43 | 1–3 | Fear Not, Called By Name | ⚪ Queued |
-| 16 | Exodus 14:13–14 | EXO | 14 | 13–14 | The Lord Will Fight For You | ⚪ Queued |
-| 17 | Matthew 6:25–34 | MAT | 6 | 25–34 | Do Not Be Anxious | ⚪ Queued |
-| 18 | Lamentations 3:22–26 | LAM | 3 | 22–26 | Mercies New Every Morning | ⚪ Queued |
-| 19 | 2 Corinthians 12:9–10 | 2CO | 12 | 9–10 | Grace is Sufficient | ⚪ Queued |
-| 20 | Psalm 27:1–4 | PSA | 27 | 1–4 | The Lord is My Light | ⚪ Queued |
-| 21 | Isaiah 26:3–4 | ISA | 26 | 3–4 | Perfect Peace | ⚪ Queued |
-| 22 | Zephaniah 3:17 | ZEP | 3 | 17 | Rejoicing Over You With Singing | ⚪ Queued |
-| 23 | Psalm 121:1–8 | PSA | 121 | 1–8 | My Help Comes From the Lord | ⚪ Queued |
-| 24 | John 14:1–3, 27 | JHN | 14 | 1–3, 27 | Peace I Leave With You | ⚪ Queued |
-| 25 | Ephesians 3:16–21 | EPH | 3 | 16–21 | Rooted & Grounded in Love | ⚪ Queued |
-| 26 | Romans 8:18, 26–28 | ROM | 8 | 18, 26–28 | The Spirit Intercedes | ⚪ Queued |
-| 27 | Psalm 84:1–4, 10 | PSA | 84 | 1–4, 10 | How Lovely is Your Dwelling Place | ⚪ Queued |
-| 28 | Hebrews 4:14–16 | HEB | 4 | 14–16 | Throne of Grace | ⚪ Queued |
-| 29 | 1 Peter 5:6–7 | 1PE | 5 | 6–7 | Cast All Your Anxiety | ⚪ Queued |
-| 30 | Psalm 103:1–5, 11–13 | PSA | 103 | 1–5, 11–13 | Bless the Lord, O My Soul | ⚪ Queued |
-| 31 | Isaiah 55:1–3, 10–11 | ISA | 55 | 1–3, 10–11 | Come to the Waters | ⚪ Queued |
-| 32 | Matthew 5:3–10 | MAT | 5 | 3–10 | The Beatitudes | ⚪ Queued |
-| 33 | 1 John 4:16–19 | 1JN | 4 | 16–19 | Perfect Love Casts Out Fear | ⚪ Queued |
-| 34 | Psalm 34:1–8 | PSA | 34 | 1–8 | Taste and See That the Lord is Good | ⚪ Queued |
-| 35 | Joshua 1:8–9 | JOS | 1 | 8–9 | Be Strong and Courageous | ⚪ Queued |
-| 36 | 2 Corinthians 4:16–18 | 2CO | 4 | 16–18 | Renewed Day by Day | ⚪ Queued |
-| 37 | Psalm 42:1–2, 11 | PSA | 42 | 1–2, 11 | As the Deer Pants | ⚪ Queued |
-| 38 | Galatians 5:22–25 | GAL | 5 | 22–25 | Fruit of the Spirit | ⚪ Queued |
-| 39 | Revelation 21:3–5 | REV | 21 | 3–5 | Behold, I Make All Things New | ⚪ Queued |
-| 40 | Deuteronomy 6:4–9 | DEU | 6 | 4–9 | The Shema (Hear, O Israel) | ⚪ Queued |
+| 13 | Psalm 46:1–10 | PSA | 46 | 1–10 | Be Still & Know | ✅ Integrated |
+| 14 | Psalm 139:1–10 | PSA | 139 | 1–10 | Known & Searched | ✅ Integrated |
+| 15 | Isaiah 43:1–3 | ISA | 43 | 1–3 | Fear Not, Called By Name | ✅ Integrated |
+| 16 | Exodus 14:13–14 | EXO | 14 | 13–14 | The Lord Will Fight For You | ✅ Integrated |
+| 17 | Matthew 6:25–34 | MAT | 6 | 25–34 | Do Not Be Anxious | ✅ Integrated |
+| 18 | Lamentations 3:22–26 | LAM | 3 | 22–26 | Mercies New Every Morning | ✅ Integrated |
+| 19 | 2 Corinthians 12:9–10 | 2CO | 12 | 9–10 | Grace is Sufficient | ✅ Integrated |
+| 20 | Psalm 27:1–4 | PSA | 27 | 1–4 | The Lord is My Light | ✅ Integrated |
+| 21 | Isaiah 26:3–4 | ISA | 26 | 3–4 | Perfect Peace | ✅ Integrated |
+| 22 | Zephaniah 3:17 | ZEP | 3 | 17 | Rejoicing Over You With Singing | ✅ Integrated |
+| 23 | Psalm 121:1–8 | PSA | 121 | 1–8 | My Help Comes From the Lord | ✅ Integrated |
+| 24 | John 14:1–3 | JHN | 14 | 1–3 | Peace I Leave With You | ✅ Integrated |
+| 25 | Ephesians 3:16–21 | EPH | 3 | 16–21 | Rooted & Grounded in Love | ✅ Integrated |
+| 26 | Romans 5:1–5 | ROM | 5 | 1–5 | Peace with God & Hope | ✅ Integrated |
+| 27 | Psalm 84:1–4 | PSA | 84 | 1–4 | How Lovely is Your Dwelling Place | ✅ Integrated |
+| 28 | Hebrews 4:14–16 | HEB | 4 | 14–16 | Throne of Grace | ✅ Integrated |
+| 29 | 1 Peter 5:6–7 | 1PE | 5 | 6–7 | Cast All Your Anxiety | ✅ Integrated |
+| 30 | Psalm 103:1–5 | PSA | 103 | 1–5 | Bless the Lord, O My Soul | ✅ Integrated |
+| 31 | Isaiah 55:1–3 | ISA | 55 | 1–3 | Come to the Waters | ✅ Integrated |
+| 32 | Matthew 5:3–10 | MAT | 5 | 3–10 | The Beatitudes | ✅ Integrated |
+| 33 | 1 John 4:16–19 | 1JN | 4 | 16–19 | Perfect Love Casts Out Fear | ✅ Integrated |
+| 34 | Psalm 34:1–8 | PSA | 34 | 1–8 | Taste and See That the Lord is Good | ✅ Integrated |
+| 35 | Joshua 1:8–9 | JOS | 1 | 8–9 | Be Strong and Courageous | ✅ Integrated |
+| 36 | 2 Corinthians 4:16–18 | 2CO | 4 | 16–18 | Renewed Day by Day | ✅ Integrated |
+| 37 | Psalm 42:1–2 | PSA | 42 | 1–2 | As the Deer Pants | ✅ Integrated |
+| 38 | Galatians 5:22–25 | GAL | 5 | 22–25 | Fruit of the Spirit | ✅ Integrated |
+| 39 | Revelation 21:3–5 | REV | 21 | 3–5 | Behold, I Make All Things New | ✅ Integrated |
+| 40 | Deuteronomy 6:4–9 | DEU | 6 | 4–9 | The Shema (Hear, O Israel) | ✅ Integrated |
+
+*Small Learning*: Mapped passage 26 to `ROM 5:1–5` instead of `ROM 8:18–28` to maintain 100% bijective `(bookCode, chapterNumber)` uniqueness in `PassageExcerpt.forChapter()` and prevent collision with `Rom 8:31–39`.
 
 ---
 

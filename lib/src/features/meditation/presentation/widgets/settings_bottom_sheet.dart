@@ -105,6 +105,66 @@ class SettingsBottomSheet extends ConsumerWidget {
           const SizedBox(height: 16),
 
           const Text(
+            'CATALOG TIER & SCRIPTURE LIBRARY',
+            style: TextStyle(fontSize: 11, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: CatalogTier.values.map((tier) {
+              final activeTier = ref.watch(catalogTierProvider);
+              final isSel = activeTier == tier;
+              return Expanded(
+                child: GestureDetector(
+                  key: Key('settings_catalog_tier_${tier.name}'),
+                  onTap: () {
+                    ref.read(catalogTierProvider.notifier).setTier(tier);
+                    AppLogger.logEvent('select_catalog_tier', {'tier': tier.name});
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: isSel ? const Color(0xFF6366F1) : const Color(0xFF0F0E26),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isSel ? const Color(0xFF818CF8) : Colors.white10,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${tier.emoji} ${tier.label}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: isSel ? Colors.white : Colors.white70,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          tier == CatalogTier.curated12
+                              ? '12 Top Passages'
+                              : tier == CatalogTier.biblical40
+                                  ? '40 Wilderness & Peace'
+                                  : 'All 66 Books',
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          style: TextStyle(
+                            fontSize: 8,
+                            color: isSel ? Colors.white.withValues(alpha: 0.9) : Colors.white38,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 16),
+
+          const Text(
             'CHAPTER REPETITIONS',
             style: TextStyle(fontSize: 11, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
           ),
