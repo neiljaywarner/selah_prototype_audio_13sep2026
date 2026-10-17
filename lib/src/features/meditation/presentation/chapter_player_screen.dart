@@ -1549,8 +1549,11 @@ class _TestedPassagesBottomSheetState extends ConsumerState<_TestedPassagesBotto
   @override
   Widget build(BuildContext context) {
     final activeTier = _overrideTier ?? ref.watch(catalogTierProvider);
-    final isCuratedOnly = activeTier == CatalogTier.curated12;
-    final passages = isCuratedOnly ? kCurated12Excerpts : kBiblical40Excerpts;
+    final passages = activeTier == CatalogTier.curated12
+        ? kCurated12Excerpts
+        : activeTier == CatalogTier.biblical40
+            ? kBiblical40Excerpts
+            : kSoftLaunch77Excerpts;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
@@ -1605,38 +1608,58 @@ class _TestedPassagesBottomSheetState extends ConsumerState<_TestedPassagesBotto
                   style: TextStyle(fontSize: 12, color: Colors.indigo.shade200),
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    ChoiceChip(
-                      label: Text('🌿 Curated 12 (${kCurated12Excerpts.length})'),
-                      selected: isCuratedOnly,
-                      selectedColor: const Color(0xFF6366F1),
-                      backgroundColor: const Color(0xFF0F0E26),
-                      labelStyle: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: isCuratedOnly ? Colors.white : Colors.white60,
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      ChoiceChip(
+                        label: Text('🌿 Curated 12 (${kCurated12Excerpts.length})'),
+                        selected: activeTier == CatalogTier.curated12,
+                        selectedColor: const Color(0xFF6366F1),
+                        backgroundColor: const Color(0xFF0F0E26),
+                        labelStyle: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: activeTier == CatalogTier.curated12 ? Colors.white : Colors.white60,
+                        ),
+                        onSelected: (val) {
+                          if (val) setState(() => _overrideTier = CatalogTier.curated12);
+                        },
                       ),
-                      onSelected: (val) {
-                        if (val) setState(() => _overrideTier = CatalogTier.curated12);
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    ChoiceChip(
-                      label: Text('📜 Biblical 40 (${kBiblical40Excerpts.length})'),
-                      selected: !isCuratedOnly,
-                      selectedColor: const Color(0xFF6366F1),
-                      backgroundColor: const Color(0xFF0F0E26),
-                      labelStyle: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: !isCuratedOnly ? Colors.white : Colors.white60,
+                      const SizedBox(width: 8),
+                      ChoiceChip(
+                        label: Text('📜 Biblical 40 (${kBiblical40Excerpts.length})'),
+                        selected: activeTier == CatalogTier.biblical40,
+                        selectedColor: const Color(0xFF6366F1),
+                        backgroundColor: const Color(0xFF0F0E26),
+                        labelStyle: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: activeTier == CatalogTier.biblical40 ? Colors.white : Colors.white60,
+                        ),
+                        onSelected: (val) {
+                          if (val) setState(() => _overrideTier = CatalogTier.biblical40);
+                        },
                       ),
-                      onSelected: (val) {
-                        if (val) setState(() => _overrideTier = CatalogTier.biblical40);
-                      },
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      ChoiceChip(
+                        label: Text('🕊️ The 77 (${kSoftLaunch77Excerpts.length})'),
+                        selected: activeTier == CatalogTier.softLaunch77 || activeTier == CatalogTier.allPassages,
+                        selectedColor: const Color(0xFF6366F1),
+                        backgroundColor: const Color(0xFF0F0E26),
+                        labelStyle: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: (activeTier == CatalogTier.softLaunch77 || activeTier == CatalogTier.allPassages)
+                              ? Colors.white
+                              : Colors.white60,
+                        ),
+                        onSelected: (val) {
+                          if (val) setState(() => _overrideTier = CatalogTier.softLaunch77);
+                        },
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Expanded(
@@ -1646,7 +1669,6 @@ class _TestedPassagesBottomSheetState extends ConsumerState<_TestedPassagesBotto
                     separatorBuilder: (_, _) => const Divider(color: Colors.white10, height: 1),
                     itemBuilder: (context, index) {
                       final item = passages[index];
-                      final isFirst12 = index < 12;
                       final titleStr = item.displayTitle ?? '${item.bookCode} ${item.chapterNumber}:${item.startVerse}–${item.endVerse}';
                       final descStr = item.theme ?? 'Curated Selah Meditation';
 
@@ -1662,15 +1684,25 @@ class _TestedPassagesBottomSheetState extends ConsumerState<_TestedPassagesBotto
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: isFirst12
+                                color: index < 12
                                     ? const Color(0xFF064E3B).withValues(alpha: 0.8)
-                                    : const Color(0xFF312E81).withValues(alpha: 0.8),
+                                    : index < 40
+                                        ? const Color(0xFF312E81).withValues(alpha: 0.8)
+                                        : const Color(0xFF701A75).withValues(alpha: 0.8),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                isFirst12 ? '🌿 Curated' : '📜 Biblical 40',
+                                index < 12
+                                    ? '🌿 Curated'
+                                    : index < 40
+                                        ? '📜 Biblical 40'
+                                        : '🕊️ The 77',
                                 style: TextStyle(
-                                  color: isFirst12 ? const Color(0xFF34D399) : const Color(0xFFA5B4FC),
+                                  color: index < 12
+                                      ? const Color(0xFF34D399)
+                                      : index < 40
+                                          ? const Color(0xFFA5B4FC)
+                                          : const Color(0xFFF472B6),
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                 ),

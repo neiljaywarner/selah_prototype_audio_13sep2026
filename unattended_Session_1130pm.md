@@ -39,6 +39,9 @@ To prevent macOS from ever displaying the "Application Not Responding: Reopen / 
 5. **Prompt-Free GitHub Workflow**:
    - All Git pushes use `./scripts/git_push_safe.sh` to prevent IDE modal interceptors.
    - All PR creations, reviews, and merges execute via GitHub MCP server.
+6. **Zero Ad-Hoc Inline Scripts (`python3 -c`)**:
+   - Never execute arbitrary inline `python3 -c "..."` commands, as they trigger Antigravity IDE security authorization modals.
+   - Use pre-approved repository scripts in `.agents/` or inspect outputs directly via `view_file`.
 
 ---
 

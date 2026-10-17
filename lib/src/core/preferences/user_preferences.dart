@@ -71,6 +71,7 @@ class UserPreferences {
 enum CatalogTier {
   curated12('Curated 12', 'Core foundation (12 passages)', '🌿'),
   biblical40('Biblical 40', 'Wilderness & Peace cohort (40 passages)', '📜'),
+  softLaunch77('The 77 Cohort', 'Beta Meditators dedicated cohort (77 passages)', '🕊️'),
   allPassages('All 66 Books', 'Full Scripture library & arbitrary passages', '📖');
 
   const CatalogTier(this.label, this.description, this.emoji);

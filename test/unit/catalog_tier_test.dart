@@ -3,13 +3,15 @@ import 'package:selah_prototype_audio_13sep2026/src/core/preferences/user_prefer
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/passage_excerpt.dart';
 
 void main() {
-  group('Catalog Tier & Biblical 40 Tests (v0.3.6)', () {
-    test('CatalogTier has curated12, biblical40, and allPassages with valid metadata', () {
-      expect(CatalogTier.values.length, 3);
+  group('Catalog Tier & Soft Launch 77 Tests (v0.3.7)', () {
+    test('CatalogTier has curated12, biblical40, softLaunch77, and allPassages with valid metadata', () {
+      expect(CatalogTier.values.length, 4);
       expect(CatalogTier.curated12.label, 'Curated 12');
       expect(CatalogTier.curated12.emoji, '🌿');
       expect(CatalogTier.biblical40.label, 'Biblical 40');
       expect(CatalogTier.biblical40.emoji, '📜');
+      expect(CatalogTier.softLaunch77.label, 'The 77 Cohort');
+      expect(CatalogTier.softLaunch77.emoji, '🕊️');
       expect(CatalogTier.allPassages.label, 'All 66 Books');
       expect(CatalogTier.allPassages.emoji, '📖');
     });
@@ -30,19 +32,41 @@ void main() {
       }
     });
 
-    test('PassageExcerpt.forChapter resolves unique chapters across Biblical 40', () {
+    test('kSoftLaunch77Excerpts contains exactly 77 passages with unique chapters and non-null themes', () {
+      expect(kSoftLaunch77Excerpts.length, 77);
+      final seenKeys = <String>{};
+      for (final excerpt in kSoftLaunch77Excerpts) {
+        final key = '${excerpt.bookCode}_${excerpt.chapterNumber}';
+        expect(
+          seenKeys.contains(key),
+          isFalse,
+          reason: 'Duplicate chapter mapping found: $key for ${excerpt.displayTitle}',
+        );
+        seenKeys.add(key);
+        expect(excerpt.theme, isNotNull, reason: '${excerpt.displayTitle} theme must not be null');
+        expect(excerpt.theme!.trim(), isNotEmpty);
+        expect(excerpt.displayTitle, isNotNull);
+        expect(excerpt.endVerse, greaterThanOrEqualTo(excerpt.startVerse));
+      }
+    });
+
+    test('PassageExcerpt.forChapter resolves unique chapters across The 77 Cohort', () {
       final psalm46 = PassageExcerpt.forChapter('PSA', 46);
       expect(psalm46, isNotNull);
       expect(psalm46!.displayTitle, 'Psalm 46:1–10');
       expect(psalm46.theme, 'Be Still and Know');
 
-      final isaiah43 = PassageExcerpt.forChapter('ISA', 43);
-      expect(isaiah43, isNotNull);
-      expect(isaiah43!.displayTitle, 'Isaiah 43:1–3');
+      final psalm1 = PassageExcerpt.forChapter('PSA', 1);
+      expect(psalm1, isNotNull);
+      expect(psalm1!.displayTitle, 'Psalm 1:1–3');
 
-      final matthew6 = PassageExcerpt.forChapter('MAT', 6);
-      expect(matthew6, isNotNull);
-      expect(matthew6!.displayTitle, 'Matt 6:25–34');
+      final john15 = PassageExcerpt.forChapter('JHN', 15);
+      expect(john15, isNotNull);
+      expect(john15!.displayTitle, 'John 15:1–5');
+
+      final habakkuk3 = PassageExcerpt.forChapter('HAB', 3);
+      expect(habakkuk3, isNotNull);
+      expect(habakkuk3!.displayTitle, 'Hab 3:17–19');
     });
   });
 }
