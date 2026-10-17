@@ -48,6 +48,11 @@ To guarantee reliable unattended operation on existing hardware, we enforce thes
 - Keep unused emulators, iOS simulators, or secondary physical devices closed.
 - Keep the target device (e.g. Pixel 9a) awake via `caffeinate -dimsu` rather than keeping a high-refresh UI mirror running.
 
+### E. Strategic Build Anchoring (Conserving Intel CPU Thermals)
+- Compiling a full 80MB release APK on the 8-Core Intel Core i9 takes ~105 seconds and consumes 2.5 GB JVM memory, generating significant thermal heat and throttling clock speeds.
+- For rapid autonomous sprints, verify intermediate feature PRs (`v0.3.5`, `v0.3.6`, `v0.3.7`, `v0.3.8`) with fast Unit & Widget test suites (< 15 seconds, negligible heat).
+- Anchor full release APK compilations and Firebase App Distribution to key release anchors: **`v0.3.4` (Done)**, **`v0.3.9`**, and **`v0.4.0`**, saving ~15 minutes of build time and keeping the machine cool.
+
 ---
 
 ## 🛒 3. Hardware Procurement Recommendations (Upgrading Tomorrow)
