@@ -120,6 +120,7 @@ firebase appdistribution:distribute "$APK_PATH" \
   --app "$FIREBASE_APP_ID" \
   --project "$PROJECT_ID" \
   --groups "$TARGET_GROUPS" \
+  --testers "njwandroid@gmail.com,neilwarner@gmail.com" \
   --release-notes "$RELEASE_NOTES"
 
 echo "=== Release Distributed Successfully to $TARGET_GROUPS ==="

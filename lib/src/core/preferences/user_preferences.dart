@@ -52,7 +52,31 @@ class UserPreferences {
   Future<void> setShowWorkInProgressFeatures(bool value) async =>
       _prefs?.setBool(showWorkInProgressFeaturesKey, value);
 
+  static const catalogTierKey = 'selah.catalog_tier';
+
+  CatalogTier get catalogTier {
+    final raw = _prefs?.getString(catalogTierKey);
+    return CatalogTier.values.firstWhere(
+      (e) => e.name == raw,
+      orElse: () => CatalogTier.biblical40,
+    );
+  }
+
+  Future<void> setCatalogTier(CatalogTier tier) async =>
+      _prefs?.setString(catalogTierKey, tier.name);
+
   SharedPreferences? get prefs => _prefs;
+}
+
+enum CatalogTier {
+  curated12('Curated 12', 'Core foundation (12 passages)', '🌿'),
+  biblical40('Biblical 40', 'Wilderness & Peace cohort (40 passages)', '📜'),
+  allPassages('All 66 Books', 'Full Scripture library & arbitrary passages', '📖');
+
+  const CatalogTier(this.label, this.description, this.emoji);
+  final String label;
+  final String description;
+  final String emoji;
 }
 
 final userPreferencesProvider = Provider<UserPreferences>(
@@ -84,4 +108,20 @@ class WorkInProgressFeaturesNotifier extends Notifier<bool> {
 final workInProgressFeaturesProvider =
     NotifierProvider<WorkInProgressFeaturesNotifier, bool>(
   WorkInProgressFeaturesNotifier.new,
+);
+
+class CatalogTierNotifier extends Notifier<CatalogTier> {
+  @override
+  CatalogTier build() {
+    return ref.watch(userPreferencesProvider).catalogTier;
+  }
+
+  Future<void> setTier(CatalogTier tier) async {
+    state = tier;
+    await ref.read(userPreferencesProvider).setCatalogTier(tier);
+  }
+}
+
+final catalogTierProvider = NotifierProvider<CatalogTierNotifier, CatalogTier>(
+  CatalogTierNotifier.new,
 );
