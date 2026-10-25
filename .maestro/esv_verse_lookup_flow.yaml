@@ -40,3 +40,15 @@ appId: com.example.selah_prototype_audio_13sep2026
     visible: ".*\\(ESV\\).*"
     timeout: 45000
 - takeScreenshot: docs/artifacts/screenshots/esv_1_cor_13_4_7
+
+# 1 Peter 5:7-9 curated passage lookup
+- tapOn:
+    text: "1 Cor 13:4-7"
+    optional: true
+- eraseText
+- inputText: "1 Peter 5:7-9"
+- tapOn: "Play"
+- extendedWaitUntil:
+    visible: ".*\\(ESV\\).*"
+    timeout: 45000
+- takeScreenshot: docs/artifacts/screenshots/esv_1_peter_5_7_9
