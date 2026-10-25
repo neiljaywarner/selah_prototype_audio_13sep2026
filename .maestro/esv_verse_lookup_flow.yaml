@@ -34,6 +34,9 @@ appId: com.example.selah_prototype_audio_13sep2026
 - inputText: "1 Cor 13:4-7"
 - tapOn: "Play"
 - extendedWaitUntil:
+    visible: ".*13:4.*"
+    timeout: 45000
+- extendedWaitUntil:
     visible: ".*\\(ESV\\).*"
     timeout: 45000
 - takeScreenshot: docs/artifacts/screenshots/esv_1_cor_13_4_7

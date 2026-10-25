@@ -54,7 +54,7 @@ Pass criteria: the 4–7 test expects exactly `['1 Cor 13:4', '1 Cor 13:5', '1 C
 Then:
 
 ```bash
-git diff --cached | grep -E 'ESV_API_KEY=.+[A-Za-z0-9]{16}' && echo 'SECRET LEAK' || echo 'no key in staged diff'
+git diff --cached | grep -qE 'ESV_API_KEY=.+[A-Za-z0-9]{16}' && echo 'SECRET LEAK' || echo 'no key in staged diff'
 ```
 
 If that prints `SECRET LEAK`, unstage the file and remove the value before any commit.
@@ -82,9 +82,11 @@ maestro record .maestro/esv_verse_lookup_flow.yaml
 If `maestro record` is not a subcommand, run `maestro --help` and use whichever subcommand writes an mp4. Fallback while the flow runs:
 
 ```bash
-adb shell screenrecord --time-limit 45 /sdcard/esv_verse_lookup.mp4
-adb pull /sdcard/esv_verse_lookup.mp4 docs/artifacts/videos/esv_verse_lookup.mp4
+adb shell screenrecord --time-limit 45 /sdcard/esv_verse_lookup.mp4 &
+RECORD_PID=$!
 maestro test .maestro/esv_verse_lookup_flow.yaml
+kill $RECORD_PID 2>/dev/null || true
+adb pull /sdcard/esv_verse_lookup.mp4 docs/artifacts/videos/esv_verse_lookup.mp4
 ```
 
 4. Copy Maestro screenshots from `test_artifacts/` or `~/.maestro/tests/` into `docs/artifacts/screenshots/`. The frames must show the player text ending with `(ESV)` for `John 11:35` and for `1 Cor 13:4-7`.
@@ -115,7 +117,7 @@ Create `integration_test/esv_verse_lookup_patrol_test.dart` by copying the heade
 1. `await $.pumpWidgetAndSettle(const ProviderScope(child: SelahApp()));`
 2. Enter `John 11:35` into the search field (the field's initial text is `John 1`).
 3. Tap `Play`.
-4. `expect($('(ESV)'), findsWidgets);` after a pump that allows the network future to finish. Patrol on a device needs the same `--dart-define=ESV_API_KEY=$ESV_API_KEY` passed through `patrol test`.
+4. `expect($(find.textContaining('(ESV)', findRichText: true)), findsWidgets);` after a pump that allows the network future to finish. Patrol on a device needs the same `--dart-define=ESV_API_KEY=$ESV_API_KEY` passed through `patrol test`.
 5. Run: `patrol test -t integration_test/esv_verse_lookup_patrol_test.dart --dart-define=ESV_API_KEY=$ESV_API_KEY`
 6. Copy Patrol's failure or success screenshots into `docs/artifacts/screenshots/`.
 

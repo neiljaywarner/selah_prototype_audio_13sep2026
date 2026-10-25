@@ -6,6 +6,20 @@ import '../../../core/constants/bible_canon.dart';
 /// a human narrator, so routing is `translation.hasNarratorFor(book)` instead
 /// of string comparisons scattered across the codebase.
 enum BibleTranslation {
+  esv(
+    code: 'ESV',
+    shortLabel: 'ESV',
+    fullName: 'English Standard Version',
+    audioBibleId: '',
+    textBibleId: '',
+    hasOtNarrator: true,
+    hasNtNarrator: true,
+    isLicensed: true,
+    copyright:
+        'Scripture quotations are from the ESV® Bible (The Holy Bible, English Standard Version®), '
+        'copyright © 2001 by Crossway, a publishing ministry of Good News Publishers. '
+        'Used by permission. All rights reserved.',
+  ),
   bsb(
     code: 'BSB',
     shortLabel: 'BSB',
@@ -84,6 +98,7 @@ enum BibleTranslation {
 
   /// Short attribution line for player card and lockscreen displays.
   String get shortAttribution => switch (this) {
+        BibleTranslation.esv => 'ESV® © Crossway · Audio ℗ Crossway / David Cochran Heath',
         BibleTranslation.bsb => 'Public Domain · Narrator: Barry Hays',
         BibleTranslation.web => 'Public Domain · Audio ℗ 2013 Hosanna',
         BibleTranslation.niv => 'NIV® © Biblica, Inc.® · Audio ℗ 2011 Max McLean',
@@ -94,6 +109,7 @@ enum BibleTranslation {
 
   /// Human narrator credit string.
   String get narratorCredit => switch (this) {
+        BibleTranslation.esv => 'David Cochran Heath (Hear the Word / Crossway)',
         BibleTranslation.bsb => 'Barry Hays',
         BibleTranslation.web => 'Hosanna / Faith Comes By Hearing',
         BibleTranslation.niv => 'Max McLean (The Listener’s Bible®)',
@@ -101,6 +117,9 @@ enum BibleTranslation {
 
   /// Detailed audio streaming terms and offline caching boundary notice.
   String get audioLicensingTerms => switch (this) {
+        BibleTranslation.esv =>
+          'ESV passage text and audio are streamed from Crossway’s API for noncommercial use. '
+          'Do not cache more than 500 consecutive verses locally.',
         BibleTranslation.bsb =>
           'Berean Standard Bible audio is dedicated to the public domain and may be cached offline freely.',
         BibleTranslation.web =>

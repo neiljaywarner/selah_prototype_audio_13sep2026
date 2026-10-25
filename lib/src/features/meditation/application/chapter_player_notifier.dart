@@ -14,6 +14,7 @@ import '../../../core/audio/bundled_audio_service.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/bible_canon.dart';
 import '../../../core/esv/esv_api_client.dart';
+import '../../../core/esv/esv_passage_policy.dart';
 import '../../../core/karaoke/timestamp_loader.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/preferences/user_preferences.dart';
@@ -98,15 +99,19 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       _flutterTts.stop().catchError((_) => 0);
     });
 
-    String initialTranslation = 'BSB';
+    final policy = ref.watch(esvPassagePolicyProvider);
+    String initialTranslation = policy.defaultTranslationCode;
     try {
       final userPrefs = ref.watch(userPreferencesProvider);
       final saved = userPrefs.lastTranslationCode;
       if (saved != null && saved.isNotEmpty) {
-        initialTranslation = BibleTranslation.fromCode(saved).code;
+        final savedCode = BibleTranslation.fromCode(saved).code;
+        if (policy.showApiBibleTranslations || savedCode == BibleTranslation.esv.code) {
+          initialTranslation = savedCode;
+        }
       }
     } catch (_) {
-      // In tests or if provider not yet overridden, fall back cleanly to BSB
+      // In tests or if provider not yet overridden, fall back cleanly
     }
 
     return ChapterPlayerState(
@@ -332,6 +337,18 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
     final fallbackText = _fallbackChapterText(bookCode, chapterNumber, bookName);
     final effectiveExcerpt = excerpt ?? PassageExcerpt.forChapter(bookCode, chapterNumber);
+
+    final policy = ref.read(esvPassagePolicyProvider);
+    if (policy.useEsvForPassages) {
+      final query = effectiveExcerpt?.toEsvPassageQuery() ?? '$bookName $chapterNumber';
+      if (await tryPlayEsvPassage(EsvPassagePolicy.normalizePassageQuery(query))) {
+        state = state.copyWith(
+          activeTranslation: BibleTranslation.esv.code,
+          activeExcerpt: effectiveExcerpt,
+        );
+        return;
+      }
+    }
 
     state = state.copyWith(
       currentChapter: ChapterInfo(
@@ -614,18 +631,56 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       }
 
       final verseStr = '${verses.map((verse) => verse.text).join(' ')} $kEsvShortCopyright';
-      state = state.copyWith(
-        currentChapter: ChapterInfo(
-          bookCode: 'VRS',
-          bookName: EsvApiClient.joinedReference(verses),
-          chapterNumber: 1,
-          audioStreamUrl: '',
-          textContent: verseStr,
-        ),
-        infoNotice: 'ESV text loaded. $kEsvShortCopyright $kEsvCopyrightNotice',
-      );
-      await _playTts(verseStr);
-      return true;
+      final joinedRef = EsvApiClient.joinedReference(verses);
+
+      final directAudioUrl = await esv.fetchPassageAudioUrl(query) ??
+          'https://api.esv.org/v3/passage/audio/?q=${Uri.encodeComponent(query)}';
+      try {
+        final mediaItem = MediaItem(
+          id: directAudioUrl,
+          album: 'Selah Scripture Audio',
+          title: joinedRef,
+          artist: 'David Cochran Heath (ESV)',
+          artUri: Uri.parse('https://selahword.web.app/icons/Icon-192.png'),
+        );
+        final source = AudioSource.uri(
+          Uri.parse(directAudioUrl),
+          headers: {'Authorization': 'Token ${esv.apiKey}'},
+          tag: mediaItem,
+        );
+        final dur = await _audioPlayer.setAudioSource(source);
+        if (!ref.mounted) return false;
+        state = state.copyWith(
+          isLoading: false,
+          isPlaying: true,
+          audioMode: AudioMode.narrator,
+          activeTranslation: BibleTranslation.esv.code,
+          duration: dur ?? Duration.zero,
+          position: Duration.zero,
+          currentChapter: ChapterInfo(
+            bookCode: 'VRS',
+            bookName: joinedRef,
+            chapterNumber: 1,
+            displayTitle: joinedRef,
+            audioStreamUrl: directAudioUrl,
+            textContent: verseStr,
+          ),
+          infoNotice:
+              'ESV human narrator audio (David Cochran Heath). $kEsvShortCopyright $kEsvCopyrightNotice',
+        );
+        play();
+        return true;
+      } catch (audioErr) {
+        AppLogger.error('ESV human audio playback failed: $audioErr');
+        if (ref.mounted) {
+          state = state.copyWith(
+            isLoading: false,
+            isPlaying: false,
+            lastError: 'ESV audio stream error: $audioErr',
+          );
+        }
+        return false;
+      }
     } catch (e) {
       AppLogger.error('ESV verse fetch failed', error: e);
       if (ref.mounted) state = state.copyWith(isLoading: false);
@@ -635,6 +690,16 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
   Future<void> fetchAndPlaySingleVerse(String query, {bool tryEsv = true}) async {
     if (tryEsv && await tryPlayEsvPassage(query)) return;
+
+    final policy = ref.read(esvPassagePolicyProvider);
+    if (policy.useEsvForPassages) {
+      state = state.copyWith(
+        isLoading: false,
+        isPlaying: false,
+        lastError: 'ESV passage "$query" could not be played.',
+      );
+      return;
+    }
 
     await stopAllPlayback();
     if (!ref.mounted) return;
@@ -690,15 +755,23 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     state = state.copyWith(isPlaying: false, isPausedInGap: false);
   }
 
+  /// Removes trailing copyright notices (e.g. `(ESV)`) from text spoken by TTS.
+  /// The mark is displayed visually in textContent but not spoken aloud.
+  static String _spokenText(String text) {
+    const suffix = ' $kEsvShortCopyright';
+    return text.endsWith(suffix) ? text.substring(0, text.length - suffix.length) : text;
+  }
+
   Future<void> _playTts(String text) async {
     await stopAllPlayback();
     if (!ref.mounted) return;
 
+    final spoken = _spokenText(text);
     state = state.copyWith(
       isLoading: false,
       isPlaying: true,
       isPausedInGap: false,
-      duration: Duration(seconds: (text.split(' ').length * 0.45).ceil()),
+      duration: Duration(seconds: (spoken.split(' ').length * 0.45).ceil()),
       position: Duration.zero,
     );
 
@@ -709,7 +782,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
     try {
       await _flutterTts.stop();
-      await _flutterTts.speak(text);
+      await _flutterTts.speak(spoken);
     } catch (e) {
       AppLogger.error('TTS speech failed', error: e);
       state = state.copyWith(isPlaying: false, lastError: 'TTS playback error: $e');
@@ -731,6 +804,14 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   Future<void> loadChapter(ChapterInfo chapter, {PassageExcerpt? excerpt}) async {
     await stopAllPlayback();
     if (!ref.mounted) return;
+
+    final policy = ref.read(esvPassagePolicyProvider);
+    if (policy.useEsvForPassages) {
+      final query = esvPassageQueryFor(chapter, excerpt: excerpt);
+      if (query != null && await tryPlayEsvPassage(query)) {
+        return;
+      }
+    }
 
     _currentTimestamps = await TimestampLoaderService.loadChapterTimestamps(
       translation: state.activeTranslation,
@@ -791,9 +872,17 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         artist: 'Human Narrator (${state.activeTranslation})',
         artUri: Uri.parse('https://selahword.web.app/icons/Icon-192.png'),
       );
+      final isEsvAudio = chapter.audioStreamUrl.contains('api.esv.org');
+      final audioHeaders = isEsvAudio && isEsvApiConfigured
+          ? {'Authorization': 'Token $kEsvApiKey'}
+          : null;
       final UriAudioSource baseSource = isAsset
           ? AudioSource.asset(chapter.audioStreamUrl, tag: mediaItem)
-          : AudioSource.uri(Uri.parse(chapter.audioStreamUrl), tag: mediaItem);
+          : AudioSource.uri(
+              Uri.parse(chapter.audioStreamUrl),
+              headers: audioHeaders,
+              tag: mediaItem,
+            );
 
       final window = effectiveExcerpt?.clipWindow(_currentTimestamps);
       _clipOffset = window?.start ?? Duration.zero;
@@ -860,7 +949,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       if (state.audioMode == AudioMode.narrator) {
         _audioPlayer.play();
       } else {
-        _flutterTts.speak(state.currentChapter.textContent);
+        _flutterTts.speak(_spokenText(state.currentChapter.textContent));
       }
       return;
     }
@@ -877,7 +966,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     state = state.copyWith(isPlaying: true, clearLastError: true);
 
     if (state.audioMode == AudioMode.tts) {
-      await _flutterTts.speak(state.currentChapter.textContent);
+      await _flutterTts.speak(_spokenText(state.currentChapter.textContent));
       return;
     }
 
@@ -936,9 +1025,14 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     AppLogger.logEvent('change_setting', {'setting': 'pauseGapSeconds', 'value': seconds});
   }
 
-  void setTranslation(String translation) {
+  void setTranslation(String translation, {bool force = false}) {
     final target = BibleTranslation.fromCode(translation);
     if (state.activeTranslation == target.code) return;
+
+    final policy = ref.read(esvPassagePolicyProvider);
+    if (!force && !policy.showApiBibleTranslations && target.code != BibleTranslation.esv.code) {
+      return;
+    }
 
     final previousTranslation = state.activeTranslation;
     state = state.copyWith(activeTranslation: target.code);
@@ -1130,7 +1224,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         await loadChapter(state.currentChapter);
       }
     } else {
-      await _flutterTts.speak(state.currentChapter.textContent);
+      await _flutterTts.speak(_spokenText(state.currentChapter.textContent));
     }
   }
 }

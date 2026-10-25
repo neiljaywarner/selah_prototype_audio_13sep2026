@@ -51,8 +51,10 @@ void main() {
         expect(translation.badgeLabel.isNotEmpty, isTrue);
       }
       expect(BibleTranslation.niv.isLicensed, isTrue);
+      expect(BibleTranslation.esv.isLicensed, isTrue);
       expect(BibleTranslation.bsb.isLicensed, isFalse);
       expect(BibleTranslation.web.isLicensed, isFalse);
+      expect(BibleTranslation.esv.shortAttribution.contains('Crossway'), isTrue);
     });
   });
 }

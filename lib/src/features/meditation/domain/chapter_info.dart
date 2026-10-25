@@ -72,4 +72,13 @@ final List<ChapterInfo> kFeaturedChapters = [
         'The LORD is my shepherd; I shall not want. He makes me lie down in green pastures; He leads me beside quiet waters. He restores my soul; He guides me in the paths of righteousness for His name’s sake. Even though I walk through the valley of the shadow of death, I will fear no evil, for You are with me; Your rod and Your staff, they comfort me. You prepare a table before me in the presence of my enemies. You anoint my head with oil; my cup overflows. Surely goodness and mercy will follow me all the days of my life, and I will dwell in the house of the LORD forever.',
     displayTitle: 'Psalm 23',
   ),
+  const ChapterInfo(
+    bookCode: '1PE',
+    bookName: '1 Peter',
+    chapterNumber: 5,
+    audioStreamUrl: '',
+    textContent:
+        'Casting all your anxieties on him, because he cares for you. Be sober-minded; be watchful. Your adversary the devil prowls around like a roaring lion, seeking someone to devour. Resist him, firm in your faith, knowing that the same kinds of suffering are being experienced by your brotherhood throughout the world.',
+    displayTitle: '1 Peter 5:7–9',
+  ),
 ];

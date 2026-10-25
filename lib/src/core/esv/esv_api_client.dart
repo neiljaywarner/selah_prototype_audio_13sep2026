@@ -36,7 +36,47 @@ class EsvApiClient {
   final Dio _dio;
   final String _apiKey;
 
+  String get apiKey => _apiKey;
   bool get isConfigured => _apiKey.isNotEmpty && _apiKey != 'REDACTED';
+
+  /// Resolves the direct human narrator MP3 URL for a passage query.
+  /// Follows the redirects from api.esv.org to audio.esv.org.
+  Future<String?> fetchPassageAudioUrl(String query) async {
+    if (!isConfigured) return null;
+    try {
+      final res = await _dio.get<dynamic>(
+        '/passage/audio/',
+        queryParameters: <String, dynamic>{'q': query},
+        options: Options(
+          headers: {'Authorization': 'Token $_apiKey'},
+          followRedirects: false,
+          validateStatus: (s) => s != null && s >= 200 && s < 400,
+        ),
+      );
+      String? location = res.headers.value('location');
+      if (location != null && location.isNotEmpty) {
+        // Follow internal redirect on audio.esv.org if needed (e.g. /hw/ -> /hw/mq/)
+        try {
+          final res2 = await _dio.get<dynamic>(
+            location,
+            options: Options(
+              headers: {'Authorization': 'Token $_apiKey'},
+              followRedirects: false,
+              validateStatus: (s) => s != null && s >= 200 && s < 400,
+            ),
+          );
+          final loc2 = res2.headers.value('location');
+          if (loc2 != null && loc2.isNotEmpty) {
+            return loc2;
+          }
+        } catch (_) {}
+        return location;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// Book, chapter, start verse, end verse. Same chapter only.
   static final RegExp _range = RegExp(r'^(.+?)\s+(\d+):(\d+)\s*[-–—]\s*(\d+)$');
