@@ -66,6 +66,7 @@ jobs:
           flutter build web --release "${defines[@]}"
 
       - name: Deploy to Firebase Hosting Preview Channel
+        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SELAHWORDAPP != '' }}
         uses: FirebaseExtended/action-hosting-deploy@v0
         id: deploy
         with:
