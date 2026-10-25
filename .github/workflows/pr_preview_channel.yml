@@ -35,8 +35,34 @@ jobs:
       - name: AI Pre-Deployment Safety & Quality Scan
         run: python3 scripts/preview_channel_precheck.py
 
+      # Keys live in GitHub Actions secrets, never in the repo.
+      # Settings → Secrets and variables → Actions:
+      #   API_BIBLE_KEY, APTABASE_KEY, POSTHOG_KEY, ESV_API_KEY
+      # An empty secret is skipped so the Dart default stays REDACTED.
       - name: Build Flutter Web Release
-        run: flutter build web --release
+        env:
+          API_BIBLE_KEY: ${{ secrets.API_BIBLE_KEY }}
+          APTABASE_KEY: ${{ secrets.APTABASE_KEY }}
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
+          ESV_API_KEY: ${{ secrets.ESV_API_KEY }}
+        run: |
+          set -euo pipefail
+          defines=()
+          add_define() {
+            local name="$1"
+            local value="$2"
+            if [ -n "$value" ]; then
+              echo "Passing --dart-define=${name} (value hidden)"
+              defines+=(--dart-define="${name}=${value}")
+            else
+              echo "Secret ${name} is unset; leaving the compile-time default"
+            fi
+          }
+          add_define API_BIBLE_KEY "$API_BIBLE_KEY"
+          add_define APTABASE_KEY "$APTABASE_KEY"
+          add_define POSTHOG_KEY "$POSTHOG_KEY"
+          add_define ESV_API_KEY "$ESV_API_KEY"
+          flutter build web --release "${defines[@]}"
 
       - name: Deploy to Firebase Hosting Preview Channel
         uses: FirebaseExtended/action-hosting-deploy@v0

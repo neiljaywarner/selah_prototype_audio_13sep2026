@@ -22,3 +22,23 @@ const String kDefaultAudioBibleId = kBsbAudioBibleId;
 
 const String kBsbTextBibleId = 'bba9f40183526463-01';
 const String kWebTextBibleId = '9879dbb7cfe39e4d-01';
+
+// Crossway ESV API v3 (https://api.esv.org/docs/).
+// Inject at build time with --dart-define=ESV_API_KEY=...
+// Never commit a real key. The default sentinel matches the other keys.
+const String kEsvBaseUrl = 'https://api.esv.org/v3';
+const String kEsvApiKey = String.fromEnvironment('ESV_API_KEY', defaultValue: 'REDACTED');
+
+/// Short mark Crossway requires next to quoted ESV text.
+const String kEsvShortCopyright = '(ESV)';
+
+/// Shown in the player notice when ESV text is on screen. Not spoken aloud.
+const String kEsvCopyrightNotice =
+    'Scripture quotations are from the ESV® Bible (The Holy Bible, English Standard Version®), '
+    'copyright © 2001 by Crossway, a publishing ministry of Good News Publishers. '
+    'Used by permission. All rights reserved.';
+
+/// One HTTP call per verse, but stop expanding before the 60 requests/minute cap.
+/// Crossway also allows at most 500 verses per request, 1,000 requests/hour,
+/// and 5,000 requests/day.
+const int kEsvMaxSingleVerseLookups = 60;

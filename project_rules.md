@@ -11,6 +11,7 @@
   ```bash
   --dart-define=API_BIBLE_KEY="YOUR_KEY"
   --dart-define=APTABASE_KEY="YOUR_KEY"
+  --dart-define=ESV_API_KEY="YOUR_KEY"
   --dart-define=USERORIENT_KEY="YOUR_KEY"
   --dart-define=DOORBELL_APP_ID="YOUR_APP_ID"
   --dart-define=DOORBELL_API_KEY="YOUR_API_KEY"

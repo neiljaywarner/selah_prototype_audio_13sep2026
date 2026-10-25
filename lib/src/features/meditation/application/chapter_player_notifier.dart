@@ -13,6 +13,7 @@ import 'package:just_audio_background/just_audio_background.dart';
 import '../../../core/audio/bundled_audio_service.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/bible_canon.dart';
+import '../../../core/esv/esv_api_client.dart';
 import '../../../core/karaoke/timestamp_loader.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/preferences/user_preferences.dart';
@@ -584,8 +585,59 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     } catch (_) {}
     return null;
   }
-  Future<void> fetchAndPlaySingleVerse(String query) async {
+
+  /// Plays [query] from the ESV API, one HTTP call per verse in a range.
+  ///
+  /// Returns false when the key is unset or the request fails, without
+  /// replacing a later narrator or bible-api.com attempt.
+  Future<bool> tryPlayEsvPassage(String query) async {
+    final esv = EsvApiClient();
+    if (!esv.isConfigured) return false;
+
     await stopAllPlayback();
+    if (!ref.mounted) return false;
+    state = state.copyWith(
+      isLoading: true,
+      clearLastError: true,
+      clearInfoNotice: true,
+      audioMode: AudioMode.tts,
+      highlightStart: 0,
+      highlightEnd: 0,
+    );
+
+    try {
+      final verses = await esv.fetchVerseByVerse(query);
+      if (!ref.mounted) return false;
+      if (verses.isEmpty) {
+        state = state.copyWith(isLoading: false);
+        return false;
+      }
+
+      final verseStr = '${verses.map((verse) => verse.text).join(' ')} $kEsvShortCopyright';
+      state = state.copyWith(
+        currentChapter: ChapterInfo(
+          bookCode: 'VRS',
+          bookName: EsvApiClient.joinedReference(verses),
+          chapterNumber: 1,
+          audioStreamUrl: '',
+          textContent: verseStr,
+        ),
+        infoNotice: 'ESV text loaded. $kEsvShortCopyright $kEsvCopyrightNotice',
+      );
+      await _playTts(verseStr);
+      return true;
+    } catch (e) {
+      AppLogger.error('ESV verse fetch failed', error: e);
+      if (ref.mounted) state = state.copyWith(isLoading: false);
+      return false;
+    }
+  }
+
+  Future<void> fetchAndPlaySingleVerse(String query, {bool tryEsv = true}) async {
+    if (tryEsv && await tryPlayEsvPassage(query)) return;
+
+    await stopAllPlayback();
+    if (!ref.mounted) return;
 
     state = state.copyWith(
       isLoading: true,

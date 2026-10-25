@@ -1,0 +1,39 @@
+# ESV single-verse and range lookup.
+#
+# The app under test must be installed from a build that received
+# --dart-define=ESV_API_KEY=$ESV_API_KEY. Do not put the key in this file.
+# Chapter chips stay on API.Bible. This flow types a verse query instead.
+#
+# Record a video with: maestro record .maestro/esv_verse_lookup_flow.yaml
+# See lesser_llm_esv_playback_videos.md for the full device steps.
+
+appId: com.example.selah_prototype_audio_13sep2026
+---
+- launchApp:
+    clearState: false
+- waitForAnimationToEnd
+
+- assertVisible:
+    text: ".*SELAH.*"
+
+# The search field boots with "John 1". Replace it with one verse.
+- tapOn: "John 1"
+- eraseText
+- inputText: "John 11:35"
+- tapOn: "Play"
+- extendedWaitUntil:
+    visible: ".*\\(ESV\\).*"
+    timeout: 25000
+- takeScreenshot: docs/artifacts/screenshots/esv_john_11_35
+
+# Same-chapter range must come back as ESV text, not a silent failure.
+- tapOn:
+    text: "John 11:35"
+    optional: true
+- eraseText
+- inputText: "1 Cor 13:4-7"
+- tapOn: "Play"
+- extendedWaitUntil:
+    visible: ".*\\(ESV\\).*"
+    timeout: 45000
+- takeScreenshot: docs/artifacts/screenshots/esv_1_cor_13_4_7

@@ -7,7 +7,8 @@
       "request": "launch",
       "toolArgs": [
         "--dart-define=API_BIBLE_KEY=${env:API_BIBLE_KEY}",
-        "--dart-define=APTABASE_KEY=${env:APTABASE_KEY}"
+        "--dart-define=APTABASE_KEY=${env:APTABASE_KEY}",
+        "--dart-define=ESV_API_KEY=${env:ESV_API_KEY}"
       ],
       "web": true
     },
@@ -17,7 +18,8 @@
       "request": "launch",
       "toolArgs": [
         "--dart-define=API_BIBLE_KEY=${env:API_BIBLE_KEY}",
-        "--dart-define=APTABASE_KEY=${env:APTABASE_KEY}"
+        "--dart-define=APTABASE_KEY=${env:APTABASE_KEY}",
+        "--dart-define=ESV_API_KEY=${env:ESV_API_KEY}"
       ]
     },
     {
@@ -26,7 +28,8 @@
       "request": "launch",
       "toolArgs": [
         "--dart-define=API_BIBLE_KEY=${env:API_BIBLE_KEY}",
-        "--dart-define=APTABASE_KEY=${env:APTABASE_KEY}"
+        "--dart-define=APTABASE_KEY=${env:APTABASE_KEY}",
+        "--dart-define=ESV_API_KEY=${env:ESV_API_KEY}"
       ]
     }
   ]
