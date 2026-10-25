@@ -61,6 +61,7 @@ class AppLogger {
       ..writeln('Audio Mode: $audioMode')
       ..writeln('API.Bible Key Configured: ${kApiBibleKey != "REDACTED" && kApiBibleKey.isNotEmpty}')
       ..writeln('Aptabase Key Configured: ${kAptabaseAppKey != "REDACTED" && kAptabaseAppKey.isNotEmpty}')
+      ..writeln('ESV Key Configured: ${kEsvApiKey != "REDACTED" && kEsvApiKey.isNotEmpty}')
       ..writeln('--- RECENT LOGS (${_inMemoryLogs.length}) ---');
     for (final line in _inMemoryLogs) {
       buffer.writeln(line);
@@ -77,6 +78,9 @@ class AppLogger {
     }
     if (kAptabaseAppKey != 'REDACTED' && kAptabaseAppKey.isNotEmpty) {
       sanitized = sanitized.replaceAll(kAptabaseAppKey, '[REDACTED_APTABASE_KEY]');
+    }
+    if (kEsvApiKey != 'REDACTED' && kEsvApiKey.isNotEmpty) {
+      sanitized = sanitized.replaceAll(kEsvApiKey, '[REDACTED_ESV_API_KEY]');
     }
     return sanitized;
   }

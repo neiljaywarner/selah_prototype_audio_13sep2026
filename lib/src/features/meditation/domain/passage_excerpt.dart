@@ -1,4 +1,7 @@
+import '../../../core/constants/bible_canon.dart';
+import '../../../core/esv/esv_passage_policy.dart';
 import '../../../core/karaoke/timestamp_loader.dart';
+import 'chapter_info.dart';
 
 /// Audio window `[start, end)` within a full-chapter narrator stream.
 typedef ClipWindow = ({Duration start, Duration end});
@@ -76,6 +79,27 @@ class PassageExcerpt {
 
     return (start: Duration(milliseconds: start), end: Duration(milliseconds: end));
   }
+
+  /// Crossway-friendly reference (e.g. `1 Cor 13:4-7`).
+  String toEsvPassageQuery() {
+    if (displayTitle != null && displayTitle!.trim().isNotEmpty) {
+      return EsvPassagePolicy.normalizePassageQuery(displayTitle!);
+    }
+    final book = BibleCanon.findBook(bookCode)?.name ?? bookCode;
+    if (startVerse == endVerse) {
+      return '$book $chapterNumber:$startVerse';
+    }
+    return '$book $chapterNumber:$startVerse-$endVerse';
+  }
+}
+
+/// Builds an ESV `q=` string from a featured chip or chapter picker selection.
+String? esvPassageQueryFor(ChapterInfo chapter, {PassageExcerpt? excerpt}) {
+  if (chapter.displayTitle != null && chapter.displayTitle!.trim().isNotEmpty) {
+    return EsvPassagePolicy.normalizePassageQuery(chapter.displayTitle!);
+  }
+  final effective = excerpt ?? PassageExcerpt.forChapter(chapter.bookCode, chapter.chapterNumber);
+  return effective?.toEsvPassageQuery();
 }
 
 /// The Top 12 Foundation Curated Meditations
@@ -318,10 +342,10 @@ const kCuratedExcerpts = [
   PassageExcerpt(
     bookCode: '1PE',
     chapterNumber: 5,
-    startVerse: 6,
-    endVerse: 7,
-    displayTitle: '1 Peter 5:6–7',
-    theme: 'Cast All Your Anxiety on Him',
+    startVerse: 7,
+    endVerse: 9,
+    displayTitle: '1 Peter 5:7–9',
+    theme: 'Cast All Your Anxieties on Him',
   ),
   PassageExcerpt(
     bookCode: 'PSA',

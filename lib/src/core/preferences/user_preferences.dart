@@ -44,6 +44,14 @@ class UserPreferences {
     list.remove(ref);
     await prefs.setStringList(savedChaptersKey, list);
   }
+  static const experimentalApiBibleNarratorKey = 'selah.experimental_api_bible_narrator';
+
+  bool get experimentalApiBibleNarrator =>
+      _prefs?.getBool(experimentalApiBibleNarratorKey) ?? false;
+
+  Future<void> setExperimentalApiBibleNarrator(bool value) async =>
+      _prefs?.setBool(experimentalApiBibleNarratorKey, value);
+
   static const showWorkInProgressFeaturesKey = 'selah.show_work_in_progress_features';
 
   bool get showWorkInProgressFeatures =>

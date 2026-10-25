@@ -96,6 +96,18 @@ if [ -n "${API_BIBLE_KEY:-}" ]; then
   echo "Found API_BIBLE_KEY in environment; passing via --dart-define"
   BUILD_ARGS+=(--dart-define=API_BIBLE_KEY="$API_BIBLE_KEY")
 fi
+if [ -n "${APTABASE_KEY:-}" ]; then
+  echo "Found APTABASE_KEY in environment; passing via --dart-define"
+  BUILD_ARGS+=(--dart-define=APTABASE_KEY="$APTABASE_KEY")
+fi
+if [ -n "${POSTHOG_KEY:-}" ]; then
+  echo "Found POSTHOG_KEY in environment; passing via --dart-define"
+  BUILD_ARGS+=(--dart-define=POSTHOG_KEY="$POSTHOG_KEY")
+fi
+if [ -n "${ESV_API_KEY:-}" ]; then
+  echo "Found ESV_API_KEY in environment; passing via --dart-define"
+  BUILD_ARGS+=(--dart-define=ESV_API_KEY="$ESV_API_KEY")
+fi
 flutter build apk --release "${BUILD_ARGS[@]}"
 
 if [ ! -f "$APK_PATH" ]; then

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/esv/esv_passage_policy.dart';
 import '../../../../core/preferences/user_preferences.dart';
 import '../../../../core/logging/app_logger.dart';
 import '../../../../core/remote_config/remote_config_service.dart';
@@ -15,6 +16,8 @@ class SettingsBottomSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(chapterPlayerProvider);
     final notifier = ref.read(chapterPlayerProvider.notifier);
+    final policy = ref.watch(esvPassagePolicyProvider);
+    final experimentalNarrator = ref.watch(experimentalApiBibleNarratorProvider);
     final remoteConfig = ref.watch(remoteConfigProvider);
     final knobOptions = remoteConfig.parsedKnobOptions;
     final variantGroup = knobOptions.length > 5 ? 'slider_1_to_25' : 'curated_1_3_7_inf';
@@ -48,13 +51,21 @@ class SettingsBottomSheet extends ConsumerWidget {
           const Divider(color: Colors.white12),
           const SizedBox(height: 12),
 
-          const Text(
-            'BIBLE TRANSLATION',
-            style: TextStyle(fontSize: 11, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
+          Text(
+            policy.useEsvForPassages ? 'PASSAGE TEXT (ESV)' : 'BIBLE TRANSLATION',
+            style: const TextStyle(fontSize: 11, color: Color(0xFF6366F1), fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
+          if (policy.useEsvForPassages)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Text(
+                'Curated passages and verse search use Crossway ESV text with on-device narration.',
+                style: TextStyle(fontSize: 11, color: Colors.white54, height: 1.35),
+              ),
+            ),
           Row(
-            children: BibleTranslation.values.map((item) {
+            children: policy.selectableTranslations.map((item) {
               final isSel = state.activeTranslation == item.code;
               return Expanded(
                 child: GestureDetector(
@@ -102,6 +113,29 @@ class SettingsBottomSheet extends ConsumerWidget {
             state.translation.copyright,
             style: const TextStyle(fontSize: 10, color: Colors.white38),
           ),
+          if (isEsvApiConfigured && kEnableExperimentalApiBibleDevFlag) ...[
+            const SizedBox(height: 12),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text(
+                'Preview: API.Bible narrator translations',
+                style: TextStyle(fontSize: 13, color: Colors.white),
+              ),
+              subtitle: const Text(
+                'Experimental BSB / WEB / NIV human audio and WhisperX clips. '
+                'Turn off to stay on ESV passage text only.',
+                style: TextStyle(fontSize: 11, color: Colors.white38),
+              ),
+              value: experimentalNarrator,
+              activeThumbColor: const Color(0xFFFBBF24),
+              onChanged: (enabled) async {
+                await ref.read(experimentalApiBibleNarratorProvider.notifier).setEnabled(enabled);
+                if (!enabled && isEsvApiConfigured) {
+                  notifier.setTranslation(BibleTranslation.esv.code, force: true);
+                }
+              },
+            ),
+          ],
           const SizedBox(height: 16),
 
           const Text(

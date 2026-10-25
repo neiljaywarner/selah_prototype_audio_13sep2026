@@ -26,6 +26,9 @@ Selah requires API keys injected at compile-time via `--dart-define`:
 
 - `API_BIBLE_KEY`: API.Bible access key for fetching REST audio streams and text passages.
 - `APTABASE_KEY`: App analytics key for Aptabase telemetry.
+- `ESV_API_KEY`: Crossway ESV API token for single-verse and verse-range lookup. Chapter audio stays on API.Bible. Export it from `~/.zshrc` or a GitHub Actions secret named `ESV_API_KEY`. Never commit the value.
+
+Crossway's free tier allows 5,000 queries/day, 1,000/hour, and 60/minute, with at most 500 verses per request. A range such as `1 Cor 13:4-7` is one request per verse. Ranges longer than 60 verses are not split, so a pasted chapter cannot spend the whole minute budget.
 
 ---
 
@@ -35,21 +38,24 @@ Selah requires API keys injected at compile-time via `--dart-define`:
 ```bash
 flutter run -d chrome \
   --dart-define=API_BIBLE_KEY=$API_BIBLE_KEY \
-  --dart-define=APTABASE_KEY=$APTABASE_KEY
+  --dart-define=APTABASE_KEY=$APTABASE_KEY \
+  --dart-define=ESV_API_KEY=$ESV_API_KEY
 ```
 
 ### 2. Android (Physical Device or Emulator)
 ```bash
 flutter run -d <android-device-id> \
   --dart-define=API_BIBLE_KEY=$API_BIBLE_KEY \
-  --dart-define=APTABASE_KEY=$APTABASE_KEY
+  --dart-define=APTABASE_KEY=$APTABASE_KEY \
+  --dart-define=ESV_API_KEY=$ESV_API_KEY
 ```
 
 ### 3. iOS (Simulator or Physical iPhone)
 ```bash
 flutter run -d <ios-device-id> \
   --dart-define=API_BIBLE_KEY=$API_BIBLE_KEY \
-  --dart-define=APTABASE_KEY=$APTABASE_KEY
+  --dart-define=APTABASE_KEY=$APTABASE_KEY \
+  --dart-define=ESV_API_KEY=$ESV_API_KEY
 ```
 
 ---
@@ -60,7 +66,8 @@ flutter run -d <ios-device-id> \
 ```bash
 flutter build web --release \
   --dart-define=API_BIBLE_KEY=$API_BIBLE_KEY \
-  --dart-define=APTABASE_KEY=$APTABASE_KEY
+  --dart-define=APTABASE_KEY=$APTABASE_KEY \
+  --dart-define=ESV_API_KEY=$ESV_API_KEY
 ```
 *Output: `build/web/`*
 
@@ -86,7 +93,8 @@ Automated Web PWA and Android APK deployment pipelines are documented in the [Co
 ```bash
 flutter build appbundle --release \
   --dart-define=API_BIBLE_KEY=$API_BIBLE_KEY \
-  --dart-define=APTABASE_KEY=$APTABASE_KEY
+  --dart-define=APTABASE_KEY=$APTABASE_KEY \
+  --dart-define=ESV_API_KEY=$ESV_API_KEY
 ```
 *Output: `build/app/outputs/bundle/release/app-release.aab`*
 
@@ -94,7 +102,8 @@ flutter build appbundle --release \
 ```bash
 flutter build ipa --release \
   --dart-define=API_BIBLE_KEY=$API_BIBLE_KEY \
-  --dart-define=APTABASE_KEY=$APTABASE_KEY
+  --dart-define=APTABASE_KEY=$APTABASE_KEY \
+  --dart-define=ESV_API_KEY=$ESV_API_KEY
 ```
 *Output: `build/ios/archive/Runner.xcarchive` and `build/ios/ipa/selah.ipa`*
 
@@ -103,10 +112,10 @@ flutter build ipa --release \
 ## 🛠️ IDE Run Configurations
 
 ### VS Code
-A launch configuration is pre-configured in `.vscode/launch.json`. Ensure `API_BIBLE_KEY` and `APTABASE_KEY` are exported in your terminal environment or `.zshrc`.
+A launch configuration is pre-configured in `.vscode/launch.json`. Ensure `API_BIBLE_KEY`, `APTABASE_KEY`, and `ESV_API_KEY` are exported in your terminal environment or `.zshrc`. GitHub Actions preview builds read the same names from repository secrets.
 
 ### Android Studio / IntelliJ
-Add `--dart-define=API_BIBLE_KEY=$API_BIBLE_KEY --dart-define=APTABASE_KEY=$APTABASE_KEY` to your Run/Debug Configuration's **Additional run args**.
+Add `--dart-define=API_BIBLE_KEY=$API_BIBLE_KEY --dart-define=APTABASE_KEY=$APTABASE_KEY --dart-define=ESV_API_KEY=$ESV_API_KEY` to your Run/Debug Configuration's **Additional run args**.
 
 ---
 

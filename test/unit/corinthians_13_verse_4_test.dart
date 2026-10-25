@@ -215,10 +215,10 @@ void main() {
       }
     });
 
-    test('kFeaturedChapters contains exactly 4 curated demo passages', () {
-      expect(kFeaturedChapters.length, equals(4));
+    test('kFeaturedChapters contains curated demo passages', () {
+      expect(kFeaturedChapters.length, equals(5));
       final references = kFeaturedChapters.map((c) => c.reference).toList();
-      expect(references, equals(['1 Cor 13:4–7', 'Matt 11:28–30', 'Rom 8:31–39', 'Psalm 23']));
+      expect(references, equals(['1 Cor 13:4–7', 'Matt 11:28–30', 'Rom 8:31–39', 'Psalm 23', '1 Peter 5:7–9']));
 
       // Matthew 11:28-30
       final mat = kFeaturedChapters.firstWhere((c) => c.bookCode == 'MAT');
@@ -231,6 +231,10 @@ void main() {
       // Psalm 23
       final psa = kFeaturedChapters.firstWhere((c) => c.bookCode == 'PSA');
       expect(psa.textContent, startsWith('The LORD is my shepherd; I shall not want.'));
+
+      // 1 Peter 5:7-9
+      final pet = kFeaturedChapters.firstWhere((c) => c.bookCode == '1PE');
+      expect(pet.textContent, startsWith('Casting all your anxieties on him'));
     });
 
     test('OfflineScriptureCache contains text for all 4 curated demo passages in BSB and WEB', () {

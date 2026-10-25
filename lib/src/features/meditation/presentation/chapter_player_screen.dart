@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
 import '../../../core/constants/bible_canon.dart';
+import '../../../core/esv/esv_passage_policy.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/picker/bible_reference_parser.dart';
 import '../../../core/preferences/user_preferences.dart';
@@ -73,8 +76,34 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     setState(() => _searchSuggestions = []);
 
     if (raw.contains(':')) {
-      // Check for curated passages (1 Cor 13:4-7, Matt 11:28-30, Rom 8:31-39, Psalm 23)
-      // If user typed a verse range (e.g. "col 1:17-20" or "matt 11:28-30")
+      unawaited(_preferEsvThenExistingVerseQuery(raw));
+      return;
+    }
+
+    _submitBookOrChapter(raw);
+  }
+
+  /// Verse and range searches use ESV when `ESV_API_KEY` is compiled in.
+  /// Otherwise the existing narrator excerpt / bible-api.com path runs.
+  Future<void> _preferEsvThenExistingVerseQuery(String raw) async {
+    final played = await ref.read(chapterPlayerProvider.notifier).tryPlayEsvPassage(raw);
+    if (!mounted) return;
+    if (played) {
+      ref.read(userPreferencesProvider).saveChapter(raw);
+      setState(() {});
+      return;
+    }
+    _submitColonQueryWithoutEsv(raw);
+  }
+
+  void _submitColonQueryWithoutEsv(String raw) {
+    if (ref.read(esvPassagePolicyProvider).useEsvForPassages) {
+      AppLogger.logEvent('request_single_verse', {'query': raw, 'esv_failed': true});
+      return;
+    }
+
+    // Check for curated passages (1 Cor 13:4-7, Matt 11:28-30, Rom 8:31-39, Psalm 23)
+    // If user typed a verse range (e.g. "col 1:17-20" or "matt 11:28-30")
       if (raw.contains('-') || raw.contains('–')) {
         final parsedList = BibleReferenceParser.getSuggestions(raw);
         if (parsedList.isNotEmpty) {
@@ -158,11 +187,11 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
 
       AppLogger.logEvent('request_single_verse', {'query': raw});
       ref.read(userPreferencesProvider).saveChapter(raw);
-      ref.read(chapterPlayerProvider.notifier).fetchAndPlaySingleVerse(raw);
+      ref.read(chapterPlayerProvider.notifier).fetchAndPlaySingleVerse(raw, tryEsv: false);
       setState(() {});
-      return;
-    }
+  }
 
+  void _submitBookOrChapter(String raw) {
     final parsedList = BibleReferenceParser.getSuggestions(raw);
     if (parsedList.isNotEmpty) {
       final match = parsedList.first;
