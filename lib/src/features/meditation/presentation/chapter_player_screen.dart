@@ -500,6 +500,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     final remoteConfig = ref.watch(remoteConfigProvider);
     final showWip = ref.watch(workInProgressFeaturesProvider);
     final isFeatureVotingEnabled = remoteConfig.featureVotingEnabled || showWip;
+    final policy = ref.watch(esvPassagePolicyProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -956,82 +957,100 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Translation Segmented Toggle (BSB, WEB, NIV)
-                            Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0F0E26),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.white12),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: BibleTranslation.values.map((tr) {
-                                  final isSelected = playerState.activeTranslation == tr.code;
-                                  return GestureDetector(
-                                    onTap: () => notifier.setTranslation(tr.code),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: isSelected
-                                            ? const Color(0xFF6366F1)
-                                            : Colors.transparent,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        tr.shortLabel,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                          color: isSelected ? Colors.white : Colors.white54,
+                        if (policy.showApiBibleTranslations)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Translation Segmented Toggle (BSB, WEB, NIV)
+                              Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0F0E26),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: Colors.white12),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: policy.selectableTranslations.map((tr) {
+                                    final isSelected = playerState.activeTranslation == tr.code;
+                                    return GestureDetector(
+                                      onTap: () => notifier.setTranslation(tr.code),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: isSelected
+                                              ? const Color(0xFF6366F1)
+                                              : Colors.transparent,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          tr.shortLabel,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: isSelected ? Colors.white : Colors.white54,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  );
-                                }).toList(),
+                                    );
+                                  }).toList(),
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 6),
-                            // Shuffle Translations Toggle Button
-                            Tooltip(
-                              message: playerState.shuffleTranslations
-                                  ? 'Translation Shuffle ON (Cycles BSB ↔ WEB ↔ NIV per repeat)'
-                                  : 'Turn on Translation Shuffle across repetitions',
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(10),
-                                  onTap: () => notifier.toggleShuffleTranslations(),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(5),
-                                    decoration: BoxDecoration(
-                                      color: playerState.shuffleTranslations
-                                          ? const Color(0xFFFBBF24).withValues(alpha: 0.25)
-                                          : const Color(0xFF0F0E26),
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
+                              const SizedBox(width: 6),
+                              // Shuffle Translations Toggle Button
+                              Tooltip(
+                                message: playerState.shuffleTranslations
+                                    ? 'Translation Shuffle ON (Cycles BSB ↔ WEB ↔ NIV per repeat)'
+                                    : 'Turn on Translation Shuffle across repetitions',
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(10),
+                                    onTap: () => notifier.toggleShuffleTranslations(),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(5),
+                                      decoration: BoxDecoration(
+                                        color: playerState.shuffleTranslations
+                                            ? const Color(0xFFFBBF24).withValues(alpha: 0.25)
+                                            : const Color(0xFF0F0E26),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: playerState.shuffleTranslations
+                                              ? const Color(0xFFFBBF24)
+                                              : Colors.white12,
+                                          width: playerState.shuffleTranslations ? 1.5 : 1.0,
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        Icons.shuffle_rounded,
+                                        size: 16,
                                         color: playerState.shuffleTranslations
                                             ? const Color(0xFFFBBF24)
-                                            : Colors.white12,
-                                        width: playerState.shuffleTranslations ? 1.5 : 1.0,
+                                            : Colors.white54,
                                       ),
-                                    ),
-                                    child: Icon(
-                                      Icons.shuffle_rounded,
-                                      size: 16,
-                                      color: playerState.shuffleTranslations
-                                          ? const Color(0xFFFBBF24)
-                                          : Colors.white54,
                                     ),
                                   ),
                                 ),
                               ),
+                            ],
+                          )
+                        else
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0F0E26),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.white12),
                             ),
-                          ],
-                        ),
+                            child: const Text(
+                              'ESV',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -1082,7 +1101,9 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                       children: [
                         Flexible(
                           child: Text(
-                            '${playerState.translation.fullName} (${playerState.activeTranslation}) • API.Bible${playerState.shuffleTranslations ? ' • 🔀 Shuffle Active' : ''}',
+                            playerState.activeTranslation == 'ESV'
+                                ? 'English Standard Version (ESV) • Crossway'
+                                : '${playerState.translation.fullName} (${playerState.activeTranslation}) • API.Bible${playerState.shuffleTranslations ? ' • 🔀 Shuffle Active' : ''}',
                             style: TextStyle(fontSize: 11, color: Colors.indigo.shade200),
                             textAlign: TextAlign.center,
                           ),

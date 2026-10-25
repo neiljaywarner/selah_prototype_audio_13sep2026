@@ -665,8 +665,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
             audioStreamUrl: directAudioUrl,
             textContent: verseStr,
           ),
-          infoNotice:
-              'ESV human narrator audio (David Cochran Heath). $kEsvShortCopyright $kEsvCopyrightNotice',
+          infoNotice: null,
         );
         play();
         return true;

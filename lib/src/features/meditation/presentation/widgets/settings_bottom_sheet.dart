@@ -60,7 +60,7 @@ class SettingsBottomSheet extends ConsumerWidget {
             const Padding(
               padding: EdgeInsets.only(bottom: 8),
               child: Text(
-                'Curated passages and verse search use Crossway ESV text with on-device narration.',
+                'Curated passages and verse search use Crossway ESV human narrator audio (David Cochran Heath).',
                 style: TextStyle(fontSize: 11, color: Colors.white54, height: 1.35),
               ),
             ),
