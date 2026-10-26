@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/esv/esv_passage_policy.dart';
+import '../domain/bible_translation.dart';
 import 'widgets/licensing_attribution_sheet.dart';
 
 /// Tasteful, peaceful modal dialog displaying Selah app credits, version info,
 /// copyright transparency (specifically distinguishing proprietary NIV from public domain),
 /// release notes, and publisher licensing links.
-class AboutSelahDialog extends StatelessWidget {
+class AboutSelahDialog extends ConsumerWidget {
   const AboutSelahDialog({super.key});
 
   static Future<void> show(BuildContext context) async {
@@ -16,13 +19,15 @@ class AboutSelahDialog extends StatelessWidget {
     );
 
     if (openLicensing == true && context.mounted) {
-      await LicensingAttributionSheet.show(context);
+      await LicensingAttributionSheet.show(context, translation: BibleTranslation.esv);
     }
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final screenHeight = MediaQuery.sizeOf(context).height;
+    final policy = ref.watch(esvPassagePolicyProvider);
+    final isEsvExclusive = policy.useEsvForPassages;
 
     return Dialog(
       backgroundColor: const Color(0xFF161536),
@@ -88,7 +93,7 @@ class AboutSelahDialog extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Scripture Audio Meditation • v0.3.1 (Build 42)',
+                          'Scripture Audio Meditation • v0.4.1 (Build 53)',
                           style: TextStyle(
                             color: Colors.indigo.shade200,
                             fontSize: 12,
@@ -142,43 +147,66 @@ class AboutSelahDialog extends StatelessWidget {
                       // Scripture Copyright Transparency Section
                       _buildSectionTitle('Scripture Copyrights & Attributions', Icons.verified_user_rounded),
                       const SizedBox(height: 8),
-                      _buildCopyrightCard(
-                        title: 'New International Version® (NIV®)',
-                        badgeText: 'COPYRIGHTED · NOT PUBLIC DOMAIN',
-                        badgeColor: const Color(0xFFFBBF24),
-                        body: 'The Holy Bible, New International Version® NIV® Copyright © 1973, 1978, 1984, 2011 by Biblica, Inc.® '
-                            'Used by Permission. All rights reserved worldwide.\n\n'
-                            'Audio: The Listener’s Bible®: NIV® Edition Audio ℗ 2011 by Max McLean. Used by permission.\n\n'
-                            'Delivered on-demand via API.Bible with active Fair Use Message System (FUMS) reporting. '
-                            'Per publisher licensing terms, proprietary audio streams are never saved or cached to disk.',
-                      ),
-                      const SizedBox(height: 10),
-                      _buildCopyrightCard(
-                        title: 'Berean Standard Bible (BSB)',
-                        badgeText: 'PUBLIC DOMAIN',
-                        badgeColor: Colors.greenAccent,
-                        body: 'The Holy Bible, Berean Standard Bible (BSB) text and narrator audio (narrated by Barry Hays) '
-                            'are dedicated to the public domain by the Berean Bible. '
-                            'Free to quote, memorize, loop, and distribute without restriction.',
-                      ),
-                      const SizedBox(height: 10),
-                      _buildCopyrightCard(
-                        title: 'World English Bible (WEB)',
-                        badgeText: 'PUBLIC DOMAIN',
-                        badgeColor: Colors.greenAccent,
-                        body: 'The World English Bible (WEB) text is in the public domain. '
-                            'New Testament dramatized audio ℗ 2013 Hosanna / Faith Comes By Hearing. Used by permission.',
-                      ),
+                      if (isEsvExclusive) ...[
+                        _buildCopyrightCard(
+                          title: 'English Standard Version® (ESV®)',
+                          badgeText: 'CROSSWAY · LICENSED AUDIO',
+                          badgeColor: const Color(0xFFFBBF24),
+                          body: 'Scripture quotations are from the ESV® Bible (The Holy Bible, English Standard Version®), '
+                              'copyright © 2001 by Crossway, a publishing ministry of Good News Publishers. '
+                              'Used by permission. All rights reserved.\n\n'
+                              'Audio: Hear the Word / Crossway audio narration ℗ Crossway, narrated by David Cochran Heath. '
+                              'Used by permission.\n\n'
+                              'Streamed on-demand via Crossway API with pure human voice narration.',
+                        ),
+                      ] else ...[
+                        _buildCopyrightCard(
+                          title: 'English Standard Version® (ESV®)',
+                          badgeText: 'CROSSWAY · LICENSED AUDIO',
+                          badgeColor: const Color(0xFFFBBF24),
+                          body: 'Scripture quotations are from the ESV® Bible (The Holy Bible, English Standard Version®), '
+                              'copyright © 2001 by Crossway, a publishing ministry of Good News Publishers. '
+                              'Used by permission. All rights reserved.\n\n'
+                              'Audio: Hear the Word / Crossway audio narration ℗ Crossway, narrated by David Cochran Heath.',
+                        ),
+                        const SizedBox(height: 10),
+                        _buildCopyrightCard(
+                          title: 'New International Version® (NIV®)',
+                          badgeText: 'COPYRIGHTED · NOT PUBLIC DOMAIN',
+                          badgeColor: const Color(0xFFFBBF24),
+                          body: 'The Holy Bible, New International Version® NIV® Copyright © 1973, 1978, 1984, 2011 by Biblica, Inc.® '
+                              'Used by Permission. All rights reserved worldwide.\n\n'
+                              'Audio: The Listener’s Bible®: NIV® Edition Audio ℗ 2011 by Max McLean. Used by permission.\n\n'
+                              'Delivered on-demand via API.Bible with active Fair Use Message System (FUMS) reporting.',
+                        ),
+                        const SizedBox(height: 10),
+                        _buildCopyrightCard(
+                          title: 'Berean Standard Bible (BSB)',
+                          badgeText: 'PUBLIC DOMAIN',
+                          badgeColor: Colors.greenAccent,
+                          body: 'The Holy Bible, Berean Standard Bible (BSB) text and narrator audio (narrated by Barry Hays) '
+                              'are dedicated to the public domain by the Berean Bible. '
+                              'Free to quote, memorize, loop, and distribute without restriction.',
+                        ),
+                        const SizedBox(height: 10),
+                        _buildCopyrightCard(
+                          title: 'World English Bible (WEB)',
+                          badgeText: 'PUBLIC DOMAIN',
+                          badgeColor: Colors.greenAccent,
+                          body: 'The World English Bible (WEB) text is in the public domain. '
+                              'New Testament dramatized audio ℗ 2013 Hosanna / Faith Comes By Hearing. Used by permission.',
+                        ),
+                      ],
                       const SizedBox(height: 20),
 
                       // Release Notes Section
-                      _buildSectionTitle('Release Notes (v0.3.1)', Icons.auto_awesome_rounded),
+                      _buildSectionTitle('Release Notes (v0.4.1)', Icons.auto_awesome_rounded),
                       const SizedBox(height: 8),
-                      _buildReleaseBullet('Natural Voice Synthesis: Google Speech Services & Neural voice matching for peaceful contemplative cadence on NIV excerpts.'),
-                      _buildReleaseBullet('Top 12 Contemplative Passages: Full WhisperX acoustic silence calibration across Matt 11, 1 Cor 13, Rom 8, Psalm 23, Psalm 62, Col 1, Psalm 91, John 3, Phil 4, Prov 3, Isa 40, and Rom 12.'),
-                      _buildReleaseBullet('Interactive Community Feedback: Seamless in-app feedback submission to private GitHub triage queue and Doorbell.io.'),
-                      _buildReleaseBullet('Repetition Meditation: Custom repetition looping with 4-second prayer silence gaps.'),
-                      _buildReleaseBullet('Full Copyright Transparency: Explicit distinction between licensed publisher streams and public domain scriptures.'),
+                      _buildReleaseBullet('Pure Human Narrator Audio: David Cochran Heath contemplative narration streamed directly for ESV passages.'),
+                      _buildReleaseBullet('Zero TTS Fallback Guard: Strict protection against accidental synthetic speech fallback in ESV soft-launch mode.'),
+                      _buildReleaseBullet('Seamless Passage Replay: Complete audio source pipeline refresh for peaceful repetitive reflection on 1 Cor 13:4–7.'),
+                      _buildReleaseBullet('Synchronized Search Bar: Search input dynamically mirrors current active meditation passage on startup.'),
+                      _buildReleaseBullet('Cache-Busting Web Headers: Instant updates delivered on every deployment with zero stale service worker caching.'),
                       const SizedBox(height: 20),
 
                       // Publisher Licensing Sheet Button

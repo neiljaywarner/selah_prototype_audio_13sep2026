@@ -46,7 +46,9 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController(text: 'John 1');
+    final initialPassage = ref.read(chapterPlayerProvider).currentChapter.displayTitle ??
+        ref.read(chapterPlayerProvider).currentChapter.reference;
+    _searchController = TextEditingController(text: initialPassage);
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -528,7 +530,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
-                    'Scripture Audio Meditation v0.2',
+                    'Scripture Audio Meditation v0.4.1',
                     style: TextStyle(fontSize: 10, color: Colors.indigo.shade200),
                     overflow: TextOverflow.ellipsis,
                   ),
