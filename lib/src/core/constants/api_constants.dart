@@ -29,6 +29,24 @@ const String kWebTextBibleId = '9879dbb7cfe39e4d-01';
 const String kEsvBaseUrl = 'https://api.esv.org/v3';
 const String kEsvApiKey = String.fromEnvironment('ESV_API_KEY', defaultValue: 'REDACTED');
 
+/// Strips surrounding whitespace and accidental shell quotes (`'...'` or `"..."`)
+/// from `--dart-define` values, returning `''` when unset or `REDACTED`.
+String sanitizeEnvSecret(String raw) {
+  var cleaned = raw.trim();
+  while (cleaned.length >= 2 &&
+      ((cleaned.startsWith("'") && cleaned.endsWith("'")) ||
+          (cleaned.startsWith('"') && cleaned.endsWith('"')))) {
+    cleaned = cleaned.substring(1, cleaned.length - 1).trim();
+  }
+  if (cleaned.isEmpty || cleaned.toUpperCase() == 'REDACTED') {
+    return '';
+  }
+  return cleaned;
+}
+
+String get sanitizedEsvApiKey => sanitizeEnvSecret(kEsvApiKey);
+String get sanitizedApiBibleKey => sanitizeEnvSecret(kApiBibleKey);
+
 /// Short mark Crossway requires next to quoted ESV text.
 const String kEsvShortCopyright = '(ESV)';
 

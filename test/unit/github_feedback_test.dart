@@ -55,7 +55,7 @@ void main() {
 
       expect(success, isTrue);
       expect(mockAdapter.lastRequestOptions.uri.toString(),
-          'https://api.github.com/repos/njwandroid/selahfeedback/issues');
+          'https://api.github.com/repos/neiljaywarner/selahprivatefeedback/issues');
       expect(mockAdapter.lastRequestOptions.headers['Authorization'], 'Bearer test_token_secret_123');
       expect(mockAdapter.lastRequestOptions.headers['Accept'], 'application/vnd.github.v3+json');
 
@@ -74,10 +74,10 @@ void main() {
         dioClient: testDio,
       );
 
-      expect(url, contains('njwandroid/selahfeedback/blob/main/feedback_assets/test_shot.png?raw=true'));
+      expect(url, contains('neiljaywarner/selahprivatefeedback/main/feedback_assets/test_shot.png'));
       expect(mockAdapter.lastRequestOptions.method, 'PUT');
       expect(mockAdapter.lastRequestOptions.uri.toString(),
-          'https://api.github.com/repos/njwandroid/selahfeedback/contents/feedback_assets/test_shot.png');
+          'https://api.github.com/repos/neiljaywarner/selahprivatefeedback/contents/feedback_assets/test_shot.png');
       final payload = mockAdapter.lastData as Map<String, dynamic>;
       expect(payload['branch'], 'main');
       expect(payload['content'], isNotEmpty);

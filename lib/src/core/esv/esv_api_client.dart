@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../constants/api_constants.dart';
 
@@ -21,7 +22,7 @@ class EsvVerse {
 /// Chapter audio stays on API.Bible. This client does not cache text to disk.
 class EsvApiClient {
   EsvApiClient({Dio? dio, String? apiKey})
-    : _apiKey = apiKey ?? kEsvApiKey,
+    : _apiKey = sanitizeEnvSecret(apiKey ?? kEsvApiKey),
       _dio =
           dio ??
           Dio(
@@ -37,7 +38,36 @@ class EsvApiClient {
   final String _apiKey;
 
   String get apiKey => _apiKey;
-  bool get isConfigured => _apiKey.isNotEmpty && _apiKey != 'REDACTED';
+  bool get isConfigured => _apiKey.isNotEmpty;
+
+  /// Direct Crossway Hear-the-Word CDN URL for [query].
+  ///
+  /// Matches the `302 Location` target returned by `GET /v3/passage/audio/?q=...`
+  /// (`https://audio.esv.org/hw/<encoded>.mp3`). Works directly in HTML5 `<audio>`
+  /// on Web without custom HTTP headers or XHR CORS preflight errors.
+  static String directHwAudioUrl(String query) {
+    final normalized = query.trim().replaceAll(RegExp(r'[–—]'), '-');
+    return 'https://audio.esv.org/hw/${Uri.encodeComponent(normalized)}.mp3';
+  }
+
+  /// Resolves a playable human narrator MP3 URL for [query].
+  ///
+  /// On Web (`isWeb: true`), browser `XMLHttpRequest` cannot stop at `302`
+  /// (`followRedirects: false` is ignored) and fails CORS on `audio.esv.org`,
+  /// while HTML5 `<audio>` cannot attach `Authorization` headers. Returning
+  /// [directHwAudioUrl] allows `<audio>` to stream Crossway MP3s natively.
+  Future<String?> resolvePassageAudioUrl(
+    String query, {
+    bool isWeb = kIsWeb,
+  }) async {
+    if (!isConfigured) return null;
+    final normalized = query.trim().replaceAll(RegExp(r'[–—]'), '-');
+    if (normalized.isEmpty) return null;
+    if (isWeb) {
+      return directHwAudioUrl(normalized);
+    }
+    return await fetchPassageAudioUrl(normalized) ?? directHwAudioUrl(normalized);
+  }
 
   /// Resolves the direct human narrator MP3 URL for a passage query.
   /// Follows the redirects from api.esv.org to audio.esv.org.

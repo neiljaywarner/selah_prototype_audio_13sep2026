@@ -26,7 +26,7 @@ class FeedbackService {
     return token.isNotEmpty && token != 'REDACTED';
   }
   static const String defaultFeedbackEmail = 'neilwarner+selah@gmail.com';
-  static const String privateGitHubRepo = 'njwandroid/selahfeedback';
+  static const String privateGitHubRepo = 'neiljaywarner/selahprivatefeedback';
 
   /// Submits feedback to Doorbell.io with NPS, properties, and tags.
   static Future<bool> submitDoorbellFeedback({
@@ -325,7 +325,7 @@ ${(message != null && message.trim().isNotEmpty) ? message.trim() : '_No comment
       final isSuccess = response.statusCode == 200 || response.statusCode == 201;
       if (isSuccess) {
         AppLogger.info('Screenshot uploaded successfully to $privateGitHubRepo/feedback_assets/$fileName');
-        return 'https://github.com/$privateGitHubRepo/blob/main/feedback_assets/$fileName?raw=true';
+        return 'https://raw.githubusercontent.com/$privateGitHubRepo/main/feedback_assets/$fileName';
       }
     } catch (e, stack) {
       AppLogger.error('Failed to upload screenshot asset to $privateGitHubRepo',

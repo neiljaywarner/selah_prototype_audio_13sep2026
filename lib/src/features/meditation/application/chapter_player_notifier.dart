@@ -31,28 +31,37 @@ final chapterPlayerProvider = NotifierProvider<ChapterPlayerNotifier, ChapterPla
 );
 
 class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
-  late final AudioPlayer _audioPlayer;
-  late final FlutterTts _flutterTts;
-  late final Dio _dio;
+  late AudioPlayer _audioPlayer;
+  late FlutterTts _flutterTts;
+  late Dio _dio;
   Timer? _gapTimer;
   Timer? _sleepTimer;
   Timer? _volumeFadeTimer;
   StreamSubscription? _posSub;
   StreamSubscription? _durSub;
-  StreamSubscription? _stateSub;
   StreamSubscription? _eventSub;
+  StreamSubscription? _stateSub;
   List<VerseTimestamp>? _currentTimestamps;
 
   /// Start of the active clip within the full chapter stream. Player positions
   /// are clip-relative, while timestamps are chapter-absolute.
   Duration _clipOffset = Duration.zero;
 
+  bool get _isEsvModeActive {
+    final esv = ref.read(esvApiClientProvider);
+    final policy = ref.read(esvPassagePolicyProvider);
+    return policy.useEsvForPassages ||
+        (esv.isConfigured && state.activeTranslation == BibleTranslation.esv.code);
+  }
+
   String _getActiveApiKey() {
     try {
-      final remoteKey = ref.read(remoteConfigServiceProvider).getString('api_bible_key');
+      final remoteKey = sanitizeEnvSecret(
+        ref.read(remoteConfigServiceProvider).getString('api_bible_key'),
+      );
       if (remoteKey.isNotEmpty) return remoteKey;
     } catch (_) {}
-    return (kApiBibleKey != 'REDACTED' && kApiBibleKey.isNotEmpty) ? kApiBibleKey : '';
+    return sanitizedApiBibleKey;
   }
 
   @override
@@ -99,10 +108,10 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       _flutterTts.stop().catchError((_) => 0);
     });
 
-    final policy = ref.watch(esvPassagePolicyProvider);
+    final policy = ref.read(esvPassagePolicyProvider);
     String initialTranslation = policy.defaultTranslationCode;
     try {
-      final userPrefs = ref.watch(userPreferencesProvider);
+      final userPrefs = ref.read(userPreferencesProvider);
       final saved = userPrefs.lastTranslationCode;
       if (saved != null && saved.isNotEmpty) {
         final savedCode = BibleTranslation.fromCode(saved).code;
@@ -203,6 +212,16 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
           if (state.currentChapter.audioStreamUrl.startsWith('assets/')) {
             AppLogger.info('Attempting recovery of bundled narrator asset after playback error');
             loadChapter(state.currentChapter);
+          } else if (_isEsvModeActive) {
+            _audioPlayer.stop().catchError((_) {});
+            state = state.copyWith(
+              audioMode: AudioMode.narrator,
+              isPlaying: false,
+              isLoading: false,
+              clearInfoNotice: true,
+              lastError:
+                  'ESV human narrator audio stream unavailable. Please check your connection and tap Play to retry.',
+            );
           } else {
             _switchToTtsFallback(
               'Audio stream blocked or unavailable. Switched to Text-to-Speech (TTS).',
@@ -338,16 +357,28 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     final fallbackText = _fallbackChapterText(bookCode, chapterNumber, bookName);
     final effectiveExcerpt = excerpt ?? PassageExcerpt.forChapter(bookCode, chapterNumber);
 
-    final policy = ref.read(esvPassagePolicyProvider);
-    if (policy.useEsvForPassages) {
-      final query = effectiveExcerpt?.toEsvPassageQuery() ?? '$bookName $chapterNumber';
-      if (await tryPlayEsvPassage(EsvPassagePolicy.normalizePassageQuery(query))) {
+    if (_isEsvModeActive) {
+      final rawQuery = effectiveExcerpt?.toEsvPassageQuery() ??
+          (bookCode.toUpperCase() == 'VRS' ? bookName : '$bookName $chapterNumber');
+      final normalizedQuery = EsvPassagePolicy.normalizePassageQuery(rawQuery);
+      if (await tryPlayEsvPassage(normalizedQuery)) {
         state = state.copyWith(
           activeTranslation: BibleTranslation.esv.code,
           activeExcerpt: effectiveExcerpt,
         );
         return;
       }
+      if (!ref.mounted) return;
+      state = state.copyWith(
+        activeTranslation: BibleTranslation.esv.code,
+        audioMode: AudioMode.narrator,
+        isLoading: false,
+        isPlaying: false,
+        clearInfoNotice: true,
+        lastError: state.lastError ??
+            'ESV human narrator audio for "$normalizedQuery" could not be loaded.',
+      );
+      return;
     }
 
     state = state.copyWith(
@@ -405,7 +436,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       final text = state.currentChapter.textContent.isNotEmpty
           ? state.currentChapter.textContent
           : fallbackText;
-      final notice = kIsWeb
+      final notice = (kIsWeb && translation == BibleTranslation.niv)
           ? 'NIV audio stream is proprietary to Biblica / API.Bible. Narrating with Text-to-Speech (TTS).'
           : '${translation.fullName} (${translation.code}) excerpt narration — narrating with Text-to-Speech (TTS).';
       state = state.copyWith(
@@ -463,7 +494,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
             bookCode,
             chapterNumber,
           ) ?? fallbackText;
-      final noticeMessage = translation.isLicensed
+      final noticeMessage = translation == BibleTranslation.niv
           ? 'NIV audio stream currently unavailable. Narrating with contemplative voice.'
           : 'Narrator stream unavailable — narrating ${translation.fullName} (${translation.code}) with contemplative voice.';
       state = state.copyWith(isOffline: false);
@@ -529,7 +560,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
             chapterNumber,
           ) ?? fallbackText;
 
-      final noticeMessage = translation.isLicensed
+      final noticeMessage = translation == BibleTranslation.niv
           ? 'NIV audio stream currently unavailable. Narrating with contemplative voice.'
           : 'Narrator stream currently unavailable — narrating ${translation.fullName} (${translation.code}) with contemplative voice.';
 
@@ -608,7 +639,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   /// Returns false when the key is unset or the request fails, without
   /// replacing a later narrator or bible-api.com attempt.
   Future<bool> tryPlayEsvPassage(String query) async {
-    final esv = EsvApiClient();
+    final esv = ref.read(esvApiClientProvider);
     if (!esv.isConfigured) return false;
 
     await stopAllPlayback();
@@ -617,7 +648,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       isLoading: true,
       clearLastError: true,
       clearInfoNotice: true,
-      audioMode: AudioMode.tts,
+      audioMode: AudioMode.narrator,
+      activeTranslation: BibleTranslation.esv.code,
       highlightStart: 0,
       highlightEnd: 0,
     );
@@ -626,15 +658,21 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       final verses = await esv.fetchVerseByVerse(query);
       if (!ref.mounted) return false;
       if (verses.isEmpty) {
-        state = state.copyWith(isLoading: false);
+        state = state.copyWith(
+          isLoading: false,
+          isPlaying: false,
+          audioMode: AudioMode.narrator,
+          clearInfoNotice: true,
+          lastError: 'ESV passage "$query" could not be found.',
+        );
         return false;
       }
 
       final verseStr = '${verses.map((verse) => verse.text).join(' ')} $kEsvShortCopyright';
       final joinedRef = EsvApiClient.joinedReference(verses);
 
-      final directAudioUrl = await esv.fetchPassageAudioUrl(query) ??
-          'https://api.esv.org/v3/passage/audio/?q=${Uri.encodeComponent(query)}';
+      final directAudioUrl = await esv.resolvePassageAudioUrl(query) ??
+          EsvApiClient.directHwAudioUrl(query);
       try {
         final mediaItem = MediaItem(
           id: directAudioUrl,
@@ -643,9 +681,10 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
           artist: 'David Cochran Heath (ESV)',
           artUri: Uri.parse('https://selahword.web.app/icons/Icon-192.png'),
         );
+        final needsAuthHeader = directAudioUrl.contains('api.esv.org') && !kIsWeb;
         final source = AudioSource.uri(
           Uri.parse(directAudioUrl),
-          headers: {'Authorization': 'Token ${esv.apiKey}'},
+          headers: needsAuthHeader ? {'Authorization': 'Token ${esv.apiKey}'} : null,
           tag: mediaItem,
         );
         final dur = await _audioPlayer.setAudioSource(source);
@@ -665,9 +704,10 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
             audioStreamUrl: directAudioUrl,
             textContent: verseStr,
           ),
-          infoNotice: null,
+          clearInfoNotice: true,
+          clearLastError: true,
         );
-        play();
+        _audioPlayer.play();
         return true;
       } catch (audioErr) {
         AppLogger.error('ESV human audio playback failed: $audioErr');
@@ -675,6 +715,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
           state = state.copyWith(
             isLoading: false,
             isPlaying: false,
+            audioMode: AudioMode.narrator,
+            clearInfoNotice: true,
             lastError: 'ESV audio stream error: $audioErr',
           );
         }
@@ -682,20 +724,29 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       }
     } catch (e) {
       AppLogger.error('ESV verse fetch failed', error: e);
-      if (ref.mounted) state = state.copyWith(isLoading: false);
+      if (ref.mounted) {
+        state = state.copyWith(
+          isLoading: false,
+          isPlaying: false,
+          audioMode: AudioMode.narrator,
+          clearInfoNotice: true,
+          lastError: 'ESV passage "$query" could not be loaded. Please check your connection.',
+        );
+      }
       return false;
     }
   }
 
   Future<void> fetchAndPlaySingleVerse(String query, {bool tryEsv = true}) async {
-    if (tryEsv && await tryPlayEsvPassage(query)) return;
+    if ((tryEsv || _isEsvModeActive) && await tryPlayEsvPassage(query)) return;
 
-    final policy = ref.read(esvPassagePolicyProvider);
-    if (policy.useEsvForPassages) {
+    if (_isEsvModeActive) {
       state = state.copyWith(
         isLoading: false,
         isPlaying: false,
-        lastError: 'ESV passage "$query" could not be played.',
+        audioMode: AudioMode.narrator,
+        clearInfoNotice: true,
+        lastError: state.lastError ?? 'ESV passage "$query" could not be played.',
       );
       return;
     }
@@ -765,6 +816,17 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     await stopAllPlayback();
     if (!ref.mounted) return;
 
+    if (_isEsvModeActive) {
+      state = state.copyWith(
+        isLoading: false,
+        isPlaying: false,
+        audioMode: AudioMode.narrator,
+        clearInfoNotice: true,
+        lastError: state.lastError ?? 'ESV human narrator audio unavailable.',
+      );
+      return;
+    }
+
     final spoken = _spokenText(text);
     state = state.copyWith(
       isLoading: false,
@@ -790,6 +852,16 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
   void _switchToTtsFallback(String notice, {String? overrideText}) {
     if (!ref.mounted) return;
+    if (_isEsvModeActive) {
+      state = state.copyWith(
+        isLoading: false,
+        isPlaying: false,
+        audioMode: AudioMode.narrator,
+        clearInfoNotice: true,
+        lastError: state.lastError ?? 'ESV human narrator audio unavailable.',
+      );
+      return;
+    }
     final text = overrideText ?? state.currentChapter.textContent;
     state = state.copyWith(
       isLoading: false,
@@ -804,12 +876,14 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     await stopAllPlayback();
     if (!ref.mounted) return;
 
-    final policy = ref.read(esvPassagePolicyProvider);
-    if (policy.useEsvForPassages) {
-      final query = esvPassageQueryFor(chapter, excerpt: excerpt);
-      if (query != null && await tryPlayEsvPassage(query)) {
-        return;
-      }
+    if (_isEsvModeActive) {
+      final fallbackQuery = chapter.bookCode.toUpperCase() == 'VRS'
+          ? chapter.bookName
+          : '${chapter.bookName} ${chapter.chapterNumber}';
+      final query = esvPassageQueryFor(chapter, excerpt: excerpt) ??
+          EsvPassagePolicy.normalizePassageQuery(fallbackQuery);
+      await tryPlayEsvPassage(query);
+      return;
     }
 
     _currentTimestamps = await TimestampLoaderService.loadChapterTimestamps(
@@ -871,9 +945,10 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         artist: 'Human Narrator (${state.activeTranslation})',
         artUri: Uri.parse('https://selahword.web.app/icons/Icon-192.png'),
       );
-      final isEsvAudio = chapter.audioStreamUrl.contains('api.esv.org');
-      final audioHeaders = isEsvAudio && isEsvApiConfigured
-          ? {'Authorization': 'Token $kEsvApiKey'}
+      final esvClient = ref.read(esvApiClientProvider);
+      final isEsvAudio = chapter.audioStreamUrl.contains('api.esv.org') && !kIsWeb;
+      final audioHeaders = isEsvAudio && esvClient.isConfigured
+          ? {'Authorization': 'Token ${esvClient.apiKey}'}
           : null;
       final UriAudioSource baseSource = isAsset
           ? AudioSource.asset(chapter.audioStreamUrl, tag: mediaItem)
@@ -945,7 +1020,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     if (state.isPausedInGap) {
       _gapTimer?.cancel();
       state = state.copyWith(isPausedInGap: false, isPlaying: true);
-      if (state.audioMode == AudioMode.narrator) {
+      if (state.audioMode == AudioMode.narrator || _isEsvModeActive) {
         _audioPlayer.play();
       } else {
         _flutterTts.speak(_spokenText(state.currentChapter.textContent));
@@ -953,7 +1028,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       return;
     }
 
-    if (state.audioMode == AudioMode.narrator && state.currentChapter.audioStreamUrl.isEmpty) {
+    if ((state.audioMode == AudioMode.narrator || _isEsvModeActive) &&
+        state.currentChapter.audioStreamUrl.isEmpty) {
       await routeAndPlayChapter(
         bookCode: state.currentChapter.bookCode,
         chapterNumber: state.currentChapter.chapterNumber,
@@ -964,7 +1040,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
     state = state.copyWith(isPlaying: true, clearLastError: true);
 
-    if (state.audioMode == AudioMode.tts) {
+    if (state.audioMode == AudioMode.tts && !_isEsvModeActive) {
       await _flutterTts.speak(_spokenText(state.currentChapter.textContent));
       return;
     }
@@ -987,7 +1063,16 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
           'audio_mode': state.audioMode.name,
         },
       );
-      _switchToTtsFallback('Playback failed. Switched to Text-to-Speech (TTS).');
+      if (_isEsvModeActive) {
+        state = state.copyWith(
+          isPlaying: false,
+          audioMode: AudioMode.narrator,
+          clearInfoNotice: true,
+          lastError: 'ESV human narrator playback failed: $e',
+        );
+      } else {
+        _switchToTtsFallback('Playback failed. Switched to Text-to-Speech (TTS).');
+      }
     }
   }
 
@@ -1026,15 +1111,26 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
   void setTranslation(String translation, {bool force = false}) {
     final target = BibleTranslation.fromCode(translation);
-    if (state.activeTranslation == target.code) return;
-
     final policy = ref.read(esvPassagePolicyProvider);
     if (!force && !policy.showApiBibleTranslations && target.code != BibleTranslation.esv.code) {
       return;
     }
 
+    final shouldClearShuffle =
+        !policy.showApiBibleTranslations || target.code == BibleTranslation.esv.code;
+
+    if (state.activeTranslation == target.code) {
+      if (shouldClearShuffle && state.shuffleTranslations) {
+        state = state.copyWith(shuffleTranslations: false);
+      }
+      return;
+    }
+
     final previousTranslation = state.activeTranslation;
-    state = state.copyWith(activeTranslation: target.code);
+    state = state.copyWith(
+      activeTranslation: target.code,
+      shuffleTranslations: shouldClearShuffle ? false : state.shuffleTranslations,
+    );
 
     // Persist via SharedPreferences / LocalStorage for next launch
     try {
@@ -1178,6 +1274,12 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   void toggleShuffleTranslations() {
+    if (!ref.read(esvPassagePolicyProvider).showApiBibleTranslations) {
+      if (state.shuffleTranslations) {
+        state = state.copyWith(shuffleTranslations: false);
+      }
+      return;
+    }
     final next = !state.shuffleTranslations;
     state = state.copyWith(shuffleTranslations: next);
     AppLogger.logEvent('toggle_shuffle_translations', {'enabled': next});
@@ -1187,6 +1289,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   void cycleNextTranslation() {
+    if (!ref.read(esvPassagePolicyProvider).showApiBibleTranslations) return;
     const list = ['BSB', 'WEB', 'NIV'];
     final idx = list.indexOf(state.activeTranslation);
     final next = list[(idx + 1) % list.length];
@@ -1203,12 +1306,12 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       isPlaying: true,
     );
 
-    if (state.shuffleTranslations) {
+    if (state.shuffleTranslations && ref.read(esvPassagePolicyProvider).showApiBibleTranslations) {
       cycleNextTranslation();
       return;
     }
 
-    if (state.audioMode == AudioMode.narrator) {
+    if (state.audioMode == AudioMode.narrator || _isEsvModeActive) {
       try {
         AppLogger.info('Seeking narrator player to Duration.zero for loop $nextIteration of $repLabel');
         await _audioPlayer.seek(Duration.zero);

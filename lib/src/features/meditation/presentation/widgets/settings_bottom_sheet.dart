@@ -17,6 +17,7 @@ class SettingsBottomSheet extends ConsumerWidget {
     final state = ref.watch(chapterPlayerProvider);
     final notifier = ref.read(chapterPlayerProvider.notifier);
     final policy = ref.watch(esvPassagePolicyProvider);
+    final esvConfigured = ref.watch(esvApiClientProvider).isConfigured;
     final experimentalNarrator = ref.watch(experimentalApiBibleNarratorProvider);
     final remoteConfig = ref.watch(remoteConfigProvider);
     final knobOptions = remoteConfig.parsedKnobOptions;
@@ -113,7 +114,7 @@ class SettingsBottomSheet extends ConsumerWidget {
             state.translation.copyright,
             style: const TextStyle(fontSize: 10, color: Colors.white38),
           ),
-          if (isEsvApiConfigured && kEnableExperimentalApiBibleDevFlag) ...[
+          if (esvConfigured && kEnableExperimentalApiBibleDevFlag) ...[
             const SizedBox(height: 12),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
@@ -130,8 +131,11 @@ class SettingsBottomSheet extends ConsumerWidget {
               activeThumbColor: const Color(0xFFFBBF24),
               onChanged: (enabled) async {
                 await ref.read(experimentalApiBibleNarratorProvider.notifier).setEnabled(enabled);
-                if (!enabled && isEsvApiConfigured) {
-                  notifier.setTranslation(BibleTranslation.esv.code, force: true);
+                if (!enabled && esvConfigured) {
+                  ref.read(chapterPlayerProvider.notifier).setTranslation(
+                        BibleTranslation.esv.code,
+                        force: true,
+                      );
                 }
               },
             ),

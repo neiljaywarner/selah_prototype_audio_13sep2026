@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:selah_prototype_audio_13sep2026/src/core/constants/api_constants.dart';
 import 'package:selah_prototype_audio_13sep2026/src/core/esv/esv_api_client.dart';
 
 void main() {
@@ -44,10 +45,56 @@ void main() {
     );
   });
 
-  test('placeholder and empty keys are not configured', () {
+  test('placeholder and empty keys are not configured, and shell quotes are stripped', () {
+    expect(sanitizeEnvSecret('REDACTED'), '');
+    expect(sanitizeEnvSecret("'REDACTED'"), '');
+    expect(sanitizeEnvSecret('"REDACTED"'), '');
+    expect(sanitizeEnvSecret("'clean-token-123'"), 'clean-token-123');
+    expect(sanitizeEnvSecret(' "clean-token-456" '), 'clean-token-456');
+
     expect(EsvApiClient(apiKey: 'REDACTED').isConfigured, isFalse);
+    expect(EsvApiClient(apiKey: "'REDACTED'").isConfigured, isFalse);
     expect(EsvApiClient(apiKey: '').isConfigured, isFalse);
-    expect(EsvApiClient(apiKey: 'present').isConfigured, isTrue);
+
+    final quotedClient = EsvApiClient(apiKey: "'present-token'");
+    expect(quotedClient.isConfigured, isTrue);
+    expect(quotedClient.apiKey, 'present-token');
+  });
+
+  test('directHwAudioUrl builds headerless Crossway CDN MP3 URLs for Web <audio>', () {
+    expect(
+      EsvApiClient.directHwAudioUrl('1 Cor 13:4–7'),
+      'https://audio.esv.org/hw/1%20Cor%2013%3A4-7.mp3',
+    );
+    expect(
+      EsvApiClient.directHwAudioUrl('1 Peter 5:7–9'),
+      'https://audio.esv.org/hw/1%20Peter%205%3A7-9.mp3',
+    );
+    expect(
+      EsvApiClient.directHwAudioUrl('John 11:35'),
+      'https://audio.esv.org/hw/John%2011%3A35.mp3',
+    );
+  });
+
+  test('resolvePassageAudioUrl on Web skips XHR redirect and returns directHwAudioUrl', () async {
+    final adapter = _ScriptedEsvAdapter();
+    final dio = Dio(BaseOptions(baseUrl: 'https://api.esv.org/v3'));
+    dio.httpClientAdapter = adapter;
+    final client = EsvApiClient(dio: dio, apiKey: "'test-key'");
+
+    final url = await client.resolvePassageAudioUrl('1 Cor 13:4–7', isWeb: true);
+    expect(url, 'https://audio.esv.org/hw/1%20Cor%2013%3A4-7.mp3');
+    expect(adapter.queries, isEmpty, reason: 'Web must not trigger CORS-blocked audio XHR');
+  });
+
+  test('resolvePassageAudioUrl on Native falls back to directHwAudioUrl if redirect header missing', () async {
+    final adapter = _ScriptedEsvAdapter();
+    final dio = Dio(BaseOptions(baseUrl: 'https://api.esv.org/v3'));
+    dio.httpClientAdapter = adapter;
+    final client = EsvApiClient(dio: dio, apiKey: 'test-key');
+
+    final url = await client.resolvePassageAudioUrl('1 Peter 5:7–9', isWeb: false);
+    expect(url, 'https://audio.esv.org/hw/1%20Peter%205%3A7-9.mp3');
   });
 
   test('1 Cor 13:4-7 performs one HTTP call per verse', () async {

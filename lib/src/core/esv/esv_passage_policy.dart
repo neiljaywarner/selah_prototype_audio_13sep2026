@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/meditation/domain/bible_translation.dart';
 import '../constants/api_constants.dart';
 import '../preferences/user_preferences.dart';
+import 'esv_api_client.dart';
 
 /// Compile-time gate for showing the in-app experimental narrator toggle.
 const bool kEnableExperimentalApiBibleDevFlag = bool.fromEnvironment(
@@ -10,7 +11,9 @@ const bool kEnableExperimentalApiBibleDevFlag = bool.fromEnvironment(
   defaultValue: true,
 );
 
-bool get isEsvApiConfigured => kEsvApiKey.isNotEmpty && kEsvApiKey != 'REDACTED';
+bool get isEsvApiConfigured => sanitizedEsvApiKey.isNotEmpty;
+
+final esvApiClientProvider = Provider<EsvApiClient>((ref) => EsvApiClient());
 
 /// Decides whether passages load from Crossway ESV or API.Bible narrators.
 class EsvPassagePolicy {
@@ -55,9 +58,10 @@ class ExperimentalApiBibleNarratorNotifier extends Notifier<bool> {
 }
 
 final esvPassagePolicyProvider = Provider<EsvPassagePolicy>((ref) {
+  final esvClient = ref.watch(esvApiClientProvider);
   final experimental = ref.watch(experimentalApiBibleNarratorProvider);
   return EsvPassagePolicy(
-    esvConfigured: isEsvApiConfigured,
+    esvConfigured: esvClient.isConfigured,
     experimentalApiBibleNarrator: experimental,
   );
 });

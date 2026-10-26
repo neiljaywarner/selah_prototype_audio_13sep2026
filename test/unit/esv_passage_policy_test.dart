@@ -1,4 +1,6 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:selah_prototype_audio_13sep2026/src/core/esv/esv_api_client.dart';
 import 'package:selah_prototype_audio_13sep2026/src/core/esv/esv_passage_policy.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/bible_translation.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/chapter_info.dart';
@@ -44,6 +46,21 @@ void main() {
         textContent: 'Love is patient...',
       );
       expect(info.reference, '1 Corinthians 13:4–7');
+    });
+
+    test('esvPassagePolicyProvider derives esvConfigured from esvApiClientProvider', () {
+      final container = ProviderContainer(
+        overrides: [
+          esvApiClientProvider.overrideWithValue(EsvApiClient(apiKey: 'test-esv-key')),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final policy = container.read(esvPassagePolicyProvider);
+      expect(policy.esvConfigured, isTrue);
+      expect(policy.useEsvForPassages, isTrue);
+      expect(policy.showApiBibleTranslations, isFalse);
+      expect(policy.defaultTranslationCode, 'ESV');
     });
   });
 }

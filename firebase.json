@@ -19,7 +19,16 @@
         "headers": [
           {
             "key": "Cache-Control",
-            "value": "max-age=3600"
+            "value": "public, max-age=3600"
+          }
+        ]
+      },
+      {
+        "source": "@(index.html|flutter_bootstrap.js|flutter_service_worker.js|main.dart.js|version.json|manifest.json)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
           }
         ]
       }
