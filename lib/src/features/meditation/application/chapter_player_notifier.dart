@@ -1049,7 +1049,26 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     final isAtEnd = state.duration > Duration.zero && state.position >= state.duration;
 
     if (isCompleted || isAtEnd) {
-      await _audioPlayer.seek(Duration.zero);
+      if (state.currentChapter.audioStreamUrl.isNotEmpty) {
+        final directAudioUrl = state.currentChapter.audioStreamUrl;
+        final needsAuthHeader = directAudioUrl.contains('api.esv.org') && !kIsWeb;
+        final esv = ref.read(esvApiClientProvider);
+        final mediaItem = MediaItem(
+          id: directAudioUrl,
+          album: 'Selah Scripture Audio',
+          title: state.currentChapter.displayTitle ?? state.currentChapter.bookName,
+          artist: 'David Cochran Heath (ESV)',
+          artUri: Uri.parse('https://selahword.web.app/icons/Icon-192.png'),
+        );
+        final source = AudioSource.uri(
+          Uri.parse(directAudioUrl),
+          headers: needsAuthHeader ? {'Authorization': 'Token ${esv.apiKey}'} : null,
+          tag: mediaItem,
+        );
+        await _audioPlayer.setAudioSource(source);
+      } else {
+        await _audioPlayer.seek(Duration.zero);
+      }
       await _audioPlayer.setVolume(1.0);
     }
 
@@ -1318,8 +1337,27 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
     if (state.audioMode == AudioMode.narrator || _isEsvModeActive) {
       try {
-        AppLogger.info('Seeking narrator player to Duration.zero for loop $nextIteration of $repLabel');
-        await _audioPlayer.seek(Duration.zero);
+        AppLogger.info('Resetting narrator audio source for loop $nextIteration of $repLabel');
+        if (state.currentChapter.audioStreamUrl.isNotEmpty) {
+          final directAudioUrl = state.currentChapter.audioStreamUrl;
+          final needsAuthHeader = directAudioUrl.contains('api.esv.org') && !kIsWeb;
+          final esv = ref.read(esvApiClientProvider);
+          final mediaItem = MediaItem(
+            id: directAudioUrl,
+            album: 'Selah Scripture Audio',
+            title: state.currentChapter.displayTitle ?? state.currentChapter.bookName,
+            artist: 'David Cochran Heath (ESV)',
+            artUri: Uri.parse('https://selahword.web.app/icons/Icon-192.png'),
+          );
+          final source = AudioSource.uri(
+            Uri.parse(directAudioUrl),
+            headers: needsAuthHeader ? {'Authorization': 'Token ${esv.apiKey}'} : null,
+            tag: mediaItem,
+          );
+          await _audioPlayer.setAudioSource(source);
+        } else {
+          await _audioPlayer.seek(Duration.zero);
+        }
         await _audioPlayer.setVolume(1.0);
         await _audioPlayer.play();
       } catch (e, stack) {
