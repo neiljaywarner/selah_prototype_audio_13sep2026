@@ -1045,11 +1045,16 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       return;
     }
 
-    if (state.position >= state.duration && state.duration > Duration.zero) {
+    final isCompleted = _audioPlayer.processingState == ProcessingState.completed;
+    final isAtEnd = state.duration > Duration.zero && state.position >= state.duration;
+
+    if (isCompleted || isAtEnd) {
       await _audioPlayer.seek(Duration.zero);
+      await _audioPlayer.setVolume(1.0);
     }
 
     try {
+      await _audioPlayer.setVolume(1.0);
       await _audioPlayer.play();
     } catch (e, stack) {
       AppLogger.error(
@@ -1247,10 +1252,10 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         highlightStart: 0,
         highlightEnd: 0,
       );
-      if (state.audioMode == AudioMode.narrator) {
-        _audioPlayer.pause().then((_) {
-          _audioPlayer.seek(Duration.zero);
-          _audioPlayer.setVolume(1.0);
+      if (state.audioMode == AudioMode.narrator || _isEsvModeActive) {
+        _audioPlayer.pause().then((_) async {
+          await _audioPlayer.seek(Duration.zero);
+          await _audioPlayer.setVolume(1.0);
         });
       } else {
         _audioPlayer.seek(Duration.zero);

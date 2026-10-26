@@ -1437,12 +1437,14 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
               const SizedBox(height: 6),
 
               /* Passage Timing & Quality Feedback Bar (Issue #95 / #119) */
-              PassageTimingFeedbackBar(
-                key: const Key('passage_timing_feedback_bar'),
-                passageTitle: playerState.currentChapter.displayTitle ?? playerState.currentChapter.reference,
-                translationCode: playerState.activeTranslation,
-                hasTimestamps: playerState.hasTimestamps,
-              ),
+              if (!ref.watch(esvPassagePolicyProvider).useEsvForPassages &&
+                  playerState.activeTranslation != BibleTranslation.esv.code)
+                PassageTimingFeedbackBar(
+                  key: const Key('passage_timing_feedback_bar'),
+                  passageTitle: playerState.currentChapter.displayTitle ?? playerState.currentChapter.reference,
+                  translationCode: playerState.activeTranslation,
+                  hasTimestamps: playerState.hasTimestamps,
+                ),
 
               /* Live Diagnostic Log Console Drawer */
               if (_showDebugLogs) ...[
