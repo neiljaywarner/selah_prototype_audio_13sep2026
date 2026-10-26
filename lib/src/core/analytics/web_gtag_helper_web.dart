@@ -6,10 +6,34 @@ import 'package:flutter/foundation.dart';
 external void _gtag(JSString command, JSString action, [JSAny? params]);
 
 bool isMarionetteDriving = false;
+bool isMaestroDriving = false;
+bool isPatrolDriving = false;
+bool isPwaRunning = false;
+bool isWebApkRunning = false;
 
 void setMarionetteDriving(bool active) {
   isMarionetteDriving = active;
   setGtagUserProperty('marionette_driving', active.toString());
+}
+
+void setMaestroDriving(bool active) {
+  isMaestroDriving = active;
+  setGtagUserProperty('maestro_driving', active.toString());
+}
+
+void setPatrolDriving(bool active) {
+  isPatrolDriving = active;
+  setGtagUserProperty('patrol_driving', active.toString());
+}
+
+void setPwaRunning(bool active) {
+  isPwaRunning = active;
+  setGtagUserProperty('is_pwa', active.toString());
+}
+
+void setWebApkRunning(bool active) {
+  isWebApkRunning = active;
+  setGtagUserProperty('is_webapk', active.toString());
 }
 
 /// Sets a persistent user property in Google Analytics 4 (GA4).
@@ -28,8 +52,11 @@ void sendGtagEvent(String eventName, Map<String, dynamic>? parameters) {
     final payload = <String, dynamic>{
       'k_debug_mode': kDebugMode,
       'marionette_driving': isMarionetteDriving,
+      'maestro_driving': isMaestroDriving,
+      'patrol_driving': isPatrolDriving,
+      'is_pwa': isPwaRunning,
+      'is_webapk': isWebApkRunning,
       ...?parameters,
-      // In debug mode, tag event for instant routing to GA4/Firebase DebugView
       if (kDebugMode) 'debug_mode': true,
     };
 

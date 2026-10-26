@@ -6,33 +6,32 @@ appId: com.example.selah_prototype_audio_13sep2026
 
 - waitForAnimationToEnd
 
-# 1. Open More Options from Top AppBar
-- tapOn:
-    point: "90%,4%" # More Options menu in top right
-    optional: true
+# 1. Open More Options from App Bar
+- tapOn: "More Options"
 
 - waitForAnimationToEnd
 
-# 2. Tap Prayer & Feedback
-- tapOn:
-    text: "Prayer & Feedback"
-    optional: true
+# 2. Select Prayer & Feedback
+- tapOn: "Prayer & Feedback"
 
 - waitForAnimationToEnd
 
-# 3. Verify Dialog Header & Sentiments
-- assertVisible:
-    text: "Prayer & Feedback"
-    optional: true
+# 3. Verify Dialog Header is open
+- assertVisible: "Prayer & Feedback"
 
-- assertVisible:
-    text: "Loving it!"
-    optional: true
-
-# 4. Select Suggestion
+# 4. Tap the middle sentiment chip (Suggestion - 💡)
+# Tap by approximate relative coordinate of the center sentiment button
 - tapOn:
-    text: "Suggestion"
-    optional: true
+    point: "50%,41%"
 
-# 5. Capture Proof Screenshot
+- waitForAnimationToEnd
+
+# 5. Type feedback note
+- tapOn:
+    point: "50%,52%"
+- inputText: "Loving the peaceful contemplation and narrator audio."
+
+- waitForAnimationToEnd
+
+# 6. Capture verified dialog proof
 - takeScreenshot: test_artifacts/maestro_feedback_dialog_verified

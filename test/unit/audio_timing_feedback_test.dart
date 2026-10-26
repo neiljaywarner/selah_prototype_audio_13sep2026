@@ -71,7 +71,7 @@ void main() {
       expect(success, isTrue);
       expect(mockAdapter.requests.length, 1);
       final req = mockAdapter.lastRequestOptions;
-      expect(req.uri.toString(), 'https://api.github.com/repos/njwandroid/selahfeedback/issues');
+      expect(req.uri.toString(), 'https://api.github.com/repos/neiljaywarner/selahprivatefeedback/issues');
       final data = mockAdapter.lastData as Map;
       expect(data['title'], contains('[Audio Timing] 👎 Psalm 23:1-3 (BSB)'));
       expect(data['labels'], contains('audio-alignment'));

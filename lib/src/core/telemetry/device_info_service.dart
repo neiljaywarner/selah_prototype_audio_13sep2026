@@ -4,6 +4,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:dio/dio.dart';
 import '../logging/app_logger.dart';
+import '../analytics/web_gtag_helper.dart';
 
 /// Aggregates client device, operating system, and application metadata
 /// for attaching to feedback and error diagnostics.
@@ -15,11 +16,17 @@ class AppDeviceInfoService {
     final Map<String, dynamic> context = {
       'timestamp': DateTime.now().toUtc().toIso8601String(),
       'platform': kIsWeb ? 'web' : defaultTargetPlatform.name,
+      'is_debug_mode': kDebugMode,
+      'is_marionette': isMarionetteDriving,
+      'is_maestro': isMaestroDriving,
+      'is_patrol': isPatrolDriving,
+      'is_pwa': isPwaRunning,
+      'is_webapk': isWebApkRunning,
     };
 
     if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) {
-      context['app_version'] = '0.3.1';
-      context['build_number'] = '1';
+      context['app_version'] = '0.4.1';
+      context['build_number'] = '53';
       context['package_name'] = 'com.example.selah_prototype_audio_13sep2026';
       context['device_model'] = 'TestDevice';
       context['public_ip'] = '127.0.0.1';
@@ -32,8 +39,8 @@ class AppDeviceInfoService {
       context['build_number'] = pkg.buildNumber;
       context['package_name'] = pkg.packageName;
     } catch (e) {
-      context['app_version'] = '0.3.1';
-      context['build_number'] = '1';
+      context['app_version'] = '0.4.1';
+      context['build_number'] = '53';
     }
 
     try {

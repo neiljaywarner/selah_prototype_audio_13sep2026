@@ -35,7 +35,7 @@ class MockAdapter implements HttpClientAdapter {
 }
 
 void main() {
-  group('GitHub Private Feedback Hub Integration Tests (njwandroid/selahfeedback)', () {
+  group('GitHub Private Feedback Hub Integration Tests (neiljaywarner/selahprivatefeedback)', () {
     late Dio testDio;
     late MockAdapter mockAdapter;
 
@@ -101,7 +101,7 @@ void main() {
       final issueRequest = mockAdapter.requests.firstWhere(
         (r) => r.uri.toString().endsWith('/issues'),
       );
-      expect(issueRequest.uri.toString(), 'https://api.github.com/repos/njwandroid/selahfeedback/issues');
+      expect(issueRequest.uri.toString(), 'https://api.github.com/repos/neiljaywarner/selahprivatefeedback/issues');
       final issuePayload = mockAdapter.requestBodies[mockAdapter.requests.indexOf(issueRequest)] as Map<String, dynamic>;
       expect(issuePayload['title'], contains('[Feedback] 😊 (5/5)'));
       expect(issuePayload['body'], contains('The contemplative pacing is deeply uplifting.'));
