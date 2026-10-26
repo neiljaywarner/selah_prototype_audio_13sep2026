@@ -13,13 +13,16 @@ class FirebaseAnalyticsProvider implements AnalyticsService {
   @override
   Future<void> init() async {
     try {
-      // Simulate/retrieve Firebase installation ID for observability
       _installationId = 'inst_${DateTime.now().millisecondsSinceEpoch.toRadixString(36)}';
       _initialized = true;
 
-      // Set default user properties requested by product / telemetry
+      // Set default user properties
       await setUserProperty('k_debug_mode', kDebugMode.toString());
-      await setUserProperty('marionette_driving', isMarionetteDriving.toString());
+      await setUserProperty('is_marionette', isMarionetteDriving.toString());
+      await setUserProperty('is_maestro', isMaestroDriving.toString());
+      await setUserProperty('is_patrol', isPatrolDriving.toString());
+      await setUserProperty('is_pwa', isPwaRunning.toString());
+      await setUserProperty('is_webapk', isWebApkRunning.toString());
 
       debugPrint('🔥 [FIREBASE ANALYTICS]: Initialized. Installations ID: $_installationId');
     } catch (e) {
@@ -41,7 +44,11 @@ class FirebaseAnalyticsProvider implements AnalyticsService {
     try {
       final augmentedPayload = <String, dynamic>{
         'k_debug_mode': kDebugMode,
-        'marionette_driving': isMarionetteDriving,
+        'is_marionette': isMarionetteDriving,
+        'is_maestro': isMaestroDriving,
+        'is_patrol': isPatrolDriving,
+        'is_pwa': isPwaRunning,
+        'is_webapk': isWebApkRunning,
         ...?properties,
       };
 
@@ -67,7 +74,11 @@ class FirebaseAnalyticsProvider implements AnalyticsService {
       final crashPayload = <String, dynamic>{
         'installation_id': _installationId ?? 'unknown',
         'k_debug_mode': kDebugMode,
-        'marionette_driving': isMarionetteDriving,
+        'is_marionette': isMarionetteDriving,
+        'is_maestro': isMaestroDriving,
+        'is_patrol': isPatrolDriving,
+        'is_pwa': isPwaRunning,
+        'is_webapk': isWebApkRunning,
         'error_name': errorName,
         'error_type': extraProperties?['error_type'] ?? error?.runtimeType.toString() ?? 'UnknownError',
         'error_message': error?.toString() ?? errorName,
