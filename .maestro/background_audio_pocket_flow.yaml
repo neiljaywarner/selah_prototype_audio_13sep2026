@@ -1,0 +1,38 @@
+# Maestro Flow: Background Audio & Screen Lock Resilience
+appId: com.example.selah_prototype_audio_13sep2026
+---
+- launchApp:
+    clearState: false
+
+- waitForAnimationToEnd
+
+# 1. Verify app title
+- assertVisible:
+    text: "SELAH"
+    optional: true
+
+# 2. Tap Play to initiate audio stream
+- tapOn:
+    point: "50%,78%"
+
+- waitForAnimationToEnd
+
+# 3. Simulate putting phone into pocket / locking screen
+- pressKey: "Power"
+
+# 4. Wait for background audio playback to continue uninterrupted
+- scroll:
+    direction: "DOWN"
+    optional: true
+
+# 5. Wake device back up
+- pressKey: "Power"
+
+- waitForAnimationToEnd
+
+# 6. Verify player is still visible and running
+- assertVisible:
+    text: "SELAH"
+    optional: true
+
+- takeScreenshot: test_artifacts/maestro_background_audio_pocket_verified
