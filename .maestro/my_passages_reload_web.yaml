@@ -8,9 +8,9 @@
 # It does not assert audio bytes; confirm the header shows 1 Cor 13:4-7
 # (or the ESV canonical "1 Corinthians 13:4–7") after the tap.
 
-appId: "https://REPLACE_WITH_SELAHWORD_PREVIEW.web.app"
+appId: "https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/"
 ---
-- openLink: "https://REPLACE_WITH_SELAHWORD_PREVIEW.web.app"
+- openLink: "https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/"
 - waitForAnimationToEnd:
     timeout: 20000
 
@@ -31,7 +31,7 @@ appId: "https://REPLACE_WITH_SELAHWORD_PREVIEW.web.app"
 - assertVisible:
     text: "1 Cor 13:4-7"
 
-- openLink: "https://REPLACE_WITH_SELAHWORD_PREVIEW.web.app"
+- openLink: "https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/"
 - waitForAnimationToEnd:
     timeout: 20000
 

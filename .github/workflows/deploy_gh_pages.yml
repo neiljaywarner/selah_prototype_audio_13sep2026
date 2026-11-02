@@ -1,0 +1,94 @@
+name: Deploy Selah Web PWA to GitHub Pages
+
+# Project Pages: https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/
+# This does not deploy Firebase Hosting and does not change selahword.web.app.
+# pull_request events from the GitHub App token do not start workflows, so a
+# push of this file on the verification branch is what publishes the site.
+on:
+  push:
+    branches:
+      - cursor/my-passages-persist-7409
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Flutter web
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.x'
+          channel: stable
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      # Secrets stay in Actions. An empty secret is omitted so the Dart
+      # default stays REDACTED. Never echo the values.
+      - name: Build Web PWA
+        env:
+          API_BIBLE_KEY: ${{ secrets.API_BIBLE_KEY }}
+          APTABASE_KEY: ${{ secrets.APTABASE_KEY }}
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
+          ESV_API_KEY: ${{ secrets.ESV_API_KEY }}
+        run: |
+          set -euo pipefail
+          defines=()
+          add_define() {
+            local name="$1"
+            local value="$2"
+            if [ -n "$value" ]; then
+              echo "Passing --dart-define=${name} (value hidden)"
+              defines+=(--dart-define="${name}=${value}")
+            else
+              echo "Secret ${name} is unset; leaving the compile-time default"
+            fi
+          }
+          add_define API_BIBLE_KEY "$API_BIBLE_KEY"
+          add_define APTABASE_KEY "$APTABASE_KEY"
+          add_define POSTHOG_KEY "$POSTHOG_KEY"
+          add_define ESV_API_KEY "$ESV_API_KEY"
+          flutter build web --release \
+            --base-href "/selah_prototype_audio_13sep2026/" \
+            "${defines[@]}"
+          cp build/web/index.html build/web/404.html
+          touch build/web/.nojekyll
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Pages URL
+        run: echo "GitHub Pages: ${{ steps.deployment.outputs.page_url }}"
