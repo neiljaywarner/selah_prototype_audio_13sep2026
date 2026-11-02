@@ -1,12 +1,15 @@
 name: Deploy Selah Web PWA to GitHub Pages
 
 # Project Pages: https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/
-# Source must be GitHub Actions (not Deploy from a branch).
-# Does not deploy Firebase Hosting and does not change selahword.web.app.
+# Official Actions deploy: configure-pages, upload-pages-artifact, deploy-pages.
+# A repo admin must set Settings → Pages → Source to GitHub Actions once.
+# GITHUB_TOKEN cannot create the Pages site. This does not deploy Firebase
+# Hosting and does not change selahword.web.app.
 on:
   push:
     branches:
       - cursor/my-passages-persist-7409
+      - main
   workflow_dispatch:
 
 permissions:
@@ -14,9 +17,10 @@ permissions:
   pages: write
   id-token: write
 
+# Do not cancel an in-progress Pages deployment.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -25,6 +29,9 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -67,13 +74,6 @@ jobs:
           cp build/web/index.html build/web/404.html
           touch build/web/.nojekyll
 
-      - name: Setup Pages
-        id: pages
-        continue-on-error: true
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -89,23 +89,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        continue-on-error: true
         uses: actions/deploy-pages@v4
-
-      - name: Report Pages URL
-        env:
-          DEPLOY_OUTCOME: ${{ steps.deployment.outcome }}
-          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
-        run: |
-          set -euo pipefail
-          if [ "$DEPLOY_OUTCOME" = "success" ]; then
-            echo "GitHub Pages ${PAGE_URL}"
-            echo "GitHub Pages ${PAGE_URL}" >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          {
-            echo "Pages deploy did not publish."
-            echo "One click, then re-run this workflow:"
-            echo "https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/settings/pages"
-            echo "Build and deployment, Source, GitHub Actions. Do not choose Deploy from a branch."
-          } | tee -a "$GITHUB_STEP_SUMMARY"
