@@ -9,6 +9,30 @@ import 'package:just_audio_platform_interface/just_audio_platform_interface.dart
 /// The method-channel stub never delivers the playback event just_audio waits
 /// on after `load`, so the player stays in `loading`. This platform fake emits
 /// a ready event on the same call.
+/// Completes a method-channel just_audio `load` by posting a ready event.
+/// just_audio 0.10 waits until processing state leaves `loading`.
+void scheduleJustAudioReady(String id) {
+  final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+  const codec = StandardMethodCodec();
+  scheduleMicrotask(() {
+    final event = <String, dynamic>{
+      'processingState': 3,
+      'updateTime': DateTime.now().millisecondsSinceEpoch,
+      'updatePosition': 0,
+      'bufferedPosition': 0,
+      'duration': 24000000,
+      'icyMetadata': null,
+      'currentIndex': 0,
+      'androidAudioSessionId': null,
+    };
+    messenger.handlePlatformMessage(
+      'com.ryanheise.just_audio.events.$id',
+      codec.encodeSuccessEnvelope(event),
+      (_) {},
+    );
+  });
+}
+
 void installFakeAudioPlayers() {
   final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   messenger.setMockMethodCallHandler(const MethodChannel('flutter_tts'), (call) async => 1);

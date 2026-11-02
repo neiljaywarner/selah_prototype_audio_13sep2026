@@ -12,6 +12,7 @@ import 'package:selah_prototype_audio_13sep2026/src/features/meditation/applicat
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/audio_mode.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/bible_translation.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/chapter_info.dart';
+import '../support/fake_audio_players.dart';
 
 class _ScriptedEsvHttpAdapter implements HttpClientAdapter {
   _ScriptedEsvHttpAdapter({this.shouldThrowNetworkError = false, this.returnEmptyVerses = false});
@@ -115,6 +116,7 @@ void main() {
                 final args = playerCall.arguments as Map;
                 final source = args['audioSource'] as Map;
                 loadedAudioSources.add(source);
+                scheduleJustAudioReady(id);
                 return {'duration': 24000000};
               }
               if (playerCall.method == 'play') return {};

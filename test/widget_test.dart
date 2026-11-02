@@ -27,7 +27,7 @@ void main() {
 
     // Verify Title & Subtitle
     expect(find.text('SELAH'), findsOneWidget);
-    expect(find.text('Scripture Audio Meditation v0.2'), findsOneWidget);
+    expect(find.text('Scripture Audio Meditation v0.4.1'), findsOneWidget);
 
     // Verify Action Icons
     expect(find.byIcon(Icons.how_to_vote_rounded), findsOneWidget);
