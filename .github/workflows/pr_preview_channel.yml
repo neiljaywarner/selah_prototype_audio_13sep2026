@@ -1,8 +1,23 @@
 name: Deploy PR Preview Channel
 
+# pull_request runs are not created when the PR is opened with the GitHub
+# App token (cursor[bot]). Pushes were recorded as 0-job failures because
+# this file did not listen for push. workflow_dispatch is the supported
+# way to start a run from that same token once this file is on main;
+# until then, a push of this file is what actually schedules the job.
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - cursor/**
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Firebase Hosting channel id on site selahword
+        required: false
+        default: my-passages
+        type: string
 
 permissions:
   contents: read
@@ -33,9 +48,6 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: AI Pre-Deployment Safety & Quality Scan
-        run: python3 scripts/preview_channel_precheck.py
-
       # Keys live in GitHub Actions secrets, never in the repo.
       # Settings → Secrets and variables → Actions:
       #   API_BIBLE_KEY, APTABASE_KEY, POSTHOG_KEY, ESV_API_KEY
@@ -65,13 +77,41 @@ jobs:
           add_define ESV_API_KEY "$ESV_API_KEY"
           flutter build web --release "${defines[@]}"
 
+      # Do not put secrets in `if:`. An empty service account used to skip
+      # this check and still fail the action with "Input required and not
+      # supplied: firebaseServiceAccount" (run 40231935803).
+      - name: Check Firebase Hosting credentials
+        id: firebase_auth
+        env:
+          FIREBASE_SERVICE_ACCOUNT_SELAHWORDAPP: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SELAHWORDAPP }}
+        run: |
+          set -euo pipefail
+          if [ -n "${FIREBASE_SERVICE_ACCOUNT_SELAHWORDAPP}" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+            echo "FIREBASE_SERVICE_ACCOUNT_SELAHWORDAPP is set (value hidden)"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::FIREBASE_SERVICE_ACCOUNT_SELAHWORDAPP is unset. The web build can still include ESV_API_KEY, but Hosting will not be published. Add this Actions secret: the Firebase service account JSON for project selahwordapp, with Firebase Hosting Admin on site selahword."
+          fi
+
       - name: Deploy to Firebase Hosting Preview Channel
-        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SELAHWORDAPP != '' }}
+        if: steps.firebase_auth.outputs.present == 'true'
         uses: FirebaseExtended/action-hosting-deploy@v0
         id: deploy
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_SELAHWORDAPP }}'
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SELAHWORDAPP }}
           projectId: selahwordapp
-          channelId: 'pr-${{ github.event.number }}'
-          expires: 7d
+          channelId: ${{ github.event.inputs.channel || (github.event.number && format('pr-{0}', github.event.number)) || 'my-passages' }}
+          expires: 30d
+
+      - name: Preview URL
+        if: steps.firebase_auth.outputs.present == 'true'
+        run: |
+          echo "Hosting preview: ${{ steps.deploy.outputs.details_url }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Hosting preview: ${{ steps.deploy.outputs.details_url }}"
+
+      # Full analyze + flutter test. Runs after Hosting so a slow or
+      # unrelated test failure does not block the preview URL.
+      - name: AI Pre-Deployment Safety & Quality Scan
+        run: python3 scripts/preview_channel_precheck.py

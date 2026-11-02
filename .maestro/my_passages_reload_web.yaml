@@ -1,0 +1,44 @@
+# My passages reload smoke for a Flutter web preview.
+#
+# Point both URLs at the Hosting channel from the PR (site selahword, not the
+# live channel). Example:
+#   maestro test .maestro/my_passages_reload_web.yaml
+#
+# The flow types a range, bookmarks it, reloads, and taps the saved chip.
+# It does not assert audio bytes; confirm the header shows 1 Cor 13:4-7
+# (or the ESV canonical "1 Corinthians 13:4–7") after the tap.
+
+appId: "https://REPLACE_WITH_SELAHWORD_PREVIEW.web.app"
+---
+- openLink: "https://REPLACE_WITH_SELAHWORD_PREVIEW.web.app"
+- waitForAnimationToEnd:
+    timeout: 20000
+
+- assertVisible:
+    text: "SELAH"
+
+- tapOn:
+    text: "Verse or range.*"
+    optional: true
+- eraseText
+- inputText: "1 Cor 13:4-7"
+
+- tapOn:
+    text: "Save to My passages"
+- assertVisible:
+    text: "Saved \"1 Cor 13:4-7\" to My passages"
+    optional: true
+- assertVisible:
+    text: "1 Cor 13:4-7"
+
+- openLink: "https://REPLACE_WITH_SELAHWORD_PREVIEW.web.app"
+- waitForAnimationToEnd:
+    timeout: 20000
+
+- tapOn:
+    text: "1 Cor 13:4-7"
+- waitForAnimationToEnd:
+    timeout: 15000
+- assertVisible:
+    text: "1 Cor 13:4.*"
+- takeScreenshot: test_artifacts/my_passages_reload
