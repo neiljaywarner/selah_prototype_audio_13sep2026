@@ -1,9 +1,8 @@
 name: Deploy Selah Web PWA to GitHub Pages
 
 # Project Pages: https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/
-# This does not deploy Firebase Hosting and does not change selahword.web.app.
-# pull_request events from the GitHub App token do not start workflows, so a
-# push of this file on the verification branch is what publishes the site.
+# Source must be GitHub Actions (not Deploy from a branch).
+# Does not deploy Firebase Hosting and does not change selahword.web.app.
 on:
   push:
     branches:
@@ -11,7 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
@@ -68,16 +67,12 @@ jobs:
           cp build/web/index.html build/web/404.html
           touch build/web/.nojekyll
 
-      # The GitHub App token cannot create a Pages site (403). Publishing the
-      # gh-pages branch still puts the ESV build where project Pages serves it
-      # once Source is "Deploy from a branch" / gh-pages / root.
-      - name: Publish gh-pages branch
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Setup Pages
+        id: pages
+        continue-on-error: true
+        uses: actions/configure-pages@v5
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build/web
-          publish_branch: gh-pages
-          force_orphan: true
+          enablement: true
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
@@ -85,19 +80,32 @@ jobs:
           path: build/web
 
   deploy:
-    name: Deploy with Actions Pages
+    name: Deploy to GitHub Pages
     needs: build
-    if: always() && needs.build.result == 'success'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy
+      - name: Deploy to GitHub Pages
         id: deployment
         continue-on-error: true
         uses: actions/deploy-pages@v4
 
-      - name: Pages URL
-        if: steps.deployment.outcome == 'success'
-        run: echo "GitHub Pages ${{ steps.deployment.outputs.page_url }}"
+      - name: Report Pages URL
+        env:
+          DEPLOY_OUTCOME: ${{ steps.deployment.outcome }}
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          set -euo pipefail
+          if [ "$DEPLOY_OUTCOME" = "success" ]; then
+            echo "GitHub Pages ${PAGE_URL}"
+            echo "GitHub Pages ${PAGE_URL}" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          {
+            echo "Pages deploy did not publish."
+            echo "One click, then re-run this workflow:"
+            echo "https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/settings/pages"
+            echo "Build and deployment, Source, GitHub Actions. Do not choose Deploy from a branch."
+          } | tee -a "$GITHUB_STEP_SUMMARY"
