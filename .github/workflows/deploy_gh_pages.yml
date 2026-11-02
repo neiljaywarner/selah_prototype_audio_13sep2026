@@ -91,4 +91,4 @@ jobs:
         uses: actions/deploy-pages@v4
 
       - name: Pages URL
-        run: echo "GitHub Pages: ${{ steps.deployment.outputs.page_url }}"
+        run: echo "GitHub Pages ${{ steps.deployment.outputs.page_url }}"
