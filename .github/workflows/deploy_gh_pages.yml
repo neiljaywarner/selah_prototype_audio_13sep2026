@@ -30,8 +30,19 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # This step fails closed until Settings → Pages → Source is GitHub
+      # Actions. GITHUB_TOKEN cannot create the site (enablement returns
+      # 403). Continue so the web artifact is still built and uploaded.
+      # deploy-pages then fails the workflow with the same missing-site error.
       - name: Setup Pages
+        id: pages
+        continue-on-error: true
         uses: actions/configure-pages@v5
+
+      - name: Pages site is not enabled yet
+        if: steps.pages.outcome == 'failure'
+        run: |
+          echo "::notice title=Enable GitHub Pages::Set Settings, Pages, Source to GitHub Actions, then re-run this workflow. https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/settings/pages"
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
