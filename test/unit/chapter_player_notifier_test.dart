@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:selah_prototype_audio_13sep2026/src/core/preferences/saved_passage.dart';
 import 'package:selah_prototype_audio_13sep2026/src/core/preferences/user_preferences.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/application/chapter_player_notifier.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/audio_mode.dart';
@@ -115,33 +116,33 @@ void main() {
       container.dispose();
     });
 
-    test('UserPreferences LIFO queue saves chapters at front and enforces cap', () async {
+    test('Recent history is capped without evicting My passages', () async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       final userPrefs = UserPreferences(prefs);
 
-      expect(userPrefs.savedChapters, isEmpty);
+      expect(userPrefs.myPassages, isEmpty);
+      expect(userPrefs.recentPassages, isEmpty);
 
-      await userPrefs.saveChapter('Psalms 126');
-      expect(userPrefs.savedChapters, equals(['Psalms 126']));
+      final saved = await userPrefs.saveMyPassage(
+        const SavedPassage(query: '1 Cor 13:4-7', label: '1 Cor 13:4-7'),
+      );
+      expect(saved, SavePassageResult.saved);
 
-      await userPrefs.saveChapter('Philippians 4');
-      expect(userPrefs.savedChapters, equals(['Philippians 4', 'Psalms 126']));
+      await userPrefs.recordRecent('Psalms 126');
+      await userPrefs.recordRecent('Philippians 4');
+      expect(userPrefs.recentPassages.map((p) => p.query), ['Philippians 4', 'Psalms 126']);
 
-      // Re-saving existing chapter moves it to index 0 (LIFO MRU)
-      await userPrefs.saveChapter('Psalms 126');
-      expect(userPrefs.savedChapters, equals(['Psalms 126', 'Philippians 4']));
+      await userPrefs.recordRecent('Psalms 126');
+      expect(userPrefs.recentPassages.map((p) => p.query), ['Psalms 126', 'Philippians 4']);
 
-      // Test cap of 10 items
-      for (int i = 1; i <= 15; i++) {
-        await userPrefs.saveChapter('Chapter $i');
+      for (var i = 1; i <= 20; i++) {
+        await userPrefs.recordRecent('Psalm $i');
       }
-      expect(userPrefs.savedChapters.length, equals(10));
-      expect(userPrefs.savedChapters.first, equals('Chapter 15'));
-
-      await userPrefs.removeSavedChapter('Chapter 15');
-      expect(userPrefs.savedChapters.contains('Chapter 15'), isFalse);
-      expect(userPrefs.savedChapters.length, equals(9));
+      expect(userPrefs.recentPassages.length, UserPreferences.recentPassagesCap);
+      expect(userPrefs.recentPassages.first.query, 'Psalm 20');
+      expect(userPrefs.myPassages.map((p) => p.query), ['1 Cor 13:4-7']);
+      expect(userPrefs.lastPlayedQuery, 'Psalm 20');
     });
 
     test('cycleRepetitions transitions from 1 -> 3 -> 7 -> infinite (-1) -> 1', () {

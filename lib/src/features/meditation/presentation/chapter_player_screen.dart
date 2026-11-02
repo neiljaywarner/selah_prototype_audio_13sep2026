@@ -10,6 +10,7 @@ import '../../../core/constants/bible_canon.dart';
 import '../../../core/esv/esv_passage_policy.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/picker/bible_reference_parser.dart';
+import '../../../core/preferences/saved_passage.dart';
 import '../../../core/preferences/user_preferences.dart';
 import '../application/chapter_player_notifier.dart';
 import '../domain/audio_mode.dart';
@@ -43,13 +44,47 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
   ScriptureTopic _selectedTopic = kDefaultMeditationTopics[0];
   List<ParsedBibleReference> _searchSuggestions = [];
 
+  /// Exact query last sent to playback. Chip highlight uses this so a saved
+  /// range stays selected after ESV rewrites the on-screen title.
+  String? _activeExactQuery;
+
   @override
   void initState() {
     super.initState();
-    final initialPassage = ref.read(chapterPlayerProvider).currentChapter.displayTitle ??
-        ref.read(chapterPlayerProvider).currentChapter.reference;
+    unawaited(_migratePassages());
+    final chapter = ref.read(chapterPlayerProvider).currentChapter;
+    final initialPassage = PassageQuery.canonicalize(
+      chapter.displayTitle ?? chapter.reference,
+    );
     _searchController = TextEditingController(text: initialPassage);
+    _activeExactQuery = initialPassage;
     _searchController.addListener(_onSearchChanged);
+  }
+
+  Future<void> _migratePassages() async {
+    await ref.read(userPreferencesProvider).migrateLegacySavedChapters();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _rememberPlayed(String raw) async {
+    final query = PassageQuery.canonicalize(raw);
+    if (query.isEmpty) return;
+    _activeExactQuery = query;
+    await ref.read(userPreferencesProvider).recordRecent(query);
+    if (mounted) setState(() {});
+  }
+
+  String _playingQuery(ChapterPlayerState playerState) {
+    final active = _activeExactQuery;
+    if (active != null && active.isNotEmpty) return active;
+    final fromState = esvPassageQueryFor(
+      playerState.currentChapter,
+      excerpt: playerState.activeExcerpt,
+    );
+    if (fromState != null && fromState.isNotEmpty) {
+      return PassageQuery.canonicalize(fromState);
+    }
+    return PassageQuery.canonicalize(playerState.currentChapter.reference);
   }
 
   @override
@@ -72,17 +107,38 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
   }
 
   void _handleSearchSubmit(String query) {
-    final raw = query.trim();
+    final raw = PassageQuery.canonicalize(query);
     if (raw.isEmpty) return;
 
     setState(() => _searchSuggestions = []);
 
     if (raw.contains(':')) {
+      _activeExactQuery = raw;
       unawaited(_preferEsvThenExistingVerseQuery(raw));
       return;
     }
 
     _submitBookOrChapter(raw);
+  }
+
+  /// Replays a stored query as-is. Verse ranges stay verse ranges.
+  Future<void> _replayExactQuery(String query) async {
+    final exact = PassageQuery.canonicalize(query);
+    if (exact.isEmpty) return;
+    _searchController.text = exact;
+    _activeExactQuery = exact;
+    setState(() => _searchSuggestions = []);
+    final played = await ref.read(chapterPlayerProvider.notifier).tryPlayEsvPassage(exact);
+    if (!mounted) return;
+    if (played) {
+      await _rememberPlayed(exact);
+      return;
+    }
+    if (exact.contains(':')) {
+      _submitColonQueryWithoutEsv(exact);
+    } else {
+      _submitBookOrChapter(exact);
+    }
   }
 
   /// Verse and range searches use ESV when `ESV_API_KEY` is compiled in.
@@ -91,7 +147,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     final played = await ref.read(chapterPlayerProvider.notifier).tryPlayEsvPassage(raw);
     if (!mounted) return;
     if (played) {
-      ref.read(userPreferencesProvider).saveChapter(raw);
+      unawaited(_rememberPlayed(raw));
       setState(() {});
       return;
     }
@@ -134,7 +190,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
 
             // If timestamps exist for this chapter, play the custom excerpt immediately!
             if (hasTimestamps && customExcerpt != null) {
-              ref.read(userPreferencesProvider).saveChapter(displayTitle);
+              unawaited(_rememberPlayed(displayTitle));
               ref.read(chapterPlayerProvider.notifier).routeAndPlayChapter(
                 bookCode: match.book.code,
                 chapterNumber: match.chapter,
@@ -174,7 +230,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
         final excerpt = PassageExcerpt.forChapter(match.book.code, match.chapter);
         if (excerpt != null) {
           final refStr = excerpt.displayTitle ?? '${match.book.name} ${match.chapter}:${excerpt.startVerse}-${excerpt.endVerse}';
-          ref.read(userPreferencesProvider).saveChapter(refStr);
+          unawaited(_rememberPlayed(refStr));
           ref
               .read(chapterPlayerProvider.notifier)
               .routeAndPlayChapter(
@@ -188,7 +244,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
       }
 
       AppLogger.logEvent('request_single_verse', {'query': raw});
-      ref.read(userPreferencesProvider).saveChapter(raw);
+      unawaited(_rememberPlayed(raw));
       ref.read(chapterPlayerProvider.notifier).fetchAndPlaySingleVerse(raw, tryEsv: false);
       setState(() {});
   }
@@ -198,7 +254,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     if (parsedList.isNotEmpty) {
       final match = parsedList.first;
       final refStr = '${match.book.name} ${match.chapter}';
-      ref.read(userPreferencesProvider).saveChapter(refStr);
+      unawaited(_rememberPlayed(refStr));
       ref
           .read(chapterPlayerProvider.notifier)
           .routeAndPlayChapter(
@@ -236,7 +292,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     }
 
     final refStr = '$bookName $chapterNum';
-    ref.read(userPreferencesProvider).saveChapter(refStr);
+    unawaited(_rememberPlayed(refStr));
     ref
         .read(chapterPlayerProvider.notifier)
         .routeAndPlayChapter(bookCode: bookCode, chapterNumber: chapterNum, bookName: bookName);
@@ -360,6 +416,252 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     );
   }
 
+  Future<void> _saveTypedOrPlayingPassage(ChapterPlayerState playerState) async {
+    final query = resolvePassageToSave(
+      fieldText: _searchController.text,
+      chapter: playerState.currentChapter,
+      activeExcerpt: playerState.activeExcerpt,
+    );
+    final result = await ref.read(userPreferencesProvider).saveMyPassage(
+          SavedPassage(query: query, label: query),
+        );
+    if (!mounted) return;
+    setState(() {});
+    final String message;
+    switch (result) {
+      case SavePassageResult.saved:
+        message = 'Saved "$query" to My passages';
+      case SavePassageResult.alreadySaved:
+        message = '"$query" is already in My passages';
+      case SavePassageResult.full:
+        message =
+            'My passages is full (${UserPreferences.myPassagesCap}). Remove one to save another.';
+      case SavePassageResult.unavailable:
+        message = 'Could not save this passage on this device';
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 3)),
+    );
+  }
+
+  Widget _buildMyPassages(UserPreferences userPrefs, ChapterPlayerState playerState) {
+    final passages = userPrefs.myPassages;
+    final playing = _playingQuery(playerState);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'My passages',
+                style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+            ),
+            IconButton(
+              key: const Key('manage_my_passages_button'),
+              tooltip: 'Rename or remove saved passages',
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              onPressed: passages.isEmpty ? null : _openMyPassagesManager,
+              icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFFFBBF24)),
+            ),
+          ],
+        ),
+        if (passages.isEmpty)
+          const Text(
+            'Bookmark a verse or range, such as 1 Cor 13:4-7. It stays here after you reload.',
+            style: TextStyle(color: Colors.white38, fontSize: 12, height: 1.3),
+          )
+        else
+          SizedBox(
+            height: 38,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemCount: passages.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final passage = passages[index];
+                return _PresetChip(
+                  key: ValueKey('my-passage-${passage.query}'),
+                  label: passage.label,
+                  isSelected: playing == passage.query,
+                  isBookmarked: true,
+                  onTap: () => unawaited(_replayExactQuery(passage.query)),
+                  onLongPress: () => unawaited(_editMyPassage(passage)),
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildRecents(UserPreferences userPrefs, ChapterPlayerState playerState) {
+    final recents = userPrefs.recentPassages;
+    if (recents.isEmpty) return const SizedBox.shrink();
+    final playing = _playingQuery(playerState);
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Recent',
+            style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            height: 38,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemCount: recents.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final passage = recents[index];
+                return _PresetChip(
+                  key: ValueKey('recent-${passage.query}'),
+                  label: passage.label,
+                  isSelected: playing == passage.query,
+                  onTap: () => unawaited(_replayExactQuery(passage.query)),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _editMyPassage(SavedPassage passage) async {
+    final nameController = TextEditingController(text: passage.label);
+    final action = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1B4B),
+        title: const Text('My passage', style: TextStyle(color: Colors.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              passage.query,
+              style: const TextStyle(color: Colors.white54, fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: nameController,
+              autofocus: true,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                labelStyle: TextStyle(color: Colors.white70),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'remove'),
+            child: const Text('Remove', style: TextStyle(color: Colors.redAccent)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'rename'),
+            child: const Text('Rename', style: TextStyle(color: Color(0xFFFBBF24))),
+          ),
+        ],
+      ),
+    );
+    final newLabel = nameController.text;
+    nameController.dispose();
+    if (!mounted || action == null) return;
+    final prefs = ref.read(userPreferencesProvider);
+    if (action == 'remove') {
+      await prefs.removeMyPassage(passage.query);
+    } else if (action == 'rename') {
+      final renamed = await prefs.renameMyPassage(passage.query, newLabel);
+      if (!renamed && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Name cannot be empty')),
+        );
+      }
+    }
+    if (mounted) setState(() {});
+  }
+
+  void _openMyPassagesManager() {
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF1E1B4B),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          final passages = ref.read(userPreferencesProvider).myPassages;
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'My passages',
+                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Rename changes the name only. Replay still uses the saved reference.',
+                    style: TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                  const SizedBox(height: 8),
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: passages.length,
+                      itemBuilder: (context, index) {
+                        final passage = passages[index];
+                        return ListTile(
+                          title: Text(passage.label, style: const TextStyle(color: Colors.white)),
+                          subtitle: Text(
+                            passage.query,
+                            style: const TextStyle(color: Colors.white54, fontSize: 12),
+                          ),
+                          onTap: () async {
+                            Navigator.of(ctx).pop();
+                            await _editMyPassage(passage);
+                          },
+                          trailing: IconButton(
+                            tooltip: 'Remove ${passage.label}',
+                            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                            onPressed: () async {
+                              await ref.read(userPreferencesProvider).removeMyPassage(passage.query);
+                              setSheetState(() {});
+                              if (mounted) setState(() {});
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   void _openChapterPicker() => showDialog(
     context: context,
     builder: (ctx) => ChapterPickerDialog(
@@ -367,7 +669,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
         final refStr = '$name $chapter';
         _searchController.text = refStr;
         setState(() => _searchSuggestions = []);
-        ref.read(userPreferencesProvider).saveChapter(refStr);
+        unawaited(_rememberPlayed(refStr));
         ref
             .read(chapterPlayerProvider.notifier)
             .routeAndPlayChapter(bookCode: code, chapterNumber: chapter, bookName: name);
@@ -693,7 +995,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                       style: const TextStyle(fontSize: 14),
                       onSubmitted: _handleSearchSubmit,
                       decoration: InputDecoration(
-                        hintText: 'Search Book & Chapter (e.g. Jn, Col 3, Ps 23)',
+                        hintText: 'Verse or range (e.g. Jn 11:35, 1 Cor 13:4-7)',
                         filled: true,
                         fillColor: const Color(0xFF1E1B4B),
                         prefixIcon: const Icon(Icons.search, size: 20, color: Colors.indigo),
@@ -728,21 +1030,10 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                   ),
                   const SizedBox(width: 6),
                   IconButton(
-                    onPressed: () async {
-                      final curRef = playerState.currentChapter.reference;
-                      await ref.read(userPreferencesProvider).saveChapter(curRef);
-                      if (context.mounted) {
-                        setState(() {});
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Saved "$curRef" to recents'),
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
-                      }
-                    },
+                    key: const Key('save_my_passage_button'),
+                    onPressed: () => _saveTypedOrPlayingPassage(playerState),
                     icon: const Icon(Icons.bookmark_add_outlined, color: Color(0xFFFBBF24)),
-                    tooltip: 'Save Current Chapter to Recents',
+                    tooltip: 'Save to My passages',
                     style: IconButton.styleFrom(
                       backgroundColor: const Color(0xFF1E1B4B),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -786,7 +1077,10 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+              _buildMyPassages(userPrefs, playerState),
+              _buildRecents(userPrefs, playerState),
+              const SizedBox(height: 12),
 
               /* Featured Presets (or Topic Tabs if enabled) - Single-row horizontal scroll */
               if (remoteConfig.enableTopicTabs)
@@ -796,7 +1090,12 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                   activeReference: playerState.currentChapter.reference,
                   onTopicSelected: (topic) => setState(() => _selectedTopic = topic),
                   onChapterSelected: (chapter) {
-                    _searchController.text = '${chapter.bookCode}.${chapter.chapterNumber}';
+                    final query = PassageQuery.canonicalize(
+                      esvPassageQueryFor(chapter) ?? '${chapter.bookName} ${chapter.chapterNumber}',
+                    );
+                    _searchController.text = query;
+                    _activeExactQuery = query;
+                    unawaited(_rememberPlayed(query));
                     notifier.loadChapter(chapter);
                   },
                 )
@@ -805,32 +1104,15 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                   height: 38,
                   child: Builder(
                     builder: (context) {
-                      final savedList = userPrefs.savedChapters;
-                      final savedSet = savedList.map((s) => s.toLowerCase().trim()).toSet();
-                      final allChips = <({String label, ChapterInfo? chapter, bool isSaved})>[
-                        ...kFeaturedChapters.map((c) => (
-                              label: c.displayTitle ?? c.reference,
-                              chapter: c as ChapterInfo?,
-                              isSaved: savedSet.contains(c.reference.toLowerCase().trim()),
-                            )),
-                        ...savedList
-                            .where((s) => !kFeaturedChapters.any((c) =>
-                                c.reference.toLowerCase().trim() == s.toLowerCase().trim() ||
-                                (c.displayTitle ?? '').toLowerCase().trim() == s.toLowerCase().trim()))
-                            .map((s) => (
-                                  label: s,
-                                  chapter: null as ChapterInfo?,
-                                  isSaved: true,
-                                )),
-                      ];
-
+                      final playing = _playingQuery(playerState);
+                      final savedQueries = userPrefs.myPassages.map((p) => p.query.toLowerCase()).toSet();
                       return ListView.separated(
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
-                        itemCount: allChips.length + 1,
+                        itemCount: kFeaturedChapters.length + 1,
                         separatorBuilder: (context, index) => const SizedBox(width: 8),
                         itemBuilder: (context, index) {
-                          if (index == allChips.length) {
+                          if (index == kFeaturedChapters.length) {
                             return _PresetChip(
                               label: '+ More (12)',
                               icon: Icons.library_books_rounded,
@@ -838,22 +1120,20 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                               onTap: _openTestedPassagesModal,
                             );
                           }
-                          final item = allChips[index];
-                          final isSelected = playerState.currentChapter.reference.toLowerCase().trim() ==
-                                  item.label.toLowerCase().trim() ||
-                              (playerState.currentChapter.displayTitle ?? '').toLowerCase().trim() ==
-                                  item.label.toLowerCase().trim();
-
+                          final item = kFeaturedChapters[index];
+                          final query = PassageQuery.canonicalize(
+                            esvPassageQueryFor(item) ?? item.displayTitle ?? item.reference,
+                          );
+                          final label = item.displayTitle ?? item.reference;
                           return _PresetChip(
-                            label: item.label,
-                            isSelected: isSelected,
-                            isBookmarked: item.isSaved,
+                            label: label,
+                            isSelected: playing == query || playing == PassageQuery.canonicalize(label),
+                            isBookmarked: savedQueries.contains(query.toLowerCase()),
                             onTap: () {
-                              if (item.chapter != null) {
-                                notifier.loadChapter(item.chapter!);
-                              } else {
-                                _handleSearchSubmit(item.label);
-                              }
+                              _searchController.text = query;
+                              _activeExactQuery = query;
+                              unawaited(_rememberPlayed(query));
+                              notifier.loadChapter(item);
                             },
                           );
                         },
@@ -1562,9 +1842,11 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
 
 class _PresetChip extends StatelessWidget {
   const _PresetChip({
+    super.key,
     required this.label,
     required this.isSelected,
     required this.onTap,
+    this.onLongPress,
     this.isBookmarked = false,
     this.icon,
   });
@@ -1572,6 +1854,7 @@ class _PresetChip extends StatelessWidget {
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
   final bool isBookmarked;
   final IconData? icon;
 
@@ -1581,6 +1864,7 @@ class _PresetChip extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(12),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
