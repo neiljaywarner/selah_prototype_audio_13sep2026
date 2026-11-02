@@ -1,0 +1,26 @@
+[
+  {
+    "verse": 4,
+    "text": "Love is patient, love is kind. It does not envy, it does not boast, it is not proud.",
+    "startMs": 14880,
+    "endMs": 19800
+  },
+  {
+    "verse": 5,
+    "text": "It does not dishonor others, it is not self-seeking, it is not easily angered, it keeps no record of wrongs.",
+    "startMs": 19800,
+    "endMs": 24900
+  },
+  {
+    "verse": 6,
+    "text": "Love does not delight in evil but rejoices with the truth.",
+    "startMs": 24900,
+    "endMs": 27900
+  },
+  {
+    "verse": 7,
+    "text": "It always protects, always trusts, always hopes, always perseveres.",
+    "startMs": 27900,
+    "endMs": 31840
+  }
+]
