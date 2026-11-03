@@ -109,6 +109,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
   void _handleSearchSubmit(String query) {
     final raw = PassageQuery.canonicalize(query);
     if (raw.isEmpty) return;
+    if (_searchController.text != raw) _searchController.text = raw;
 
     setState(() => _searchSuggestions = []);
 
