@@ -12,13 +12,47 @@ void main() {
 
   setUpAll(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(const MethodChannel('plugins.flutter.io/path_provider'), (call) async => '/tmp');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(const MethodChannel('flutter_tts'), (call) async => 1);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
           const MethodChannel('com.ryanheise.just_audio.methods'),
           (call) async {
             if (call.method == 'init') {
-              return {'id': 'test-player'};
+              final id = (call.arguments as Map?)?['id'] as String? ?? 'test-player';
+              TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+                  .setMockMethodCallHandler(
+                    MethodChannel('com.ryanheise.just_audio.methods.$id'),
+                    (playerCall) async {
+                      if (playerCall.method == 'load') {
+                        final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+                        const codec = StandardMethodCodec();
+                        final event = <String, dynamic>{
+                          'processingState': 3,
+                          'updateTime': DateTime.now().millisecondsSinceEpoch,
+                          'updatePosition': 0,
+                          'bufferedPosition': 0,
+                          'duration': 10000000,
+                          'icyMetadata': null,
+                          'currentIndex': 0,
+                          'androidAudioSessionId': null,
+                        };
+                        messenger.handlePlatformMessage(
+                          'com.ryanheise.just_audio.events.$id',
+                          codec.encodeSuccessEnvelope(event),
+                          (_) {},
+                        );
+                        return {'duration': 10000000};
+                      }
+                      if (playerCall.method == 'play') return {};
+                      if (playerCall.method == 'pause') return {};
+                      if (playerCall.method == 'stop') return {};
+                      if (playerCall.method == 'setVolume') return {};
+                      return {};
+                    },
+                  );
+              return {'id': id};
             }
             if (call.method == 'load') {
               return {'duration': 10000000};
@@ -166,6 +200,24 @@ void main() {
       // 1 -> 3
       notifier.cycleRepetitions();
       expect(container.read(chapterPlayerProvider).repetitions, equals(3));
+    });
+
+    test('pause and stopAllPlayback emit playback_stopped when playing', () async {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final notifier = container.read(chapterPlayerProvider.notifier);
+      await notifier.play();
+      expect(container.read(chapterPlayerProvider).isPlaying, isTrue);
+
+      await notifier.pause();
+      expect(container.read(chapterPlayerProvider).isPlaying, isFalse);
+
+      await notifier.play();
+      expect(container.read(chapterPlayerProvider).isPlaying, isTrue);
+
+      await notifier.stopAllPlayback();
+      expect(container.read(chapterPlayerProvider).isPlaying, isFalse);
     });
   });
 }

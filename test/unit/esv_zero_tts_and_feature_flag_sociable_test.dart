@@ -81,11 +81,13 @@ void main() {
   final List<String> ttsSpeakCalls = [];
   final List<Map<dynamic, dynamic>> loadedAudioSources = [];
   bool failJustAudioLoad = false;
+  String? activePlayerId;
 
   setUp(() {
     ttsSpeakCalls.clear();
     loadedAudioSources.clear();
     failJustAudioLoad = false;
+    activePlayerId = null;
 
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(const MethodChannel('flutter_tts'), (call) async {
@@ -115,6 +117,23 @@ void main() {
                 final args = playerCall.arguments as Map;
                 final source = args['audioSource'] as Map;
                 loadedAudioSources.add(source);
+                final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+                const codec = StandardMethodCodec();
+                final event = <String, dynamic>{
+                  'processingState': 3,
+                  'updateTime': DateTime.now().millisecondsSinceEpoch,
+                  'updatePosition': 0,
+                  'bufferedPosition': 0,
+                  'duration': 24000000,
+                  'icyMetadata': null,
+                  'currentIndex': 0,
+                  'androidAudioSessionId': null,
+                };
+                messenger.handlePlatformMessage(
+                  'com.ryanheise.just_audio.events.$id',
+                  codec.encodeSuccessEnvelope(event),
+                  (_) {},
+                );
                 return {'duration': 24000000};
               }
               if (playerCall.method == 'play') return {};

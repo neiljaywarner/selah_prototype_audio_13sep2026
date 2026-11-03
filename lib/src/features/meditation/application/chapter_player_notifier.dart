@@ -47,6 +47,31 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   /// are clip-relative, while timestamps are chapter-absolute.
   Duration _clipOffset = Duration.zero;
 
+  DateTime? _playStartTime;
+  int _accumulatedSeconds = 0;
+
+  void _recordListeningStart() {
+    _playStartTime = DateTime.now();
+  }
+
+  int _computeAndResetSecondsListened() {
+    int total = _accumulatedSeconds;
+    if (_playStartTime != null) {
+      total += DateTime.now().difference(_playStartTime!).inSeconds;
+      _playStartTime = null;
+    }
+    _accumulatedSeconds = 0;
+    return total;
+  }
+
+  int _pauseSecondsListened() {
+    if (_playStartTime != null) {
+      _accumulatedSeconds += DateTime.now().difference(_playStartTime!).inSeconds;
+      _playStartTime = null;
+    }
+    return _accumulatedSeconds;
+  }
+
   bool get _isEsvModeActive {
     final esv = ref.read(esvApiClientProvider);
     final policy = ref.read(esvPassagePolicyProvider);
@@ -795,6 +820,16 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
   Future<void> stopAllPlayback() async {
     _gapTimer?.cancel();
+    final secondsListened = _pauseSecondsListened();
+    if (state.isPlaying && secondsListened > 0) {
+      AppLogger.logEvent('playback_stopped', {
+        'passage': state.currentChapter.reference,
+        'translation': state.activeTranslation,
+        'current_iteration': state.currentIteration,
+        'seconds_listened': secondsListened,
+      });
+    }
+    _computeAndResetSecondsListened();
     try {
       await _flutterTts.stop();
     } catch (_) {}
@@ -1017,6 +1052,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   Future<void> play() async {
+    _recordListeningStart();
     if (state.isPausedInGap) {
       _gapTimer?.cancel();
       state = state.copyWith(isPausedInGap: false, isPlaying: true);
@@ -1102,6 +1138,15 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
   Future<void> pause() async {
     _gapTimer?.cancel();
+    final secondsListened = _pauseSecondsListened();
+    if (state.isPlaying && secondsListened > 0) {
+      AppLogger.logEvent('playback_stopped', {
+        'passage': state.currentChapter.reference,
+        'translation': state.activeTranslation,
+        'current_iteration': state.currentIteration,
+        'seconds_listened': secondsListened,
+      });
+    }
     if (state.audioMode == AudioMode.narrator) {
       await _audioPlayer.pause();
     } else {
@@ -1251,6 +1296,15 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   Future<void> _handleChapterPlaybackComplete() async {
+    final secondsListened = _computeAndResetSecondsListened();
+    AppLogger.logEvent('playback_cycle_completed', {
+      'passage': state.currentChapter.reference,
+      'translation': state.activeTranslation,
+      'iteration': state.currentIteration,
+      'total_repetitions': state.repetitions,
+      'seconds_listened': secondsListened,
+    });
+
     // 1. Tactile loop haptic feedback (subtle light pulse signaling loop wrap)
     try {
       await HapticFeedback.lightImpact();
@@ -1265,6 +1319,12 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
     if (state.repetitions != -1 && state.currentIteration >= state.repetitions) {
       AppLogger.info('Completed all ${state.repetitions} repetitions.');
+      AppLogger.logEvent('playback_completed', {
+        'passage': state.currentChapter.reference,
+        'translation': state.activeTranslation,
+        'repetitions_completed': state.repetitions,
+        'total_seconds_listened': secondsListened,
+      });
       state = state.copyWith(
         isPlaying: false,
         currentIteration: 1,
@@ -1321,6 +1381,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   Future<void> _startNextIteration() async {
+    _recordListeningStart();
     final nextIteration = state.currentIteration + 1;
     final repLabel = state.repetitions == -1 ? '∞' : '${state.repetitions}';
     AppLogger.info('Starting repetition $nextIteration (loop $nextIteration of $repLabel)');
