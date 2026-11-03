@@ -1,0 +1,42 @@
+# My passages reload smoke for the GitHub Pages verification build.
+#
+#   maestro test .maestro/my_passages_reload_web.yaml
+#
+# The flow types a range, bookmarks it, reloads, and taps the saved chip.
+# Confirm the header shows 1 Cor 13:4-7 or the ESV canonical
+# "1 Corinthians 13:4–7" after the tap. This URL is not selahword.web.app.
+
+appId: "https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/"
+---
+- openLink: "https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/"
+- waitForAnimationToEnd:
+    timeout: 20000
+
+- assertVisible:
+    text: "SELAH"
+
+- tapOn:
+    text: "Verse or range.*"
+    optional: true
+- eraseText
+- inputText: "1 Cor 13:4-7"
+
+- tapOn:
+    text: "Save to My passages"
+- assertVisible:
+    text: "Saved \"1 Cor 13:4-7\" to My passages"
+    optional: true
+- assertVisible:
+    text: "1 Cor 13:4-7"
+
+- openLink: "https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/"
+- waitForAnimationToEnd:
+    timeout: 20000
+
+- tapOn:
+    text: "1 Cor 13:4-7"
+- waitForAnimationToEnd:
+    timeout: 15000
+- assertVisible:
+    text: "1 Cor 13:4.*"
+- takeScreenshot: test_artifacts/my_passages_reload
