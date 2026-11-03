@@ -191,7 +191,7 @@ class AboutSelahDialog extends ConsumerWidget {
                         const SizedBox(height: 10),
                         _buildCopyrightCard(
                           title: 'World English Bible (WEB)',
-                          badgeText: 'PUBLIC DOMAIN',
+                          badgeText: 'PUBLIC DOMAIN TEXT',
                           badgeColor: Colors.greenAccent,
                           body: 'The World English Bible (WEB) text is in the public domain. '
                               'New Testament dramatized audio ℗ 2013 Hosanna / Faith Comes By Hearing. Used by permission.',
@@ -205,7 +205,7 @@ class AboutSelahDialog extends ConsumerWidget {
                       _buildReleaseBullet('Pure Human Narrator Audio: David Cochran Heath contemplative narration streamed directly for ESV passages.'),
                       _buildReleaseBullet('Zero TTS Fallback Guard: Strict protection against accidental synthetic speech fallback in ESV soft-launch mode.'),
                       _buildReleaseBullet('Seamless Passage Replay: Complete audio source pipeline refresh for peaceful repetitive reflection on 1 Cor 13:4–7.'),
-                      _buildReleaseBullet('Synchronized Search Bar: Search input dynamically mirrors current active meditation passage on startup.'),
+                      _buildReleaseBullet('Recent passages: the last passage you played is waiting in the search bar and the player, paused, the next time you open Selah. No account required.'),
                       _buildReleaseBullet('Cache-Busting Web Headers: Instant updates delivered on every deployment with zero stale service worker caching.'),
                       const SizedBox(height: 20),
 

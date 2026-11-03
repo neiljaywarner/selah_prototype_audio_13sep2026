@@ -45,7 +45,7 @@ external void _gtag(JSString command, JSString action, [JSAny? params]);
 * **When to check**: **1 to 5 seconds** after user interaction!
 * **How to enable**:
   * **Option A**: Run in debug mode (`flutter run -d chrome`). The app automatically injects `'debug_mode': true` into the event payload.
-  * **Option B**: Install the [Google Analytics Debugger](https://chromewebstore.google.com/detail/google-analytics-debugger/jnnbpmfnfgllkg commissioner) Chrome extension and turn it ON.
+  * **Option B**: Install the [Google Analytics Debugger](https://chromewebstore.google.com/detail/google-analytics-debugger/jnnbpmfnfgllkgfhldnnfhpjcgljgpgg) Chrome extension and turn it ON.
   * **Option C**: Append `?debug_mode=true` to your URL when browsing `https://selahword.web.app`.
 
 ### 3. Android Realtime & DebugView

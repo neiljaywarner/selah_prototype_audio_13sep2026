@@ -43,13 +43,13 @@ class FirebaseAnalyticsProvider implements AnalyticsService {
     if (!_initialized) return;
     try {
       final augmentedPayload = <String, dynamic>{
+        ...?properties,
         'k_debug_mode': kDebugMode,
         'is_marionette': isMarionetteDriving,
         'is_maestro': isMaestroDriving,
         'is_patrol': isPatrolDriving,
         'is_pwa': isPwaRunning,
         'is_webapk': isWebApkRunning,
-        ...?properties,
       };
 
       if (kIsWeb) {
