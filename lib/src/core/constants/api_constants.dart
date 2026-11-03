@@ -48,14 +48,15 @@ String get sanitizedEsvApiKey => sanitizeEnvSecret(kEsvApiKey);
 String get sanitizedApiBibleKey => sanitizeEnvSecret(kApiBibleKey);
 
 /// Short mark Crossway requires next to quoted ESV text.
-const String kEsvInlineAttribution = '(ESV)';
+const String kEsvShortCopyright = '(ESV)';
 
-/// Full copyright notice required on any view displaying ESV text.
-const String kEsvFullCopyrightNotice =
+/// Shown in the player notice when ESV text is on screen. Not spoken aloud.
+const String kEsvCopyrightNotice =
     'Scripture quotations are from the ESV® Bible (The Holy Bible, English Standard Version®), '
     'copyright © 2001 by Crossway, a publishing ministry of Good News Publishers. '
-    'Used by permission. All rights reserved. The Holy Bible, English Standard Version®, '
-    'is available online at esv.org.';
+    'Used by permission. All rights reserved.';
 
-/// Header value sent on Crossway ESV requests for ministry attribution.
-const String kEsvClientIdentificationHeader = 'SelahScriptureAudioMeditation/0.3';
+/// One HTTP call per verse, but stop expanding before the 60 requests/minute cap.
+/// Crossway also allows at most 500 verses per request, 1,000 requests/hour,
+/// and 5,000 requests/day.
+const int kEsvMaxSingleVerseLookups = 60;
