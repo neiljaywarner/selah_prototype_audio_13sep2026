@@ -2,15 +2,40 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:selah_prototype_audio_13sep2026/src/core/analytics/analytics_service.dart';
+import 'package:selah_prototype_audio_13sep2026/src/core/logging/app_logger.dart';
 import 'package:selah_prototype_audio_13sep2026/src/core/preferences/user_preferences.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/application/chapter_player_notifier.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/audio_mode.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/bible_translation.dart';
 
+class _MockTestAnalytics implements AnalyticsService {
+  final void Function(String event, Map<String, dynamic>? properties) onLog;
+  _MockTestAnalytics(this.onLog);
+
+  @override
+  Future<void> init() async {}
+
+  @override
+  Future<void> logEvent(String eventName, [Map<String, dynamic>? properties]) async {
+    onLog(eventName, properties);
+  }
+
+  @override
+  Future<void> logError(
+    String errorName, {
+    dynamic error,
+    StackTrace? stackTrace,
+    Map<String, dynamic>? extraProperties,
+  }) async {}
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(const MethodChannel('plugins.flutter.io/path_provider'), (call) async => '/tmp');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(const MethodChannel('flutter_tts'), (call) async => 1);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -18,7 +43,39 @@ void main() {
           const MethodChannel('com.ryanheise.just_audio.methods'),
           (call) async {
             if (call.method == 'init') {
-              return {'id': 'test-player'};
+              final id = (call.arguments as Map?)?['id'] as String? ?? 'test-player';
+              TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+                  .setMockMethodCallHandler(
+                    MethodChannel('com.ryanheise.just_audio.methods.$id'),
+                    (playerCall) async {
+                      if (playerCall.method == 'load') {
+                        final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+                        const codec = StandardMethodCodec();
+                        final event = <String, dynamic>{
+                          'processingState': 3,
+                          'updateTime': DateTime.now().millisecondsSinceEpoch,
+                          'updatePosition': 0,
+                          'bufferedPosition': 0,
+                          'duration': 10000000,
+                          'icyMetadata': null,
+                          'currentIndex': 0,
+                          'androidAudioSessionId': null,
+                        };
+                        messenger.handlePlatformMessage(
+                          'com.ryanheise.just_audio.events.$id',
+                          codec.encodeSuccessEnvelope(event),
+                          (_) {},
+                        );
+                        return {'duration': 10000000};
+                      }
+                      if (playerCall.method == 'play') return {};
+                      if (playerCall.method == 'pause') return {};
+                      if (playerCall.method == 'stop') return {};
+                      if (playerCall.method == 'setVolume') return {};
+                      return {};
+                    },
+                  );
+              return {'id': id};
             }
             if (call.method == 'load') {
               return {'duration': 10000000};
@@ -166,6 +223,41 @@ void main() {
       // 1 -> 3
       notifier.cycleRepetitions();
       expect(container.read(chapterPlayerProvider).repetitions, equals(3));
+    });
+
+    test('pause and stopAllPlayback emit playback_stopped when playing', () async {
+      final loggedEvents = <Map<String, dynamic>>[];
+      final mockAnalytics = _MockTestAnalytics((name, props) {
+        loggedEvents.add({'event': name, ...?props});
+      });
+      AppLogger.init(mockAnalytics);
+
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      final notifier = container.read(chapterPlayerProvider.notifier);
+      await notifier.play();
+      expect(container.read(chapterPlayerProvider).isPlaying, isTrue);
+
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await notifier.pause();
+      expect(container.read(chapterPlayerProvider).isPlaying, isFalse);
+
+      final pauseEvents = loggedEvents.where((e) => e['event'] == 'playback_stopped').toList();
+      expect(pauseEvents, isNotEmpty);
+      expect(pauseEvents.last['reason'], equals('user_pause'));
+      expect(pauseEvents.last['passage'], equals(container.read(chapterPlayerProvider).currentChapter.reference));
+
+      await notifier.play();
+      expect(container.read(chapterPlayerProvider).isPlaying, isTrue);
+
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await notifier.stopAllPlayback(reason: 'user_action');
+      expect(container.read(chapterPlayerProvider).isPlaying, isFalse);
+
+      final stopEvents = loggedEvents.where((e) => e['event'] == 'playback_stopped').toList();
+      expect(stopEvents.length, greaterThanOrEqualTo(2));
+      expect(stopEvents.last['reason'], equals('user_action'));
     });
   });
 }

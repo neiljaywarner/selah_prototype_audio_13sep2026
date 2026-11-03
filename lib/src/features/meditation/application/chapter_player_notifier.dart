@@ -47,6 +47,45 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   /// are clip-relative, while timestamps are chapter-absolute.
   Duration _clipOffset = Duration.zero;
 
+  DateTime? _playStartTime;
+  int _accumulatedSeconds = 0;
+  int _sessionTotalSeconds = 0;
+  bool _cycleCompletedForCurrentIteration = false;
+
+  void _recordListeningStart() {
+    _playStartTime = DateTime.now();
+    _cycleCompletedForCurrentIteration = false;
+  }
+
+  int _computeAndResetSecondsListened() {
+    int total = _accumulatedSeconds;
+    if (_playStartTime != null) {
+      total += DateTime.now().difference(_playStartTime!).inSeconds;
+      _playStartTime = null;
+    }
+    _accumulatedSeconds = 0;
+    final clamped = total.clamp(0, 86400);
+    _sessionTotalSeconds += clamped;
+    return clamped;
+  }
+
+  int _pauseSecondsListened() {
+    if (_playStartTime != null) {
+      _accumulatedSeconds += DateTime.now().difference(_playStartTime!).inSeconds;
+      _playStartTime = null;
+    }
+    // Return accumulated seconds if >= 1, or at least 1 second if playback was active
+    return _accumulatedSeconds.clamp(0, 86400);
+  }
+
+  int _resetSessionSeconds() {
+    final total = _sessionTotalSeconds;
+    _sessionTotalSeconds = 0;
+    _accumulatedSeconds = 0;
+    _playStartTime = null;
+    return total.clamp(0, 86400);
+  }
+
   bool get _isEsvModeActive {
     final esv = ref.read(esvApiClientProvider);
     final policy = ref.read(esvPassagePolicyProvider);
@@ -188,7 +227,10 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       final pStateStr = playerState.processingState.toString().split('.').last;
       state = state.copyWith(isPlaying: playerState.playing, processingStateName: pStateStr);
 
-      if (playerState.processingState == ProcessingState.completed && !state.isPausedInGap) {
+      if (playerState.processingState == ProcessingState.completed &&
+          !state.isPausedInGap &&
+          !_cycleCompletedForCurrentIteration) {
+        _cycleCompletedForCurrentIteration = true;
         AppLogger.info('Chapter completed iteration ${state.currentIteration}');
         _handleChapterPlaybackComplete();
       }
@@ -319,9 +361,10 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         }
       });
 
-      _flutterTts.setErrorHandler((_) {
+      _flutterTts.setErrorHandler((dynamic msg) {
         if (state.audioMode == AudioMode.tts && state.isPlaying) {
-          _handleChapterPlaybackComplete();
+          AppLogger.error('TTS speech engine error: $msg');
+          state = state.copyWith(isPlaying: false, lastError: 'TTS playback error: $msg');
         }
       });
     } catch (e) {
@@ -351,7 +394,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     required String bookName,
     PassageExcerpt? excerpt,
   }) async {
-    await stopAllPlayback();
+    await stopAllPlayback(reason: 'route_and_play');
     if (!ref.mounted) return;
 
     final fallbackText = _fallbackChapterText(bookCode, chapterNumber, bookName);
@@ -642,7 +685,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     final esv = ref.read(esvApiClientProvider);
     if (!esv.isConfigured) return false;
 
-    await stopAllPlayback();
+    await stopAllPlayback(reason: 'play_esv');
     if (!ref.mounted) return false;
     state = state.copyWith(
       isLoading: true,
@@ -689,6 +732,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         );
         final dur = await _audioPlayer.setAudioSource(source);
         if (!ref.mounted) return false;
+        _recordListeningStart();
         state = state.copyWith(
           isLoading: false,
           isPlaying: true,
@@ -793,8 +837,19 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     _switchToTtsFallback('Could not load online verse. Narrating fallback meditation verse.');
   }
 
-  Future<void> stopAllPlayback() async {
+  Future<void> stopAllPlayback({String reason = 'user_action'}) async {
     _gapTimer?.cancel();
+    final secondsListened = _pauseSecondsListened();
+    if (state.isPlaying) {
+      AppLogger.logEvent('playback_stopped', {
+        'passage': state.currentChapter.reference,
+        'translation': state.activeTranslation,
+        'current_iteration': state.currentIteration,
+        'seconds_listened': secondsListened,
+        'reason': reason,
+      });
+    }
+    _resetSessionSeconds();
     try {
       await _flutterTts.stop();
     } catch (_) {}
@@ -813,7 +868,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   Future<void> _playTts(String text) async {
-    await stopAllPlayback();
+    await stopAllPlayback(reason: 'play_tts');
     if (!ref.mounted) return;
 
     if (_isEsvModeActive) {
@@ -828,6 +883,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
 
     final spoken = _spokenText(text);
+    _recordListeningStart();
     state = state.copyWith(
       isLoading: false,
       isPlaying: true,
@@ -873,7 +929,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   Future<void> loadChapter(ChapterInfo chapter, {PassageExcerpt? excerpt}) async {
-    await stopAllPlayback();
+    await stopAllPlayback(reason: 'load_chapter');
     if (!ref.mounted) return;
 
     if (_isEsvModeActive) {
@@ -1017,6 +1073,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   Future<void> play() async {
+    _recordListeningStart();
     if (state.isPausedInGap) {
       _gapTimer?.cancel();
       state = state.copyWith(isPausedInGap: false, isPlaying: true);
@@ -1100,8 +1157,18 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
   }
 
-  Future<void> pause() async {
+  Future<void> pause({String reason = 'user_pause'}) async {
     _gapTimer?.cancel();
+    final secondsListened = _pauseSecondsListened();
+    if (state.isPlaying) {
+      AppLogger.logEvent('playback_stopped', {
+        'passage': state.currentChapter.reference,
+        'translation': state.activeTranslation,
+        'current_iteration': state.currentIteration,
+        'seconds_listened': secondsListened,
+        'reason': reason,
+      });
+    }
     if (state.audioMode == AudioMode.narrator) {
       await _audioPlayer.pause();
     } else {
@@ -1233,7 +1300,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     AppLogger.logEvent('sleep_timer_completed', {
       'minutes': state.sleepTimerMinutes,
     });
-    pause();
+    pause(reason: 'sleep_timer');
     _audioPlayer.setVolume(1.0).catchError((_) => {});
     state = state.copyWith(clearSleepTimer: true);
   }
@@ -1251,6 +1318,15 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   Future<void> _handleChapterPlaybackComplete() async {
+    final secondsListened = _computeAndResetSecondsListened();
+    AppLogger.logEvent('playback_cycle_completed', {
+      'passage': state.currentChapter.reference,
+      'translation': state.activeTranslation,
+      'iteration': state.currentIteration,
+      'total_repetitions': state.repetitions,
+      'seconds_listened': secondsListened,
+    });
+
     // 1. Tactile loop haptic feedback (subtle light pulse signaling loop wrap)
     try {
       await HapticFeedback.lightImpact();
@@ -1264,7 +1340,14 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
 
     if (state.repetitions != -1 && state.currentIteration >= state.repetitions) {
+      final sessionTotal = _resetSessionSeconds();
       AppLogger.info('Completed all ${state.repetitions} repetitions.');
+      AppLogger.logEvent('playback_completed', {
+        'passage': state.currentChapter.reference,
+        'translation': state.activeTranslation,
+        'repetitions_completed': state.repetitions,
+        'total_seconds_listened': sessionTotal,
+      });
       state = state.copyWith(
         isPlaying: false,
         currentIteration: 1,
@@ -1321,6 +1404,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   Future<void> _startNextIteration() async {
+    _recordListeningStart();
     final nextIteration = state.currentIteration + 1;
     final repLabel = state.repetitions == -1 ? '∞' : '${state.repetitions}';
     AppLogger.info('Starting repetition $nextIteration (loop $nextIteration of $repLabel)');
