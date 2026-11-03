@@ -2,10 +2,33 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:selah_prototype_audio_13sep2026/src/core/analytics/analytics_service.dart';
+import 'package:selah_prototype_audio_13sep2026/src/core/logging/app_logger.dart';
 import 'package:selah_prototype_audio_13sep2026/src/core/preferences/user_preferences.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/application/chapter_player_notifier.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/audio_mode.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/bible_translation.dart';
+
+class _MockTestAnalytics implements AnalyticsService {
+  final void Function(String event, Map<String, dynamic>? properties) onLog;
+  _MockTestAnalytics(this.onLog);
+
+  @override
+  Future<void> init() async {}
+
+  @override
+  Future<void> logEvent(String eventName, [Map<String, dynamic>? properties]) async {
+    onLog(eventName, properties);
+  }
+
+  @override
+  Future<void> logError(
+    String errorName, {
+    dynamic error,
+    StackTrace? stackTrace,
+    Map<String, dynamic>? extraProperties,
+  }) async {}
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -203,6 +226,12 @@ void main() {
     });
 
     test('pause and stopAllPlayback emit playback_stopped when playing', () async {
+      final loggedEvents = <Map<String, dynamic>>[];
+      final mockAnalytics = _MockTestAnalytics((name, props) {
+        loggedEvents.add({'event': name, ...?props});
+      });
+      AppLogger.init(mockAnalytics);
+
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
@@ -210,14 +239,25 @@ void main() {
       await notifier.play();
       expect(container.read(chapterPlayerProvider).isPlaying, isTrue);
 
+      await Future<void>.delayed(const Duration(milliseconds: 50));
       await notifier.pause();
       expect(container.read(chapterPlayerProvider).isPlaying, isFalse);
+
+      final pauseEvents = loggedEvents.where((e) => e['event'] == 'playback_stopped').toList();
+      expect(pauseEvents, isNotEmpty);
+      expect(pauseEvents.last['reason'], equals('user_pause'));
+      expect(pauseEvents.last['passage'], equals(container.read(chapterPlayerProvider).currentChapter.reference));
 
       await notifier.play();
       expect(container.read(chapterPlayerProvider).isPlaying, isTrue);
 
-      await notifier.stopAllPlayback();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      await notifier.stopAllPlayback(reason: 'user_action');
       expect(container.read(chapterPlayerProvider).isPlaying, isFalse);
+
+      final stopEvents = loggedEvents.where((e) => e['event'] == 'playback_stopped').toList();
+      expect(stopEvents.length, greaterThanOrEqualTo(2));
+      expect(stopEvents.last['reason'], equals('user_action'));
     });
   });
 }
