@@ -234,36 +234,12 @@ class _PopularPassagesBottomSheetState extends State<PopularPassagesBottomSheet>
                           color: const Color(0xFF0F0E26).withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: index == 0
-                                ? const Color(0xFFFBBF24).withValues(alpha: 0.3)
-                                : Colors.white.withValues(alpha: 0.08),
+                            color: Colors.white.withValues(alpha: 0.08),
                           ),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            // Rank / Index badge
-                            Container(
-                              width: 32,
-                              height: 32,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: index == 0
-                                    ? const Color(0xFFFBBF24).withValues(alpha: 0.2)
-                                    : Colors.white.withValues(alpha: 0.05),
-                              ),
-                              child: Text(
-                                '${index + 1}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: index == 0 ? const Color(0xFFFBBF24) : Colors.white60,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 14),
-
                             // Passage Details
                             Expanded(
                               child: Column(
