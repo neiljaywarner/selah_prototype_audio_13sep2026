@@ -1,0 +1,36 @@
+Feature: Community Popular Passages Discovery
+  As a Christian disciple meditating on Scripture
+  I want to see what passages fellow believers are contemplating across the community
+  So that I can join them in shared meditation without social comparison or gamified leaderboards
+
+  Background:
+    Given the Selah Scripture Audio Meditation app is active
+    And the user is on the Chapter Player Screen
+
+  Scenario: Browse community popular passages across timeframes
+    When the user taps the "🌱 Popular" chip in the horizontal passage row
+    Then a bottom sheet opens displaying "Popular Passages"
+    And timeframes "This Week", "This Month", and "All Time" are available
+    And "This Week" is selected by default
+    And beloved passages such as "1 Corinthians 13:4–7" and "Psalm 23" are listed
+    And each passage displays reverent communal metrics such as "meditators" and "loops"
+
+  Scenario: Toggle sorting between Meditators and Loops
+    Given the Popular Passages modal is open
+    When the user toggles the sort order to "Loops"
+    Then passages are re-ordered by highest loop completion count
+    When the user toggles the sort order back to "Meditators"
+    Then passages are re-ordered by highest unique meditators count
+
+  Scenario: 1-Tap meditation playback from Popular Passages
+    Given the Popular Passages modal is open
+    When the user taps on "Matthew 11:28–30"
+    Then the modal closes
+    And the player loads "Matthew 11:28–30" into the active meditation engine
+    And a "select_popular_passage" telemetry event is logged
+
+  Scenario: Reverence guardrails eliminate competitive ranking
+    Given the Popular Passages modal is open
+    Then no numeric leaderboard rank badges (e.g. #1, #2) are rendered
+    And all passages share peaceful, uniform card borders
+    And phrasing emphasizes communal presence rather than competitive virality
