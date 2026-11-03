@@ -22,6 +22,7 @@ import 'widgets/feature_voting_sheet.dart';
 import 'widgets/licensing_attribution_sheet.dart';
 import 'widgets/offline_indicator.dart';
 import 'widgets/passage_timing_feedback_bar.dart';
+import 'widgets/popular_passages_bottom_sheet.dart';
 import 'widgets/settings_bottom_sheet.dart';
 import 'widgets/topic_tab_bar.dart';
 import 'widgets/emoji_feedback_dialog.dart';
@@ -462,6 +463,21 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     );
   }
 
+  void _openPopularPassagesModal() {
+    showModalBottomSheet(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF1E1B4B),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => PopularPassagesBottomSheet(
+        onSelectPassage: _handleSearchSubmit,
+      ),
+    );
+  }
+
   void _openTestedPassagesModal() {
     showModalBottomSheet(
       context: context,
@@ -827,10 +843,18 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                       return ListView.separated(
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
-                        itemCount: allChips.length + 1,
+                        itemCount: allChips.length + 2,
                         separatorBuilder: (context, index) => const SizedBox(width: 8),
                         itemBuilder: (context, index) {
                           if (index == allChips.length) {
+                            return _PresetChip(
+                              label: '🌱 Popular',
+                              icon: Icons.auto_awesome_rounded,
+                              isSelected: false,
+                              onTap: _openPopularPassagesModal,
+                            );
+                          }
+                          if (index == allChips.length + 1) {
                             return _PresetChip(
                               label: '+ More (12)',
                               icon: Icons.library_books_rounded,
