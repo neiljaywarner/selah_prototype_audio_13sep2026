@@ -22,7 +22,7 @@ appId: com.example.selah_prototype_audio_13sep2026
 - pressKey: "Power"
 
 # 4. Wait for background audio playback to continue uninterrupted while screen is off (pocket mode)
-- evalScript: ${new Promise(r => setTimeout(r, 5000))}
+- evalScript: ${const start = Date.now(); while (Date.now() - start < 5000) {}}
 
 # 5. Wake device back up
 - pressKey: "Power"
