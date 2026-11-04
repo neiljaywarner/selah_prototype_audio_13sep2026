@@ -114,7 +114,7 @@ class FeatureVotingService {
       description:
           'Synchronized millisecond word highlighting with narrator audio using Faith Comes By Hearing BibleBrain alignment.',
       targetVersion: 'v0.3',
-      votes: 42,
+      votes: 0,
       isApproved: true,
       status: 'approved',
     ),
@@ -124,7 +124,7 @@ class FeatureVotingService {
       description:
           'Listen to user recite verses out loud with gentle pauses, checking recitation accuracy and progress.',
       targetVersion: 'v0.3.5',
-      votes: 38,
+      votes: 0,
       isApproved: true,
       status: 'approved',
     ),
@@ -134,7 +134,7 @@ class FeatureVotingService {
       description:
           'Background nature audio (gentle rain, temple pads, morning birds) layered softly beneath scripture narration.',
       targetVersion: 'v0.4',
-      votes: 29,
+      votes: 0,
       isApproved: true,
       status: 'approved',
     ),
@@ -144,7 +144,7 @@ class FeatureVotingService {
       description:
           'Slow down audio for deep lectio divina contemplation or speed up for faster listening sessions.',
       targetVersion: 'v0.2.2',
-      votes: 19,
+      votes: 0,
       isApproved: true,
       status: 'approved',
     ),
@@ -154,7 +154,7 @@ class FeatureVotingService {
       description:
           'Download narrated audio chapters locally for uninterrupted listening in airplane mode or off-grid retreats.',
       targetVersion: 'v0.2.5',
-      votes: 15,
+      votes: 0,
       isApproved: true,
       status: 'approved',
     ),

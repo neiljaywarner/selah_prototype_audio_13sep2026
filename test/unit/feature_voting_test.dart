@@ -17,8 +17,7 @@ void main() {
       expect(features.any((f) => f.id == 'karaoke_timestamps'), isTrue);
 
       final karaoke = features.firstWhere((f) => f.id == 'karaoke_timestamps');
-      expect(karaoke.votes, greaterThan(0));
-      expect(karaoke.votes, equals(42));
+      expect(karaoke.votes, equals(0));
       expect(karaoke.hasVoted, isFalse);
     });
 
