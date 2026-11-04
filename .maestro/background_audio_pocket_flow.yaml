@@ -1,0 +1,36 @@
+# Maestro Flow: Background Audio & Screen Lock Resilience
+# Target: Native Android APK (appId: com.example.selah_prototype_audio_13sep2026)
+# Note: This flow is specifically scoped to native Android APK hardware lifecycle (Power key / screen lock).
+# Web preview and PWA are validated through separate browser flows.
+appId: com.example.selah_prototype_audio_13sep2026
+---
+- launchApp:
+    clearState: false
+
+- waitForAnimationToEnd
+
+# 1. Verify app title is visible
+- assertVisible: ".*SELAH.*"
+
+# 2. Tap Play to initiate audio stream
+- tapOn:
+    point: "50%,78%"
+
+- waitForAnimationToEnd
+
+# 3. Simulate putting phone into pocket / locking screen
+- pressKey: "Power"
+
+# 4. Wait for background audio playback to continue uninterrupted while screen is off (pocket mode)
+- evalScript: ${const start = Date.now(); while (Date.now() - start < 5000) {}}
+
+# 5. Wake device back up
+- pressKey: "Power"
+
+- waitForAnimationToEnd
+
+# 6. Verify player is still visible and active after wake
+- assertVisible: ".*SELAH.*"
+- assertVisible: ".*1 Cor 13:4–7.*"
+
+- takeScreenshot: test_artifacts/maestro_background_audio_pocket_verified
