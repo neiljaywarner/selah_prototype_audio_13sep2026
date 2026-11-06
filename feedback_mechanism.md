@@ -46,9 +46,13 @@ In Selah, this is implemented in `lib/src/core/feedback/feedback_service.dart`. 
 
 For visual bug reporting with on-screen drawing:
 1. Wrap root widget with `BetterFeedback(child: SelahApp())`.
-2. On feedback submission, serialize the screenshot png and post an issue to a private repository:
+2. On feedback submission, serialize the screenshot png and post an issue via a secure cloud proxy or server-side secret:
 ```bash
-POST https://api.github.com/repos/{owner}/{private-repo}/issues
-Authorization: Bearer GITHUB_PAT
+# Production flow: Flutter Client -> Cloud Proxy -> Private GitHub Repo
+# The GitHub PAT is retained exclusively in server-side / Cloud Function secrets,
+# ensuring client builds never expose elevated repository write tokens.
+POST https://selah-feedback-proxy.web.app/api/feedback
+Authorization: Bearer <ephemeral-client-session-token>
 ```
-3. Issue body includes annotated image, app version, logs from `AppLogger.logs`, and device info.
+3. The proxy relays to `https://api.github.com/repos/{owner}/{private-triage-repo}/issues`.
+4. Issue body includes annotated image, app version, logs from `AppLogger.logs`, and device info.

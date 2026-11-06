@@ -42,6 +42,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   StreamSubscription? _eventSub;
   StreamSubscription? _stateSub;
   List<VerseTimestamp>? _currentTimestamps;
+  DateTime? _playbackSessionStart;
 
   /// Start of the active clip within the full chapter stream. Player positions
   /// are clip-relative, while timestamps are chapter-absolute.
@@ -169,7 +170,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   Future<void> _initAudioSession() async {
-    if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) {
+    if (!kIsWeb &&
+        (Platform.environment.containsKey('FLUTTER_TEST') ||
+            Platform.resolvedExecutable.contains('flutter_tester'))) {
       return;
     }
     try {
@@ -393,6 +396,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     required int chapterNumber,
     required String bookName,
     PassageExcerpt? excerpt,
+    bool autoplay = true,
+    bool resetIteration = true,
   }) async {
     await stopAllPlayback(reason: 'route_and_play');
     if (!ref.mounted) return;
@@ -404,7 +409,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       final rawQuery = effectiveExcerpt?.toEsvPassageQuery() ??
           (bookCode.toUpperCase() == 'VRS' ? bookName : '$bookName $chapterNumber');
       final normalizedQuery = EsvPassagePolicy.normalizePassageQuery(rawQuery);
-      if (await tryPlayEsvPassage(normalizedQuery)) {
+      if (await tryPlayEsvPassage(normalizedQuery, autoplay: autoplay)) {
         state = state.copyWith(
           activeTranslation: BibleTranslation.esv.code,
           activeExcerpt: effectiveExcerpt,
@@ -470,7 +475,12 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         clearInfoNotice: true,
       );
 
-      await loadChapter(dynamicChapter, excerpt: effectiveExcerpt);
+      await loadChapter(
+        dynamicChapter,
+        excerpt: effectiveExcerpt,
+        autoplay: autoplay,
+        resetIteration: resetIteration,
+      );
       return;
     }
 
@@ -487,7 +497,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         isOffline: false,
         infoNotice: notice,
       );
-      await _playTts(text);
+      await _playTts(text, autoplay: autoplay);
       return;
     }
 
@@ -518,7 +528,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
             '${translation.fullName} (${translation.code}) has no $testament narrator on API.Bible — narrating with Text-to-Speech (TTS).',
       );
 
-      await _playTts(chapterText);
+      await _playTts(chapterText, autoplay: autoplay);
       return;
     }
 
@@ -544,6 +554,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       _switchToTtsFallback(
         noticeMessage,
         overrideText: cachedText,
+        autoplay: autoplay,
       );
       return;
     }
@@ -578,7 +589,12 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
             clearInfoNotice: true,
           );
 
-          await loadChapter(dynamicChapter, excerpt: effectiveExcerpt);
+          await loadChapter(
+        dynamicChapter,
+        excerpt: effectiveExcerpt,
+        autoplay: autoplay,
+        resetIteration: resetIteration,
+      );
           return;
         }
       }
@@ -611,6 +627,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       _switchToTtsFallback(
         noticeMessage,
         overrideText: cachedText,
+        autoplay: autoplay,
       );
     }
   }
@@ -681,7 +698,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   ///
   /// Returns false when the key is unset or the request fails, without
   /// replacing a later narrator or bible-api.com attempt.
-  Future<bool> tryPlayEsvPassage(String query) async {
+  Future<bool> tryPlayEsvPassage(String query, {bool autoplay = true}) async {
     final esv = ref.read(esvApiClientProvider);
     if (!esv.isConfigured) return false;
 
@@ -735,7 +752,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         _recordListeningStart();
         state = state.copyWith(
           isLoading: false,
-          isPlaying: true,
+          isPlaying: autoplay,
           audioMode: AudioMode.narrator,
           activeTranslation: BibleTranslation.esv.code,
           duration: dur ?? Duration.zero,
@@ -751,7 +768,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
           clearInfoNotice: true,
           clearLastError: true,
         );
-        _audioPlayer.play();
+        if (autoplay) {
+          _audioPlayer.play();
+        }
         return true;
       } catch (audioErr) {
         AppLogger.error('ESV human audio playback failed: $audioErr');
@@ -781,8 +800,15 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
   }
 
-  Future<void> fetchAndPlaySingleVerse(String query, {bool tryEsv = true}) async {
-    if ((tryEsv || _isEsvModeActive) && await tryPlayEsvPassage(query)) return;
+  Future<void> fetchAndPlaySingleVerse(
+    String query, {
+    bool tryEsv = true,
+    bool autoplay = true,
+  }) async {
+    if ((tryEsv || _isEsvModeActive) &&
+        await tryPlayEsvPassage(query, autoplay: autoplay)) {
+      return;
+    }
 
     if (_isEsvModeActive) {
       state = state.copyWith(
@@ -827,14 +853,17 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
               'Single verse loaded — narrating with word-synchronized karaoke highlighting.',
         );
 
-        await _playTts(verseStr);
+        await _playTts(verseStr, autoplay: autoplay);
         return;
       }
     } catch (e) {
       AppLogger.error('Single verse fetch failed', error: e);
     }
 
-    _switchToTtsFallback('Could not load online verse. Narrating fallback meditation verse.');
+    _switchToTtsFallback(
+      'Could not load online verse. Narrating fallback meditation verse.',
+      autoplay: autoplay,
+    );
   }
 
   Future<void> stopAllPlayback({String reason = 'user_action'}) async {
@@ -867,7 +896,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     return text.endsWith(suffix) ? text.substring(0, text.length - suffix.length) : text;
   }
 
-  Future<void> _playTts(String text) async {
+  Future<void> _playTts(String text, {bool autoplay = true}) async {
     await stopAllPlayback(reason: 'play_tts');
     if (!ref.mounted) return;
 
@@ -886,11 +915,13 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     _recordListeningStart();
     state = state.copyWith(
       isLoading: false,
-      isPlaying: true,
+      isPlaying: autoplay,
       isPausedInGap: false,
       duration: Duration(seconds: (spoken.split(' ').length * 0.45).ceil()),
       position: Duration.zero,
     );
+
+    if (!autoplay) return;
 
     AppLogger.logEvent('play_tts', {
       'chapter': state.currentChapter.reference,
@@ -906,7 +937,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
   }
 
-  void _switchToTtsFallback(String notice, {String? overrideText}) {
+  void _switchToTtsFallback(String notice, {String? overrideText, bool autoplay = true}) {
     if (!ref.mounted) return;
     if (_isEsvModeActive) {
       state = state.copyWith(
@@ -925,10 +956,15 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       infoNotice: notice,
       currentChapter: state.currentChapter.copyWith(textContent: text),
     );
-    _playTts(text);
+    _playTts(text, autoplay: autoplay);
   }
 
-  Future<void> loadChapter(ChapterInfo chapter, {PassageExcerpt? excerpt}) async {
+  Future<void> loadChapter(
+    ChapterInfo chapter, {
+    PassageExcerpt? excerpt,
+    bool autoplay = true,
+    bool resetIteration = true,
+  }) async {
     await stopAllPlayback(reason: 'load_chapter');
     if (!ref.mounted) return;
 
@@ -938,7 +974,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
           : '${chapter.bookName} ${chapter.chapterNumber}';
       final query = esvPassageQueryFor(chapter, excerpt: excerpt) ??
           EsvPassagePolicy.normalizePassageQuery(fallbackQuery);
-      await tryPlayEsvPassage(query);
+      await tryPlayEsvPassage(query, autoplay: autoplay);
       return;
     }
 
@@ -967,7 +1003,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       isLoading: true,
       isPlaying: false,
       isPausedInGap: false,
-      currentIteration: 1,
+      currentIteration: resetIteration ? 1 : state.currentIteration,
       position: Duration.zero,
       duration: Duration.zero,
       clearLastError: true,
@@ -988,6 +1024,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         chapterNumber: chapter.chapterNumber,
         bookName: chapter.bookName,
         excerpt: effectiveExcerpt,
+        autoplay: autoplay,
+        resetIteration: resetIteration,
       );
       return;
     }
@@ -1045,7 +1083,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         duration: dur ?? Duration.zero,
         isOffline: isAsset,
       );
-      play();
+      if (autoplay) {
+        play();
+      }
     } catch (e, stack) {
       if (!ref.mounted) return;
       AppLogger.error(
@@ -1060,7 +1100,10 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         },
       );
       state = state.copyWith(isOffline: true);
-      _switchToTtsFallback('Audio stream blocked or failed. Switched to Text-to-Speech (TTS).');
+      _switchToTtsFallback(
+        'Audio stream blocked or failed. Switched to Text-to-Speech (TTS).',
+        autoplay: autoplay,
+      );
     }
   }
 
@@ -1174,6 +1217,17 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     } else {
       await _flutterTts.stop();
     }
+    final secondsListened = _playbackSessionStart != null
+        ? DateTime.now().difference(_playbackSessionStart!).inSeconds.clamp(0, 86400)
+        : 0;
+    _playbackSessionStart = null;
+    AppLogger.logEvent('playback_stopped', {
+      'reference': state.currentChapter.reference,
+      'reason': 'user_paused',
+      'seconds_listened': secondsListened,
+      'iteration': state.currentIteration,
+      'translation': state.activeTranslation,
+    });
     state = state.copyWith(isPlaying: false, isPausedInGap: false);
   }
 
@@ -1200,7 +1254,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     AppLogger.logEvent('change_setting', {'setting': 'pauseGapSeconds', 'value': seconds});
   }
 
-  void setTranslation(String translation, {bool force = false}) {
+  void setTranslation(String translation, {bool force = false, bool resetIteration = true}) {
     final target = BibleTranslation.fromCode(translation);
     final policy = ref.read(esvPassagePolicyProvider);
     if (!force && !policy.showApiBibleTranslations && target.code != BibleTranslation.esv.code) {
@@ -1241,6 +1295,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       bookCode: state.currentChapter.bookCode,
       chapterNumber: state.currentChapter.chapterNumber,
       bookName: state.currentChapter.bookName,
+      resetIteration: resetIteration,
     );
   }
 
@@ -1339,6 +1394,14 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       } catch (_) {}
     }
 
+    AppLogger.logEvent('playback_cycle_completed', {
+      'reference': state.currentChapter.reference,
+      'iteration': state.currentIteration,
+      'target_repetitions': state.repetitions,
+      'translation': state.activeTranslation,
+      'audio_mode': state.audioMode.name,
+    });
+
     if (state.repetitions != -1 && state.currentIteration >= state.repetitions) {
       final sessionTotal = _resetSessionSeconds();
       AppLogger.info('Completed all ${state.repetitions} repetitions.');
@@ -1395,12 +1458,12 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
   }
 
-  void cycleNextTranslation() {
+  void cycleNextTranslation({bool resetIteration = true}) {
     if (!ref.read(esvPassagePolicyProvider).showApiBibleTranslations) return;
     const list = ['BSB', 'WEB', 'NIV'];
     final idx = list.indexOf(state.activeTranslation);
     final next = list[(idx + 1) % list.length];
-    setTranslation(next);
+    setTranslation(next, resetIteration: resetIteration);
   }
 
   Future<void> _startNextIteration() async {
@@ -1415,7 +1478,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     );
 
     if (state.shuffleTranslations && ref.read(esvPassagePolicyProvider).showApiBibleTranslations) {
-      cycleNextTranslation();
+      cycleNextTranslation(resetIteration: false);
       return;
     }
 

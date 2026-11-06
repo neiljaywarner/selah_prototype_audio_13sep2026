@@ -81,13 +81,11 @@ void main() {
   final List<String> ttsSpeakCalls = [];
   final List<Map<dynamic, dynamic>> loadedAudioSources = [];
   bool failJustAudioLoad = false;
-  String? activePlayerId;
 
   setUp(() {
     ttsSpeakCalls.clear();
     loadedAudioSources.clear();
     failJustAudioLoad = false;
-    activePlayerId = null;
 
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(const MethodChannel('flutter_tts'), (call) async {
