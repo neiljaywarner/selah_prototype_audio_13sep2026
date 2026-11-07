@@ -23,6 +23,7 @@ import '../domain/audio_mode.dart';
 import '../domain/bible_translation.dart';
 import '../domain/chapter_info.dart';
 import '../domain/passage_excerpt.dart';
+import '../domain/passage_share.dart';
 export 'chapter_player_state.dart';
 import 'chapter_player_state.dart';
 
@@ -42,7 +43,6 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   StreamSubscription? _eventSub;
   StreamSubscription? _stateSub;
   List<VerseTimestamp>? _currentTimestamps;
-  DateTime? _playbackSessionStart;
 
   /// Start of the active clip within the full chapter stream. Player positions
   /// are clip-relative, while timestamps are chapter-absolute.
@@ -1108,6 +1108,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   void togglePlayPause() {
+    if (state.currentChapter.bookCode.isEmpty) return;
     if (state.isPlaying) {
       pause();
     } else {
@@ -1115,7 +1116,72 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
   }
 
+  /// Lands on a shared reference without asking the recipient to sign in.
+  /// Playback stays ready on the play control; opening a link does not autoplay.
+  void presentSharedPassage(SharedPassage passage) {
+    ChapterInfo? preset;
+    for (final chapter in kFeaturedChapters) {
+      if (chapter.bookCode.toUpperCase() == passage.book.code &&
+          chapter.chapterNumber == passage.chapter) {
+        preset = chapter;
+        break;
+      }
+    }
+
+    PassageExcerpt? excerpt;
+    if (passage.startVerse != null) {
+      excerpt = PassageExcerpt.customExcerpt(
+        bookCode: passage.book.code,
+        chapterNumber: passage.chapter,
+        startVerse: passage.startVerse!,
+        endVerse: passage.endVerse ?? passage.startVerse!,
+        displayTitle: passage.canonical,
+      );
+    } else {
+      excerpt = PassageExcerpt.forChapter(passage.book.code, passage.chapter);
+    }
+
+    state = state.copyWith(
+      currentChapter: ChapterInfo(
+        bookCode: passage.book.code,
+        bookName: passage.book.name,
+        chapterNumber: passage.chapter,
+        audioStreamUrl: '',
+        textContent: preset?.textContent ?? 'Press play to listen to ${passage.canonical}.',
+        displayTitle: passage.canonical,
+      ),
+      activeExcerpt: excerpt,
+      clearActiveExcerpt: excerpt == null,
+      isPlaying: false,
+      isLoading: false,
+      clearLastError: true,
+      clearInfoNotice: true,
+      audioMode: AudioMode.narrator,
+    );
+  }
+
+  /// Keeps the player on screen and explains that the link is not a passage.
+  void rejectSharedReference(String raw) {
+    final message = PassageShareLink.friendlyError(raw);
+    state = state.copyWith(
+      currentChapter: ChapterInfo(
+        bookCode: '',
+        bookName: 'Selah',
+        chapterNumber: 1,
+        audioStreamUrl: '',
+        textContent: 'This link does not open a passage. Search for another reference, or ask for a new link.',
+        displayTitle: 'Passage link',
+      ),
+      isPlaying: false,
+      isLoading: false,
+      clearActiveExcerpt: true,
+      clearInfoNotice: true,
+      lastError: message,
+    );
+  }
+
   Future<void> play() async {
+    if (state.currentChapter.bookCode.isEmpty) return;
     _recordListeningStart();
     if (state.isPausedInGap) {
       _gapTimer?.cancel();
@@ -1130,10 +1196,13 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
     if ((state.audioMode == AudioMode.narrator || _isEsvModeActive) &&
         state.currentChapter.audioStreamUrl.isEmpty) {
+      // Show that playback has started before audio plugins respond.
+      state = state.copyWith(isLoading: true, clearLastError: true);
       await routeAndPlayChapter(
         bookCode: state.currentChapter.bookCode,
         chapterNumber: state.currentChapter.chapterNumber,
         bookName: state.currentChapter.bookName,
+        excerpt: state.activeExcerpt,
       );
       return;
     }
@@ -1217,17 +1286,6 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     } else {
       await _flutterTts.stop();
     }
-    final secondsListened = _playbackSessionStart != null
-        ? DateTime.now().difference(_playbackSessionStart!).inSeconds.clamp(0, 86400)
-        : 0;
-    _playbackSessionStart = null;
-    AppLogger.logEvent('playback_stopped', {
-      'reference': state.currentChapter.reference,
-      'reason': 'user_paused',
-      'seconds_listened': secondsListened,
-      'iteration': state.currentIteration,
-      'translation': state.activeTranslation,
-    });
     state = state.copyWith(isPlaying: false, isPausedInGap: false);
   }
 
