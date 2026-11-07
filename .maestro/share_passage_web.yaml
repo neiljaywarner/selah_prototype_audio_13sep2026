@@ -1,0 +1,54 @@
+# Share-link landing on Flutter web.
+#
+# The published GitHub Pages site does not have this branch. Serve this
+# checkout, then run Maestro against that local origin. Do not point this
+# flow at selahword.web.app.
+#
+#   flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8091
+#   maestro test --headless --screen-size 1200x2200 .maestro/share_passage_web.yaml
+#
+# Valid links land on 1 Cor 13:4-7 and playback can start. A broken
+# reference stays on the player and shows a friendly error. No account.
+
+appId: http://127.0.0.1:8091
+# `url` marks this as a web flow so Maestro uses desktop Chromium
+# instead of a connected Android emulator.
+url: http://127.0.0.1:8091
+tags:
+  - share
+  - web
+---
+- launchApp
+- openLink: "http://127.0.0.1:8091/?ref=1+Cor+13:4-7"
+- extendedWaitUntil:
+    visible: "My Passages"
+    timeout: 45000
+# The header and subtitle share one accessibility node: "SELAHScripture Audio…".
+- assertVisible: ".*SELAH.*"
+- assertVisible: "1 Cor 13:4-7"
+- assertVisible: "Love is patient.*"
+- assertNotVisible: "Sign in"
+- assertNotVisible: "Couldn't open that link.*"
+
+- extendedWaitUntil:
+    visible: "Play passage"
+    timeout: 15000
+- tapOn: "Play passage"
+- extendedWaitUntil:
+    visible: "Pause passage"
+    timeout: 30000
+- assertVisible: "1 Cor 13:4-7"
+- assertNotVisible: "Sign in"
+- takeScreenshot: maestro_share_passage_open
+
+- openLink: "http://127.0.0.1:8091/?ref=NotABook+99:1"
+- extendedWaitUntil:
+    visible: "Couldn't open that link.*"
+    timeout: 30000
+- assertVisible: ".*NotABook 99:1.*"
+- assertVisible: ".*not a Bible passage.*"
+- assertVisible: ".*SELAH.*"
+- assertVisible: ".*does not open a passage.*"
+- assertNotVisible: "Love is patient.*"
+- assertNotVisible: "Sign in"
+- takeScreenshot: maestro_share_passage_bad_ref

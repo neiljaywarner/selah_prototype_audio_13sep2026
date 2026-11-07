@@ -1518,8 +1518,15 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
 
                         // Center Play / Pause
                         playerState.isLoading
-                            ? const CircularProgressIndicator(color: Color(0xFFFBBF24))
-                            : GestureDetector(
+                            ? Semantics(
+                                label: 'Loading passage',
+                                child: const CircularProgressIndicator(color: Color(0xFFFBBF24)),
+                              )
+                            : Semantics(
+                                button: true,
+                                identifier: 'play_passage_button',
+                                label: playerState.isPlaying ? 'Pause passage' : 'Play passage',
+                                child: GestureDetector(
                                 key: const Key('play_passage_button'),
                                 onTap: playerState.currentChapter.bookCode.isEmpty
                                     ? null
@@ -1551,6 +1558,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                                   ),
                                 ),
                               ),
+                            ),
 
                         const SizedBox(width: 24),
 

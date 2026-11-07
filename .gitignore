@@ -48,6 +48,10 @@ app.*.map.json
 # Widget Preview related
 .widget_preview/
 
+# Patrol generates this bundle. Do not commit it.
+**/test_bundle.dart
+.patrol.env
+
 # Security & Credentials
 *.env
 *.env.*

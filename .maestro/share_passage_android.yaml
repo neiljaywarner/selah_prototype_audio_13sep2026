@@ -1,0 +1,76 @@
+# Share 1 Cor 13:4-7 from the player and from My Passages.
+#
+# Install a debug build of this branch first (the patrol test bundle is a
+# different entry point, so install the normal app):
+#
+#   flutter build apk --debug
+#   adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-debug.apk
+#   maestro test .maestro/share_passage_android.yaml
+#
+# `flutter install` can pick an older app-release.apk. Install the debug apk
+# you just built. The connected emulator on this machine is `emulator-5554`
+# (AVD name `maestro`).
+#
+# The share sheet receives the reference, the GitHub Pages link, and the
+# short attribution. The verse body is not the shared text. Dismissing the
+# sheet shows "Link ready to share: 1 Cor 13:4-7".
+
+appId: com.example.selah_prototype_audio_13sep2026
+tags:
+  - share
+  - android
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: ".*SELAH.*"
+    timeout: 30000
+- extendedWaitUntil:
+    visible: "1 Cor 13:4.*"
+    timeout: 20000
+
+- scrollUntilVisible:
+    element: "Share this passage"
+    direction: DOWN
+    timeout: 20000
+    visibilityPercentage: 50
+- tapOn: "Share this passage"
+- extendedWaitUntil:
+    visible: ".*1\\+Cor\\+13:4-7.*"
+    timeout: 15000
+- assertVisible: ".*Listen to 1 Cor 13:4-7 in Selah.*"
+- assertVisible: ".*Public Domain · Narrator: Barry Hays.*"
+- assertNotVisible: "Love is patient.*"
+- back
+- extendedWaitUntil:
+    visible: ".*Link ready to share: 1 Cor 13:4-7.*"
+    timeout: 10000
+- takeScreenshot: maestro_share_from_player
+
+- scrollUntilVisible:
+    element: "Save Current Chapter to Recents"
+    direction: UP
+    timeout: 20000
+    visibilityPercentage: 50
+- tapOn: "Save Current Chapter to Recents"
+- extendedWaitUntil:
+    visible: "Saved.*1 Cor 13:4.*to recents"
+    timeout: 10000
+
+- tapOn: "My Passages"
+- extendedWaitUntil:
+    visible: "Share a reference.*"
+    timeout: 10000
+- assertVisible: "1 Cor 13:4-7"
+- tapOn: "Share 1 Cor 13:4-7"
+- extendedWaitUntil:
+    visible: ".*1\\+Cor\\+13:4-7.*"
+    timeout: 15000
+- assertVisible: ".*Listen to 1 Cor 13:4-7 in Selah.*"
+- assertVisible: ".*ref=1\\+Cor\\+13:4-7.*"
+- assertNotVisible: "Love is patient.*"
+- back
+- extendedWaitUntil:
+    visible: ".*Link ready to share: 1 Cor 13:4-7.*"
+    timeout: 10000
+- takeScreenshot: maestro_share_from_my_passages

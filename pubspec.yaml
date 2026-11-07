@@ -90,6 +90,17 @@ flutter_launcher_icons:
     background_color: "#0B132B"
     theme_color: "#1C2541"
 
+# Patrol reads this block. Tests live in patrol_test/ so the older
+# integration_test/ smoke files are not picked up by `patrol test`.
+patrol:
+  app_name: Selah
+  test_directory: patrol_test
+  screenshot_on_failure: true
+  android:
+    package_name: com.example.selah_prototype_audio_13sep2026
+  ios:
+    bundle_id: com.example.selahPrototypeAudio13sep2026
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
