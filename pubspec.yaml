@@ -48,6 +48,7 @@ dependencies:
   feedback: ^3.2.0
   device_info_plus: ^13.3.0
   package_info_plus: ^10.2.2
+  share_plus: ^13.3.1
 
 dev_dependencies:
   flutter_test:
@@ -73,6 +74,8 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.3
   patrol_finders: ^3.6.0
   patrol_mcp: ^0.2.1
+  build_runner: ^2.16.2
+  share_plus_platform_interface: ^7.2.0
 
 flutter_launcher_icons:
   android: true

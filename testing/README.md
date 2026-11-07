@@ -176,6 +176,22 @@ flutter test test/unit/corinthians_13_verse_4_test.dart
 
 All 96 tests pass with 100% coverage across core audio playback, verse timestamps, karaoke highlighting, feedback routing, and copyright attributions.
 
+### Share a passage (issue #240) — `bdd_widget_test`
+
+Gherkin lives in `test/features/share_a_passage.feature`. Step definitions live in `test/features/step/`. `bdd_widget_test` generates `test/features/share_a_passage_test.dart`, which `flutter test` runs in CI.
+
+```bash
+# Regenerate the widget test from the feature file after editing Gherkin
+dart run build_runner build --delete-conflicting-outputs
+
+# Run the share scenarios and the URL/payload unit tests
+flutter test test/features/share_a_passage_test.dart test/unit/passage_share_link_test.dart
+```
+
+The scenarios cover sharing the playing passage, sharing from My Passages, opening a valid link while signed out, and a friendly error for a broken reference. They assert the payload contains `?ref=1+Cor+13:4-7` and does not contain the verse body.
+
+The native iOS, Android, and web share sheets cannot open inside a widget test. `PlatformPassageShareLauncher` is that thin device boundary: it copies the link and passes the same reference-only message to `share_plus`. A unit test captures that message with a fake share platform. Widget scenarios replace the launcher and assert the payload.
+
 ---
 
 ## 📋 Pre-Release Checklist & Run Commands
