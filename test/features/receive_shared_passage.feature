@@ -3,8 +3,10 @@
 # Run: flutter test test/features/receive_shared_passage_test.dart
 
 Feature: Receive a shared passage on BSB
-  Opening a link while signed out, with no ESV key, shows and reads the shared range.
+  Opening a link while signed out, with no ESV key, shows the shared range.
   A chapter that already has a different curated excerpt does not replace the share.
+  When that other excerpt is the only bundled recording, Selah does not play it
+  and does not start text-to-speech.
 
   Scenario: Psalm 62:5-7 does not show the curated 62:1-2 text
     Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=Psalm+62:5-7'} while signed out

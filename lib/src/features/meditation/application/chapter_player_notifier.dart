@@ -23,6 +23,7 @@ import '../../../core/remote_config/remote_config_service.dart';
 import '../domain/audio_mode.dart';
 import '../domain/bible_translation.dart';
 import '../domain/chapter_info.dart';
+import '../domain/passage_audio_route.dart';
 import '../domain/passage_excerpt.dart';
 import '../domain/passage_share.dart';
 export 'chapter_player_state.dart';
@@ -912,12 +913,12 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
             audioStreamUrl: '',
           ),
           isLoading: false,
-          audioMode: AudioMode.tts,
-          infoNotice: 'ESV narrator audio is unavailable, so these verses are read aloud.',
-          clearLastError: true,
+          isPlaying: false,
+          audioMode: AudioMode.narrator,
+          clearInfoNotice: true,
+          lastError: 'ESV human narrator audio for "$query" could not be played.',
         );
-        await _playTts(verseStr, autoplay: autoplay);
-        return true;
+        return false;
       }
     } catch (e) {
       AppLogger.error('ESV verse fetch failed', error: e);
@@ -1129,6 +1130,56 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       chapter.chapterNumber,
     );
 
+    final window = effectiveExcerpt?.clipWindow(_currentTimestamps);
+    _clipOffset = window?.start ?? Duration.zero;
+    final curated = PassageExcerpt.forChapter(chapter.bookCode, chapter.chapterNumber);
+    final decision = decidePassageAudio(
+      PassageAudioSituation(
+        esvMode: false,
+        translationHasNarrator: state.translation.hasNarratorFor(chapter.bookCode),
+        hasBundledChapterAudio: chapter.audioStreamUrl.startsWith('assets/'),
+        hasChapterStream:
+            chapter.audioStreamUrl.isNotEmpty && !chapter.audioStreamUrl.startsWith('assets/'),
+        requestedStart: effectiveExcerpt?.startVerse,
+        requestedEnd: effectiveExcerpt?.endVerse,
+        curatedStart: curated?.startVerse,
+        curatedEnd: curated?.endVerse,
+        clipCoversRequestedRange: window != null,
+      ),
+    );
+    final refuseUnclipped = decision == PassageAudioDecision.holdUnaligned ||
+        decision == PassageAudioDecision.speakWithTts ||
+        (decision == PassageAudioDecision.playNarratorClip && window == null);
+    if (chapter.audioStreamUrl.isNotEmpty && refuseUnclipped) {
+      final label =
+          effectiveExcerpt?.displayTitle ?? chapter.displayTitle ?? chapter.reference;
+      AppLogger.logEvent('custom_passage_unaligned', {
+        'passage': label,
+        'translation': state.activeTranslation,
+        'tts': false,
+      });
+      final words = chapter.textContent.trim();
+      final canShowRange = words.isNotEmpty && !words.startsWith('Press play to listen');
+      state = state.copyWith(
+        currentChapter: chapter.copyWith(
+          audioStreamUrl: '',
+          displayTitle: chapter.displayTitle ?? label,
+          textContent: canShowRange ? chapter.textContent : 'Press play to listen to $label.',
+        ),
+        audioMode: AudioMode.narrator,
+        hasTimestamps: false,
+        activeExcerpt: effectiveExcerpt,
+        isLoading: false,
+        isPlaying: false,
+        isOffline: true,
+        infoNotice: canShowRange
+            ? 'Verse timing for $label is not aligned, so Selah did not start a synthetic voice or a different passage.'
+            : 'Verse timing for $label is not aligned, and those words are not loaded. Selah will not play a different passage.',
+        clearLastError: true,
+      );
+      return;
+    }
+
     state = state.copyWith(
       currentChapter: chapter,
       audioMode: AudioMode.narrator,
@@ -1185,41 +1236,6 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
               headers: audioHeaders,
               tag: mediaItem,
             );
-
-      final window = effectiveExcerpt?.clipWindow(_currentTimestamps);
-      _clipOffset = window?.start ?? Duration.zero;
-
-      if (effectiveExcerpt != null && window == null) {
-        final label = effectiveExcerpt.displayTitle ?? chapter.displayTitle ?? chapter.reference;
-        AppLogger.logEvent('custom_passage_unaligned', {
-          'passage': label,
-          'translation': state.activeTranslation,
-        });
-        final words = chapter.textContent.trim();
-        final canReadRange = words.isNotEmpty && !words.startsWith('Press play to listen');
-        final spokenChapter = chapter.copyWith(
-          audioStreamUrl: '',
-          displayTitle: chapter.displayTitle ?? label,
-          textContent: canReadRange ? chapter.textContent : 'Press play to listen to $label.',
-        );
-        state = state.copyWith(
-          currentChapter: spokenChapter,
-          audioMode: canReadRange ? AudioMode.tts : AudioMode.narrator,
-          hasTimestamps: false,
-          activeExcerpt: effectiveExcerpt,
-          isLoading: false,
-          isPlaying: false,
-          isOffline: true,
-          infoNotice: canReadRange
-              ? 'Verse timing for $label is not aligned yet, so these verses are read aloud.'
-              : 'Verse timing for $label is not aligned, and those words are not loaded. Selah will not play a different passage.',
-          clearLastError: true,
-        );
-        if (canReadRange) {
-          await _playTts(spokenChapter.textContent, autoplay: autoplay);
-        }
-        return;
-      }
 
       final AudioSource finalSource = window == null
           ? baseSource
