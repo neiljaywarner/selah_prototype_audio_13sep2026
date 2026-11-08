@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Loads a public-domain verse range (BSB or WEB) when it is not already
 /// in the offline bank.
 ///
+/// API.Bible is tried first for these translations when a key is compiled in.
+/// Helloao is only the fallback for BSB and WEB when that request does not
+/// return the range. WEB's Helloao id is `eng_web`. ESV never uses this path.
+///
 /// Helloao publishes the Berean Standard Bible and the World English Bible.
-/// This is only used for those two translations. ESV stays on Crossway.
 final publicDomainPassageTextProvider = Provider<PublicDomainPassageText>(
   (ref) => PublicDomainPassageText(),
 );
