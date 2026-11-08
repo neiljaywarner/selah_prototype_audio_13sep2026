@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:selah_prototype_audio_13sep2026/src/core/preferences/user_preferences.dart';
@@ -36,7 +37,28 @@ class _QuietRemoteConfig extends RemoteConfigNotifier {
   SelahRemoteConfig build() => const SelahRemoteConfig();
 }
 
+void installPlaybackChannelMocks() {
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(const MethodChannel('flutter_tts'), (call) async => 1);
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(const MethodChannel('com.ryanheise.just_audio.methods'), (call) async {
+    if (call.method == 'init') {
+      final id = (call.arguments as Map?)?['id'] as String? ?? 'test-player';
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        MethodChannel('com.ryanheise.just_audio.methods.$id'),
+        (playerCall) async {
+          if (playerCall.method == 'load') return {'duration': 10000000};
+          return <String, dynamic>{};
+        },
+      );
+      return {'id': id};
+    }
+    return <String, dynamic>{};
+  });
+}
+
 Future<void> pumpSharePassageApp(WidgetTester tester) async {
+  installPlaybackChannelMocks();
   tester.view.physicalSize = const Size(1200, 2200);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);

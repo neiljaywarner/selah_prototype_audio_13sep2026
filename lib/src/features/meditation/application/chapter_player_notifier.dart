@@ -11,6 +11,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 
 import '../../../core/audio/bundled_audio_service.dart';
+import '../../../core/cache/public_domain_passage_text.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/bible_canon.dart';
 import '../../../core/esv/esv_api_client.dart';
@@ -375,20 +376,88 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
   }
 
-  String _fallbackChapterText(String bookCode, int chapterNumber, String bookName) {
-    for (final preset in kFeaturedChapters) {
-      if (preset.bookCode.toUpperCase() == bookCode.toUpperCase() &&
-          preset.chapterNumber == chapterNumber) {
-        return preset.textContent;
+  String _fallbackChapterText(
+    String bookCode,
+    int chapterNumber,
+    String bookName, {
+    PassageExcerpt? excerpt,
+  }) {
+    final curated = PassageExcerpt.forChapter(bookCode, chapterNumber);
+    final sameCuratedRange = excerpt == null ||
+        curated == null ||
+        (curated.startVerse == excerpt.startVerse && curated.endVerse == excerpt.endVerse);
+
+    if (sameCuratedRange) {
+      for (final preset in kFeaturedChapters) {
+        if (preset.bookCode.toUpperCase() == bookCode.toUpperCase() &&
+            preset.chapterNumber == chapterNumber) {
+          return preset.textContent;
+        }
       }
     }
-    if (state.currentChapter.bookCode.toUpperCase() == bookCode.toUpperCase() &&
-        state.currentChapter.chapterNumber == chapterNumber &&
-        state.currentChapter.textContent.isNotEmpty) {
-      return state.currentChapter.textContent;
+
+    final current = state.currentChapter;
+    final currentText = current.textContent.trim();
+    final currentMatchesChapter = current.bookCode.toUpperCase() == bookCode.toUpperCase() &&
+        current.chapterNumber == chapterNumber &&
+        currentText.isNotEmpty;
+    if (currentMatchesChapter && !_isDifferentCuratedScripture(currentText, bookCode, chapterNumber, excerpt)) {
+      return current.textContent;
+    }
+
+    if (excerpt != null) {
+      final label = excerpt.displayTitle ?? excerpt.toEsvPassageQuery();
+      return 'Press play to listen to $label.';
     }
     return '${BibleCanon.findBook(bookCode)?.name ?? bookName} Chapter $chapterNumber.\n\n'
         '"In the beginning was the Word, and the Word was with God, and the Word was God."';
+  }
+
+  /// True when [text] is the curated meditation for this chapter, but [excerpt]
+  /// asks for a different verse range.
+  bool _isDifferentCuratedScripture(
+    String text,
+    String bookCode,
+    int chapterNumber,
+    PassageExcerpt? excerpt,
+  ) {
+    if (excerpt == null) return false;
+    final curated = PassageExcerpt.forChapter(bookCode, chapterNumber);
+    if (curated == null) return false;
+    if (curated.startVerse == excerpt.startVerse && curated.endVerse == excerpt.endVerse) {
+      return false;
+    }
+    final curatedText = ref.read(offlineScriptureCacheProvider).getOfflineText(
+          state.activeTranslation,
+          bookCode,
+          chapterNumber,
+          startVerse: curated.startVerse,
+          endVerse: curated.endVerse,
+        );
+    if (curatedText != null && curatedText.trim() == text.trim()) return true;
+    for (final preset in kFeaturedChapters) {
+      if (preset.bookCode.toUpperCase() == bookCode.toUpperCase() &&
+          preset.chapterNumber == chapterNumber &&
+          preset.textContent.trim() == text.trim()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  Future<String> _scriptureTextFor({
+    required String bookCode,
+    required int chapterNumber,
+    required String bookName,
+    PassageExcerpt? excerpt,
+  }) async {
+    final fetched = await _fetchChapterText(bookCode, chapterNumber, excerpt: excerpt);
+    if (fetched != null &&
+        fetched.trim().isNotEmpty &&
+        !_isDifferentCuratedScripture(fetched, bookCode, chapterNumber, excerpt)) {
+      return fetched;
+    }
+    return _fallbackChapterText(bookCode, chapterNumber, bookName, excerpt: excerpt);
   }
 
   Future<void> routeAndPlayChapter({
@@ -402,8 +471,13 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     await stopAllPlayback(reason: 'route_and_play');
     if (!ref.mounted) return;
 
-    final fallbackText = _fallbackChapterText(bookCode, chapterNumber, bookName);
     final effectiveExcerpt = excerpt ?? PassageExcerpt.forChapter(bookCode, chapterNumber);
+    final fallbackText = _fallbackChapterText(
+      bookCode,
+      chapterNumber,
+      bookName,
+      excerpt: effectiveExcerpt,
+    );
 
     if (_isEsvModeActive) {
       final rawQuery = effectiveExcerpt?.toEsvPassageQuery() ??
@@ -457,7 +531,12 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     );
     if (bundledAudioPath != null) {
       AppLogger.info('Found bundled human narrator audio: $bundledAudioPath');
-      final fetchedText = await _fetchChapterText(bookCode, chapterNumber) ?? fallbackText;
+      final fetchedText = await _scriptureTextFor(
+        bookCode: bookCode,
+        chapterNumber: chapterNumber,
+        bookName: bookName,
+        excerpt: effectiveExcerpt,
+      );
       if (!ref.mounted) return;
 
       final dynamicChapter = ChapterInfo(
@@ -507,7 +586,12 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         'Routing: ${translation.code} has no narrator for $bookCode $chapterNumber -> Using standard TTS engine.',
       );
 
-      final chapterText = await _fetchChapterText(bookCode, chapterNumber) ?? fallbackText;
+      final chapterText = await _scriptureTextFor(
+        bookCode: bookCode,
+        chapterNumber: chapterNumber,
+        bookName: bookName,
+        excerpt: effectiveExcerpt,
+      );
       if (!ref.mounted) return;
 
       final dynamicChapter = ChapterInfo(
@@ -542,11 +626,12 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       AppLogger.info(
         'API.Bible key unconfigured; gracefully routing to contemplative voice for $chapterId.',
       );
-      final cachedText = ref.read(offlineScriptureCacheProvider).getOfflineText(
-            translation.code,
-            bookCode,
-            chapterNumber,
-          ) ?? fallbackText;
+      final cachedText = await _scriptureTextFor(
+        bookCode: bookCode,
+        chapterNumber: chapterNumber,
+        bookName: bookName,
+        excerpt: effectiveExcerpt,
+      );
       final noticeMessage = translation == BibleTranslation.niv
           ? 'NIV audio stream currently unavailable. Narrating with contemplative voice.'
           : 'Narrator stream unavailable — narrating ${translation.fullName} (${translation.code}) with contemplative voice.';
@@ -571,7 +656,12 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         _recordFumsToken(response.data, kind: 'audio', chapterId: chapterId);
 
         if (streamUrl != null && streamUrl.isNotEmpty) {
-          final fetchedText = await _fetchChapterText(bookCode, chapterNumber) ?? fallbackText;
+          final fetchedText = await _scriptureTextFor(
+            bookCode: bookCode,
+            chapterNumber: chapterNumber,
+            bookName: bookName,
+            excerpt: effectiveExcerpt,
+          );
           if (!ref.mounted) return;
 
           final dynamicChapter = ChapterInfo(
@@ -613,11 +703,12 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
           'bible_id': bibleId,
         },
       );
-      final cachedText = ref.read(offlineScriptureCacheProvider).getOfflineText(
-            translation.code,
-            bookCode,
-            chapterNumber,
-          ) ?? fallbackText;
+      final cachedText = await _scriptureTextFor(
+        bookCode: bookCode,
+        chapterNumber: chapterNumber,
+        bookName: bookName,
+        excerpt: effectiveExcerpt,
+      );
 
       final noticeMessage = translation == BibleTranslation.niv
           ? 'NIV audio stream currently unavailable. Narrating with contemplative voice.'
@@ -652,45 +743,77 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     });
   }
 
-  Future<String?> _fetchChapterText(String bookCode, int chapterNumber) async {
-    // Check offline disk cache first for public domain BSB / WEB
+  Future<String?> _fetchChapterText(
+    String bookCode,
+    int chapterNumber, {
+    PassageExcerpt? excerpt,
+  }) async {
+    final requested = excerpt ?? PassageExcerpt.forChapter(bookCode, chapterNumber);
     try {
       final cache = ref.read(offlineScriptureCacheProvider);
-      final cached = cache.getOfflineText(state.activeTranslation, bookCode, chapterNumber);
-      if (cached != null && cached.trim().isNotEmpty) {
+      final cached = requested == null
+          ? cache.getOfflineText(state.activeTranslation, bookCode, chapterNumber)
+          : cache.getOfflineText(
+              state.activeTranslation,
+              bookCode,
+              chapterNumber,
+              startVerse: requested.startVerse,
+              endVerse: requested.endVerse,
+            );
+      if (cached != null &&
+          cached.trim().isNotEmpty &&
+          !_isDifferentCuratedScripture(cached, bookCode, chapterNumber, excerpt)) {
         return cached;
       }
     } catch (_) {}
 
     final activeKey = _getActiveApiKey();
-    if (activeKey.isEmpty) return null;
-    try {
-      final textBibleId = state.translation.textBibleId;
-      final excerpt = PassageExcerpt.forChapter(bookCode, chapterNumber);
-      final passageId = excerpt != null
-          ? '${bookCode.toUpperCase()}.$chapterNumber.${excerpt.startVerse}-${bookCode.toUpperCase()}.$chapterNumber.${excerpt.endVerse}'
-          : '${bookCode.toUpperCase()}.$chapterNumber';
-      final res = await _dio.get(
-        '/bibles/$textBibleId/passages/$passageId',
-        queryParameters: {'content-type': 'text', 'include-verse-numbers': 'false'},
-      );
-      if (res.statusCode == 200 && res.data != null) {
-        _recordFumsToken(res.data, kind: 'text', chapterId: passageId);
-        final content = res.data['data']?['content'] as String?;
-        if (content != null && content.trim().isNotEmpty) {
-          final cleaned = content.replaceAll(RegExp(r'\s+'), ' ').trim();
-          try {
-            ref.read(offlineScriptureCacheProvider).saveOfflineToDisk(
-              state.activeTranslation,
-              bookCode,
-              chapterNumber,
-              cleaned,
-            );
-          } catch (_) {}
-          return cleaned;
+    if (activeKey.isNotEmpty) {
+      try {
+        final textBibleId = state.translation.textBibleId;
+        final passageId = requested == null
+            ? '${bookCode.toUpperCase()}.$chapterNumber'
+            : '${bookCode.toUpperCase()}.$chapterNumber.${requested.startVerse}-${bookCode.toUpperCase()}.$chapterNumber.${requested.endVerse}';
+        final res = await _dio.get(
+          '/bibles/$textBibleId/passages/$passageId',
+          queryParameters: {'content-type': 'text', 'include-verse-numbers': 'false'},
+        );
+        if (res.statusCode == 200 && res.data != null) {
+          _recordFumsToken(res.data, kind: 'text', chapterId: passageId);
+          final content = res.data['data']?['content'] as String?;
+          if (content != null && content.trim().isNotEmpty) {
+            final cleaned = content.replaceAll(RegExp(r'\s+'), ' ').trim();
+            if (requested == null) {
+              try {
+                ref.read(offlineScriptureCacheProvider).saveOfflineToDisk(
+                  state.activeTranslation,
+                  bookCode,
+                  chapterNumber,
+                  cleaned,
+                );
+              } catch (_) {}
+            }
+            return cleaned;
+          }
         }
+      } catch (_) {}
+    }
+
+    if (requested != null &&
+        (state.activeTranslation == 'BSB' || state.activeTranslation == 'WEB')) {
+      final ranged = await PublicDomainPassageText().fetchRange(
+        translation: state.activeTranslation,
+        bookCode: bookCode,
+        chapterNumber: chapterNumber,
+        startVerse: requested.startVerse,
+        endVerse: requested.endVerse,
+      );
+      if (ranged != null &&
+          ranged.trim().isNotEmpty &&
+          !_isDifferentCuratedScripture(ranged, bookCode, chapterNumber, excerpt)) {
+        return ranged;
       }
-    } catch (_) {}
+    }
     return null;
   }
 
@@ -1056,10 +1179,35 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       _clipOffset = window?.start ?? Duration.zero;
 
       if (effectiveExcerpt != null && window == null) {
+        final label = effectiveExcerpt.displayTitle ?? chapter.displayTitle ?? chapter.reference;
         AppLogger.logEvent('custom_passage_unaligned', {
-          'passage': effectiveExcerpt.displayTitle ?? chapter.reference,
+          'passage': label,
           'translation': state.activeTranslation,
         });
+        final words = chapter.textContent.trim();
+        final canReadRange = words.isNotEmpty && !words.startsWith('Press play to listen');
+        final spokenChapter = chapter.copyWith(
+          audioStreamUrl: '',
+          displayTitle: chapter.displayTitle ?? label,
+          textContent: canReadRange ? chapter.textContent : 'Press play to listen to $label.',
+        );
+        state = state.copyWith(
+          currentChapter: spokenChapter,
+          audioMode: canReadRange ? AudioMode.tts : AudioMode.narrator,
+          hasTimestamps: false,
+          activeExcerpt: effectiveExcerpt,
+          isLoading: false,
+          isPlaying: false,
+          isOffline: true,
+          infoNotice: canReadRange
+              ? 'Verse timing for $label is not aligned yet, so these verses are read aloud.'
+              : 'Verse timing for $label is not aligned, and those words are not loaded. Selah will not play a different passage.',
+          clearLastError: true,
+        );
+        if (canReadRange) {
+          await _playTts(spokenChapter.textContent, autoplay: autoplay);
+        }
+        return;
       }
 
       final AudioSource finalSource = window == null
@@ -1116,13 +1264,20 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
   }
 
+  static String _normalizedReference(String raw) => raw
+      .replaceAll(RegExp(r'[–—−]'), '-')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim()
+      .toLowerCase();
+
   /// Lands on a shared reference without asking the recipient to sign in.
   /// Playback stays ready on the play control; opening a link does not autoplay.
   void presentSharedPassage(SharedPassage passage) {
     ChapterInfo? preset;
+    final sharedTitle = _normalizedReference(passage.canonical);
     for (final chapter in kFeaturedChapters) {
-      if (chapter.bookCode.toUpperCase() == passage.book.code &&
-          chapter.chapterNumber == passage.chapter) {
+      final featuredTitle = _normalizedReference(chapter.displayTitle ?? chapter.reference);
+      if (featuredTitle == sharedTitle) {
         preset = chapter;
         break;
       }

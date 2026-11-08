@@ -53,11 +53,19 @@ class OfflineScriptureCache {
     if (tr != 'BSB' && tr != 'WEB') return null;
 
     if (startVerse != null && endVerse != null) {
-      final excerpt = _embeddedExcerptBank['$tr.${bookCode.toUpperCase()}.$chapter.$startVerse-$endVerse'];
-      if (excerpt != null) {
-        AppLogger.info('Offline Cache Hit (excerpt bank): $tr.${bookCode.toUpperCase()}.$chapter.$startVerse-$endVerse');
-        return excerpt;
+      final exactKey = '$tr.${bookCode.toUpperCase()}.$chapter.$startVerse-$endVerse';
+      final exact = _embeddedExcerptBank[exactKey];
+      if (exact != null) {
+        AppLogger.info('Offline Cache Hit (excerpt bank): $exactKey');
+        return exact;
       }
+      // A different curated range for this chapter is not this request.
+      // Psalm 62:5-7 must not come back as the bundled 62:1-2 meditation.
+      final curated = PassageExcerpt.forChapter(bookCode, chapter);
+      final sameCuratedRange = curated != null &&
+          curated.startVerse == startVerse &&
+          curated.endVerse == endVerse;
+      if (!sameCuratedRange) return null;
     }
 
     final key = _cacheKey(translation, bookCode, chapter);
@@ -159,6 +167,11 @@ class OfflineScriptureCache {
     // Psalm 62:1–2 (Curated Excerpt)
     'BSB.PSA.62.1-2':
         'My soul finds rest in God alone; my salvation comes from Him. He alone is my rock and my salvation; He is my fortress, I will never be shaken.',
+    // Psalm 62:5–7 (public-domain BSB; not the curated 1–2 window)
+    'BSB.PSA.62.5-7':
+        'Rest in God alone, O my soul, for my hope comes from Him. '
+        'He alone is my rock and my salvation; He is my fortress; I will not be shaken. '
+        'My salvation and my honor rest on God, my strong rock; my refuge is in God.',
     'WEB.PSA.62.1-2':
         'Truly my soul finds rest in God; my salvation comes from him. Truly he is my rock and my salvation; he is my fortress, I will never be shaken.',
 
