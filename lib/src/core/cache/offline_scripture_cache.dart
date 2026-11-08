@@ -24,6 +24,13 @@ class OfflineScriptureCache {
       if (_embeddedExcerptBank.containsKey('$tr.${bookCode.toUpperCase()}.$chapter.$startVerse-$endVerse')) {
         return true;
       }
+      // A chapter file or a different curated window is not this range.
+      // 1 Cor 13:8-13 must not look available just because 13:4-7 is bundled.
+      final curated = PassageExcerpt.forChapter(bookCode, chapter);
+      final sameCuratedRange = curated != null &&
+          curated.startVerse == startVerse &&
+          curated.endVerse == endVerse;
+      if (!sameCuratedRange) return false;
     }
 
     final key = _cacheKey(translation, bookCode, chapter);

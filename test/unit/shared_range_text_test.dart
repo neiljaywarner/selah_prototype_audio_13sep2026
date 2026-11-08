@@ -26,6 +26,14 @@ void main() {
       expect(curated, isNot(equals(shared)));
     });
 
+    test('a different range on a bundled chapter is not marked available', () {
+      final cache = OfflineScriptureCache(null);
+      expect(cache.hasOfflineText('BSB', '1CO', 13, startVerse: 8, endVerse: 13), isFalse);
+      expect(cache.getOfflineText('BSB', '1CO', 13, startVerse: 8, endVerse: 13), isNull);
+      expect(cache.hasOfflineText('BSB', '1CO', 13, startVerse: 4, endVerse: 7), isTrue);
+      expect(cache.hasOfflineText('BSB', 'PSA', 62, startVerse: 5, endVerse: 7), isTrue);
+    });
+
     test('a range that is not the curated window does not borrow that window', () {
       final cache = OfflineScriptureCache(null);
       expect(
