@@ -1564,6 +1564,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                               )
                             : Semantics(
                                 button: true,
+                                enabled: playerState.currentChapter.bookCode.isNotEmpty,
                                 identifier: 'play_passage_button',
                                 label: playerState.isPlaying ? 'Pause passage' : 'Play passage',
                                 child: GestureDetector(

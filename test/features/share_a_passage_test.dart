@@ -20,6 +20,7 @@ import './step/i_am_not_asked_to_sign_in.dart';
 import './step/i_see_a_friendly_passage_error.dart';
 import './step/the_player_is_not_blank.dart';
 import './step/saving_the_passage_is_unavailable.dart';
+import './step/playback_is_unavailable.dart';
 import './step/i_choose_the_translation.dart';
 
 void main() {
@@ -62,6 +63,7 @@ void main() {
       await iSeeAFriendlyPassageError(tester);
       await thePlayerIsNotBlank(tester);
       await savingThePassageIsUnavailable(tester);
+      await playbackIsUnavailable(tester);
       await iAmNotAskedToSignIn(tester);
       await iChooseTheTranslation(tester, 'WEB');
       await iSeeAFriendlyPassageError(tester);

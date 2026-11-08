@@ -38,6 +38,7 @@ Feature: Share a passage
     Then I see a friendly passage error
     And the player is not blank
     And saving the passage is unavailable
+    And playback is unavailable
     And I am not asked to sign in
     When I choose the {'WEB'} translation
     Then I see a friendly passage error
