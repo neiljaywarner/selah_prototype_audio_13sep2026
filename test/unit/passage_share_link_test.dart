@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:selah_prototype_audio_13sep2026/src/core/constants/bible_canon.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/application/passage_share_launcher.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/bible_translation.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/chapter_info.dart';
@@ -115,6 +116,26 @@ void main() {
       expect(message, contains("Couldn't open that link"));
       expect(message, contains('NotABook 99:1'));
       expect(message, isNot(contains(loveSnippet)));
+    });
+
+    test('every book round-trips from its full name and its share label', () {
+      for (final book in BibleCanon.books) {
+        final fromName = PassageShareLink.tryParse('${book.name} 1');
+        expect(fromName, isNotNull, reason: book.name);
+        expect(fromName!.book.code, book.code, reason: book.name);
+        expect(fromName.chapter, 1);
+
+        final payload = PassageShareLink.tryPayload(reference: '${book.name} 1');
+        expect(payload, isNotNull, reason: book.name);
+        expect(payload!.reference, fromName.canonical);
+
+        final opened = PassageShareLink.tryParse(payload.url);
+        expect(opened?.canonical, fromName.canonical, reason: payload.url);
+
+        final fromLabel = PassageShareLink.tryParse(fromName.canonical);
+        expect(fromLabel?.canonical, fromName.canonical, reason: fromName.canonical);
+        expect(fromLabel?.book.code, book.code);
+      }
     });
   });
 

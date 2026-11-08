@@ -188,7 +188,12 @@ class PassageShareLink {
     if (parsed == null) {
       throw ArgumentError.value(reference, 'reference', 'Not a shareable passage');
     }
-    final token = parsed.canonical
+    return urlFor(parsed, page: page);
+  }
+
+  /// URL for a passage that has already been parsed. Does not parse again.
+  static String urlFor(SharedPassage passage, {Uri? page}) {
+    final token = passage.canonical
         .replaceAll('%', '%25')
         .replaceAll(' ', '+')
         .replaceAll('&', '%26')
@@ -204,7 +209,7 @@ class PassageShareLink {
   }) {
     final parsed = tryParse(reference);
     if (parsed == null) return null;
-    final url = buildUrl(parsed.canonical, page: page);
+    final url = urlFor(parsed, page: page);
     final shortAttribution = _safeAttribution(attribution);
     final lines = <String>[
       'Listen to ${parsed.canonical} in Selah',
