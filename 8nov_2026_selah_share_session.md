@@ -51,7 +51,7 @@ Maestro web, Maestro Android (real share sheet), and Patrol were added and execu
 
 ### 7–8 Nov 2026 — Psalm 62:5-7 send video and email
 
-Neil asked to record a Maestro video of sharing **Psalm 62:5-7** (not 1 Cor 13:4-7) and email it to his Gmail plus-tag (`neilwarner+selah@gmail.com`; “Warren” treated as a typo of Warner).
+Neil asked to record a Maestro video of sharing **Psalm 62:5-7** (not 1 Cor 13:4-7) and email it to his Gmail plus-tag.
 
 He then asked:
 
@@ -65,7 +65,7 @@ Answers recorded in the chat:
 - The “disambiguation” UI is search suggestion chips (2+ characters, no colon). Incoming `?ref=Psalm+62:5-7` parses exactly and skips the chapter picker.
 - [#245](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/245) filed under [#240](https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/240): Digital Asset Links `assetlinks.json` at the host root, Firebase Hosting `**/.*` ignore (would skip `.well-known`), SPA rewrite notes, and why GitHub Pages project paths are a poor place to claim the domain.
 
-The send demo (`share_psalm_62_5_7.mp4`, about 79 seconds) showed signed-out ESV, the full reference entered without Psalm/Psalms chips, playback, the Android share sheet with `Listen to Psalm 62:5-7 in Selah`, the `?ref=Psalm+62:5-7` link, and Crossway attribution — not the verse body. Neil pressed Send on the draft. Mail went out from `tal17@mail.grokbot.com` to `neilwarner+selah@gmail.com`. That message should not be sent again.
+The send demo (`share_psalm_62_5_7.mp4`, about 79 seconds) showed signed-out ESV, the full reference entered without Psalm/Psalms chips, playback, the Android share sheet with `Listen to Psalm 62:5-7 in Selah`, the `?ref=Psalm+62:5-7` link, and Crossway attribution — not the verse body. Neil pressed Send on the draft. Mail went out from the agent sender to Neil's Gmail plus-tag. That message should not be sent again.
 
 ### 8 Nov 2026 — how much of receiving is done?
 
