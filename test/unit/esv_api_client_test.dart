@@ -41,7 +41,7 @@ void main() {
         EsvVerse(reference: '1 Corinthians 13:4', text: 'a'),
         EsvVerse(reference: '1 Corinthians 13:7', text: 'd'),
       ]),
-      '1 Corinthians 13:4–7',
+      '1 Corinthians 13:4-7',
     );
   });
 
@@ -118,7 +118,7 @@ void main() {
       'It does not rejoice at wrongdoing.',
       'Love bears all things.',
     ]);
-    expect(EsvApiClient.joinedReference(verses), '1 Corinthians 13:4–7');
+    expect(EsvApiClient.joinedReference(verses), '1 Corinthians 13:4-7');
   });
 
   test('a missing verse aborts the range instead of skipping it', () async {

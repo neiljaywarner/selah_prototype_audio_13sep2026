@@ -132,14 +132,14 @@ class EsvApiClient {
     ];
   }
 
-  /// "1 Corinthians 13:4" + "1 Corinthians 13:7" → "1 Corinthians 13:4–7".
+  /// "1 Corinthians 13:4" + "1 Corinthians 13:7" → "1 Corinthians 13:4-7".
   static String joinedReference(List<EsvVerse> verses) {
     if (verses.isEmpty) return '';
     if (verses.length == 1) return verses.first.reference;
     final last = verses.last.reference;
     final colon = last.lastIndexOf(':');
     final endVerse = colon >= 0 ? last.substring(colon + 1) : last;
-    return '${verses.first.reference}–$endVerse';
+    return '${verses.first.reference}-$endVerse';
   }
 
   /// Fetches one reference. Returns null when ESV has no passage text.
