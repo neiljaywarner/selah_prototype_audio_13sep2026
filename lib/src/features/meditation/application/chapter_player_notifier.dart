@@ -609,7 +609,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       state = state.copyWith(
         currentChapter: dynamicChapter,
         audioMode: AudioMode.tts,
-        isOffline: true,
+        isOffline: false,
         infoNotice:
             '${translation.fullName} (${translation.code}) has no $testament narrator on API.Bible — narrating with Text-to-Speech (TTS).',
       );
@@ -1077,6 +1077,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       audioMode: AudioMode.tts,
       readAloudPrompt: false,
       readAloudConfirmed: true,
+      isOffline: false,
       duration: Duration(seconds: (spoken.split(' ').length * 0.45).ceil()),
       position: Duration.zero,
     );
@@ -1252,7 +1253,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         activeExcerpt: effectiveExcerpt,
         isLoading: false,
         isPlaying: false,
-        isOffline: true,
+        isOffline: false,
         infoNotice: canShowRange
             ? 'Verse timing for $label is not aligned, so Selah did not start a synthetic voice or a different passage.'
             : 'Verse timing for $label is not aligned, and those words are not loaded. Selah will not play a different passage.',
@@ -1360,7 +1361,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
           'audio_mode': state.audioMode.name,
         },
       );
-      state = state.copyWith(isOffline: true);
+      state = state.copyWith(isOffline: false);
       _switchToTtsFallback(
         'Audio stream blocked or failed. Switched to Text-to-Speech (TTS).',
         autoplay: autoplay,
@@ -1620,6 +1621,45 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
     // A broken link has no chapter. Keep the friendly error on screen.
     if (state.currentChapter.bookCode.isEmpty) return;
+
+    // ESV playback stores a synthetic VRS chapter. Route the real book so a
+    // switch to BSB or WEB does not keep the ESV wording under the new label.
+    if (state.currentChapter.bookCode.toUpperCase() == 'VRS') {
+      final excerpt = state.activeExcerpt;
+      if (excerpt != null && excerpt.bookCode.toUpperCase() != 'VRS') {
+        final book = BibleCanon.findBook(excerpt.bookCode);
+        routeAndPlayChapter(
+          bookCode: excerpt.bookCode,
+          chapterNumber: excerpt.chapterNumber,
+          bookName: book?.name ?? state.currentChapter.bookName,
+          excerpt: excerpt,
+          resetIteration: resetIteration,
+        );
+        return;
+      }
+      final parsed = PassageShareLink.tryParse(
+        state.currentChapter.displayTitle ?? state.currentChapter.bookName,
+      );
+      if (parsed != null) {
+        final recovered = parsed.startVerse == null
+            ? null
+            : PassageExcerpt.customExcerpt(
+                bookCode: parsed.book.code,
+                chapterNumber: parsed.chapter,
+                startVerse: parsed.startVerse!,
+                endVerse: parsed.endVerse ?? parsed.startVerse!,
+                displayTitle: parsed.canonical,
+              );
+        routeAndPlayChapter(
+          bookCode: parsed.book.code,
+          chapterNumber: parsed.chapter,
+          bookName: parsed.book.name,
+          excerpt: recovered,
+          resetIteration: resetIteration,
+        );
+        return;
+      }
+    }
 
     // Keep a shared or custom range. Dropping the excerpt here would turn
     // John 16:32-33 into the whole of John 16 when the listener changes translation.
