@@ -40,6 +40,12 @@ void main() {
   });
 
   group('Helloao public-domain range', () {
+    test('WEB uses the eng_web Helloao id', () {
+      expect(PublicDomainPassageText.helloAoTranslationId('WEB'), 'eng_web');
+      expect(PublicDomainPassageText.helloAoTranslationId('BSB'), 'BSB');
+      expect(PublicDomainPassageText.helloAoTranslationId('ESV'), isNull);
+    });
+
     test('joins only the requested verses', () {
       final text = PublicDomainPassageText.textFromHelloAoBody(
         {

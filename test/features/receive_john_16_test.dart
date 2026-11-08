@@ -1,0 +1,72 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import './step/i_open_the_share_link_in_while_signed_out.dart';
+import './step/i_see_the_passage.dart';
+import './step/i_play_the_shared_passage.dart';
+import './step/the_onscreen_text_includes.dart';
+import './step/i_do_not_see_the_curated_wording.dart';
+import './step/the_heading_stays.dart';
+import './step/the_passage_is_read_aloud.dart';
+import './step/the_attribution_includes.dart';
+import './step/i_see_verse_timing_marked_unaligned.dart';
+import './step/i_choose_the_translation.dart';
+import './step/the_esv_passage_requests_include.dart';
+import './step/the_esv_passage_requests_do_not_include.dart';
+import './step/the_heading_stays_on.dart';
+import './step/i_do_not_see_verse_timing_marked_unaligned.dart';
+
+void main() {
+  group('''Receive John 16:32-33''', () {
+    testWidgets('''BSB reads John 16:32-33 aloud''', (tester) async {
+      await iOpenTheShareLinkInWhileSignedOut(
+          tester,
+          'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=John+16:32-33',
+          'BSB');
+      await iSeeThePassage(tester, 'John 16:32-33');
+      await iPlayTheSharedPassage(tester);
+      await theOnscreenTextIncludes(tester, 'Look, an hour is coming');
+      await theOnscreenTextIncludes(tester, 'take courage');
+      await iDoNotSeeTheCuratedWording(tester, 'For God so loved the world');
+      await iDoNotSeeTheCuratedWording(tester, 'In the beginning was the Word');
+      await theHeadingStays(tester, 'John 16:32-33');
+      await thePassageIsReadAloud(tester);
+      await theAttributionIncludes(tester, 'Barry Hays');
+      await iSeeVerseTimingMarkedUnaligned(tester);
+    });
+    testWidgets('''WEB reads John 16:32-33 aloud''', (tester) async {
+      await iOpenTheShareLinkInWhileSignedOut(
+          tester,
+          'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=John+16:32-33',
+          'BSB');
+      await iChooseTheTranslation(tester, 'WEB');
+      await theOnscreenTextIncludes(tester, 'Behold, the time is coming');
+      await theOnscreenTextIncludes(tester, 'cheer up');
+      await iDoNotSeeTheCuratedWording(tester, 'Look, an hour is coming');
+      await iDoNotSeeTheCuratedWording(tester, 'For God so loved the world');
+      await theHeadingStays(tester, 'John 16:32-33');
+      await thePassageIsReadAloud(tester);
+      await theAttributionIncludes(tester, 'Hosanna');
+      await iSeeVerseTimingMarkedUnaligned(tester);
+    });
+    testWidgets('''ESV requests John 16:32 and John 16:33''', (tester) async {
+      await iOpenTheShareLinkInWhileSignedOut(
+          tester,
+          'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=John+16:32-33',
+          'ESV');
+      await iSeeThePassage(tester, 'John 16:32-33');
+      await iPlayTheSharedPassage(tester);
+      await theEsvPassageRequestsInclude(tester, 'John 16:32');
+      await theEsvPassageRequestsInclude(tester, 'John 16:33');
+      await theEsvPassageRequestsDoNotInclude(tester, 'John 3:16');
+      await theOnscreenTextIncludes(tester, 'verse thirty-two only');
+      await theOnscreenTextIncludes(tester, 'verse thirty-three only');
+      await theHeadingStaysOn(tester, 'John 16:32-33');
+      await theAttributionIncludes(tester, 'Crossway');
+      await iDoNotSeeVerseTimingMarkedUnaligned(tester);
+    });
+  });
+}

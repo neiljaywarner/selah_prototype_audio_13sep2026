@@ -801,7 +801,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
     if (requested != null &&
         (state.activeTranslation == 'BSB' || state.activeTranslation == 'WEB')) {
-      final ranged = await PublicDomainPassageText().fetchRange(
+      final ranged = await ref.read(publicDomainPassageTextProvider).fetchRange(
         translation: state.activeTranslation,
         bookCode: bookCode,
         chapterNumber: chapterNumber,
@@ -853,6 +853,13 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
       final verseStr = '${verses.map((verse) => verse.text).join(' ')} $kEsvShortCopyright';
       final joinedRef = EsvApiClient.joinedReference(verses);
+      if (!ref.mounted) return false;
+      state = state.copyWith(
+        currentChapter: state.currentChapter.copyWith(
+          textContent: verseStr,
+          displayTitle: joinedRef,
+        ),
+      );
 
       final directAudioUrl = await esv.resolvePassageAudioUrl(query) ??
           EsvApiClient.directHwAudioUrl(query);
@@ -897,16 +904,20 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         return true;
       } catch (audioErr) {
         AppLogger.error('ESV human audio playback failed: $audioErr');
-        if (ref.mounted) {
-          state = state.copyWith(
-            isLoading: false,
-            isPlaying: false,
-            audioMode: AudioMode.narrator,
-            clearInfoNotice: true,
-            lastError: 'ESV audio stream error: $audioErr',
-          );
-        }
-        return false;
+        if (!ref.mounted) return false;
+        state = state.copyWith(
+          currentChapter: state.currentChapter.copyWith(
+            textContent: verseStr,
+            displayTitle: joinedRef,
+            audioStreamUrl: '',
+          ),
+          isLoading: false,
+          audioMode: AudioMode.tts,
+          infoNotice: 'ESV narrator audio is unavailable, so these verses are read aloud.',
+          clearLastError: true,
+        );
+        await _playTts(verseStr, autoplay: autoplay);
+        return true;
       }
     } catch (e) {
       AppLogger.error('ESV verse fetch failed', error: e);
@@ -1503,11 +1514,17 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       'chapter': state.currentChapter.reference,
     });
 
-    // Re-route current chapter with new translation
+    // Keep a shared or custom range. Dropping the excerpt here would turn
+    // John 16:32-33 into the whole of John 16 when the listener changes translation.
+    final excerpt = state.activeExcerpt;
+    final excerptMatchesChapter = excerpt != null &&
+        excerpt.bookCode.toUpperCase() == state.currentChapter.bookCode.toUpperCase() &&
+        excerpt.chapterNumber == state.currentChapter.chapterNumber;
     routeAndPlayChapter(
       bookCode: state.currentChapter.bookCode,
       chapterNumber: state.currentChapter.chapterNumber,
       bookName: state.currentChapter.bookName,
+      excerpt: excerptMatchesChapter ? excerpt : null,
       resetIteration: resetIteration,
     );
   }

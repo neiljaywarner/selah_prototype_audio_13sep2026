@@ -1,10 +1,15 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Loads a public-domain verse range (BSB or WEB) when it is not already
 /// in the offline bank.
 ///
 /// Helloao publishes the Berean Standard Bible and the World English Bible.
 /// This is only used for those two translations. ESV stays on Crossway.
+final publicDomainPassageTextProvider = Provider<PublicDomainPassageText>(
+  (ref) => PublicDomainPassageText(),
+);
+
 class PublicDomainPassageText {
   PublicDomainPassageText({Dio? dio})
       : _dio = dio ??
@@ -26,13 +31,13 @@ class PublicDomainPassageText {
     required int startVerse,
     required int endVerse,
   }) async {
-    final code = translation.trim().toUpperCase();
-    if (code != 'BSB' && code != 'WEB') return null;
+    final helloAoId = helloAoTranslationId(translation);
+    if (helloAoId == null) return null;
     if (startVerse < 1 || endVerse < startVerse) return null;
 
     try {
       final res = await _dio.get<dynamic>(
-        'https://bible.helloao.org/api/$code/${bookCode.toUpperCase()}/$chapterNumber.json',
+        'https://bible.helloao.org/api/$helloAoId/${bookCode.toUpperCase()}/$chapterNumber.json',
       );
       return textFromHelloAoBody(
         res.data,
@@ -41,6 +46,18 @@ class PublicDomainPassageText {
       );
     } catch (_) {
       return null;
+    }
+  }
+
+  /// Helloao ids differ from Selah's translation codes. WEB is `eng_web`.
+  static String? helloAoTranslationId(String translation) {
+    switch (translation.trim().toUpperCase()) {
+      case 'BSB':
+        return 'BSB';
+      case 'WEB':
+        return 'eng_web';
+      default:
+        return null;
     }
   }
 

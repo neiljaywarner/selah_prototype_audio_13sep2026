@@ -1,0 +1,47 @@
+# Receive John 16:32-33 in ESV, BSB, and WEB.
+# ESV has no live key in this environment, so that scenario uses a scripted
+# Crossway client. The queries are still John 16:32 and John 16:33.
+# Regenerate: dart run build_runner build
+# Run: flutter test test/features/receive_john_16_test.dart
+
+Feature: Receive John 16:32-33
+  A shared couple of verses stays on John 16:32-33 in each translation.
+  John 16 is not a curated excerpt, so nothing else is substituted.
+
+  Scenario: BSB reads John 16:32-33 aloud
+    Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=John+16:32-33'} in {'BSB'} while signed out
+    Then I see the passage {'John 16:32-33'}
+    When I play the shared passage
+    Then the on-screen text includes {'Look, an hour is coming'}
+    And the on-screen text includes {'take courage'}
+    And I do not see the curated wording {'For God so loved the world'}
+    And I do not see the curated wording {'In the beginning was the Word'}
+    And the heading stays {'John 16:32-33'}
+    And the passage is read aloud
+    And the attribution includes {'Barry Hays'}
+    And I see verse timing marked unaligned
+
+  Scenario: WEB reads John 16:32-33 aloud
+    Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=John+16:32-33'} in {'BSB'} while signed out
+    When I choose the {'WEB'} translation
+    Then the on-screen text includes {'Behold, the time is coming'}
+    And the on-screen text includes {'cheer up'}
+    And I do not see the curated wording {'Look, an hour is coming'}
+    And I do not see the curated wording {'For God so loved the world'}
+    And the heading stays {'John 16:32-33'}
+    And the passage is read aloud
+    And the attribution includes {'Hosanna'}
+    And I see verse timing marked unaligned
+
+  Scenario: ESV requests John 16:32 and John 16:33
+    Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=John+16:32-33'} in {'ESV'} while signed out
+    Then I see the passage {'John 16:32-33'}
+    When I play the shared passage
+    Then the ESV passage requests include {'John 16:32'}
+    And the ESV passage requests include {'John 16:33'}
+    And the ESV passage requests do not include {'John 3:16'}
+    And the on-screen text includes {'verse thirty-two only'}
+    And the on-screen text includes {'verse thirty-three only'}
+    And the heading stays on {'John 16:32-33'}
+    And the attribution includes {'Crossway'}
+    And I do not see verse timing marked unaligned
