@@ -21,6 +21,12 @@ Feature: Share a passage
     And the share payload contains {'1 Cor 13:4-7'}
     And the share payload does not contain the verse {'Love is patient, love is kind'}
 
+  Scenario: A failed share does not say the link is ready
+    Given the passage playing is {'1 Cor 13:4-7'}
+    And the share sheet will fail
+    When I share the current passage
+    Then I see a share failure
+
   Scenario: Opening a shared passage without an account
     Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=1+Cor+13:4-7'} while signed out
     Then I see the passage {'1 Cor 13:4-7'}

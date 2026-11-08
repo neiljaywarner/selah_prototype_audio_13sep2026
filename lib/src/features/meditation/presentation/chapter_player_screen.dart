@@ -120,6 +120,14 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
       await ref.read(passageShareLauncherProvider).share(payload);
     } catch (error) {
       AppLogger.warning('Passage share sheet failed: $error');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Couldn't share that passage."),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
     }
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

@@ -9,6 +9,8 @@ import './step/i_share_the_current_passage.dart';
 import './step/the_share_link_contains.dart';
 import './step/the_share_payload_contains.dart';
 import './step/the_share_payload_does_not_contain_the_verse.dart';
+import './step/the_share_sheet_will_fail.dart';
+import './step/i_see_a_share_failure.dart';
 import './step/i_have_in_my_passages.dart';
 import './step/i_share_from_my_passages.dart';
 import './step/i_open_the_share_link_while_signed_out.dart';
@@ -37,6 +39,13 @@ void main() {
       await theSharePayloadContains(tester, '1 Cor 13:4-7');
       await theSharePayloadDoesNotContainTheVerse(
           tester, 'Love is patient, love is kind');
+    });
+    testWidgets('''A failed share does not say the link is ready''',
+        (tester) async {
+      await thePassagePlayingIs(tester, '1 Cor 13:4-7');
+      await theShareSheetWillFail(tester);
+      await iShareTheCurrentPassage(tester);
+      await iSeeAShareFailure(tester);
     });
     testWidgets('''Opening a shared passage without an account''',
         (tester) async {

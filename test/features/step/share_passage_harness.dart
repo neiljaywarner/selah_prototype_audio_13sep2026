@@ -23,6 +23,10 @@ class RecordingPassageShareLauncher implements PassageShareLauncher {
   @override
   Future<void> share(PassageSharePayload payload) async {
     last = payload;
+    if (SharePassageWorld.shareShouldFail) {
+      SharePassageWorld.shareShouldFail = false;
+      throw StateError('share sheet failed');
+    }
   }
 }
 
@@ -34,6 +38,7 @@ class SharePassageWorld {
   /// BSB, WEB, or ESV. Null leaves the app on its default (BSB when no ESV key).
   static String? forcedTranslation;
   static final List<String> esvQueries = [];
+  static bool shareShouldFail = false;
 
   static void reset() {
     initialShareUrl = null;
@@ -41,6 +46,7 @@ class SharePassageWorld {
     launcher.last = null;
     forcedTranslation = null;
     esvQueries.clear();
+    shareShouldFail = false;
   }
 }
 
