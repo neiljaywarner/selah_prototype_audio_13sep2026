@@ -58,6 +58,7 @@ class ChapterPlayerScreen extends ConsumerStatefulWidget {
 class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
   late final TextEditingController _searchController;
   bool _showDebugLogs = false;
+  bool _readAloudSheetOpen = false;
   ScriptureTopic _selectedTopic = kDefaultMeditationTopics[0];
   List<ParsedBibleReference> _searchSuggestions = [];
 
@@ -127,6 +128,25 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
         duration: const Duration(seconds: 2),
       ),
     );
+  }
+
+  Future<void> _askBeforeReadAloud(String reference) async {
+    final allow = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: const Color(0xFF1E1B4B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: ReadAloudPromptSheet(passageTitle: reference),
+      ),
+    );
+    _readAloudSheetOpen = false;
+    if (!mounted) return;
+    final player = ref.read(chapterPlayerProvider.notifier);
+    if (allow == true) {
+      await player.confirmReadAloud();
+    } else {
+      player.declineReadAloud();
+    }
   }
 
   void _openMyPassages() {
@@ -614,6 +634,15 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
   Widget build(BuildContext context) {
     final playerState = ref.watch(chapterPlayerProvider);
     final notifier = ref.read(chapterPlayerProvider.notifier);
+    ref.listen<ChapterPlayerState>(chapterPlayerProvider, (previous, next) {
+      final opened = next.readAloudPrompt && previous?.readAloudPrompt != true;
+      if (!opened || _readAloudSheetOpen) return;
+      _readAloudSheetOpen = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _askBeforeReadAloud(next.currentChapter.reference);
+      });
+    });
     final userPrefs = ref.watch(userPreferencesProvider);
     final remoteConfig = ref.watch(remoteConfigProvider);
     final showWip = ref.watch(workInProgressFeaturesProvider);

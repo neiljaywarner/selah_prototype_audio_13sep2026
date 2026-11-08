@@ -15,10 +15,14 @@ enum PassageAudioDecision {
   /// the curated excerpt file).
   playNarratorChapter,
 
-  /// Show the requested words. Do not speak, and do not play a different range.
+  /// Stay quiet. Used when ESV audio failed and the listener has not agreed
+  /// to a read-aloud, and when there are no words to read.
   holdUnaligned,
 
-  /// No human narrator can be attempted for this request.
+  /// Show the requested words and ask before any synthetic voice.
+  askBeforeReadAloud,
+
+  /// The listener already agreed to a read-aloud for this request.
   speakWithTts,
 }
 
@@ -35,6 +39,7 @@ class PassageAudioSituation {
     this.curatedStart,
     this.curatedEnd,
     this.clipCoversRequestedRange = false,
+    this.readAloudConfirmed = false,
   });
 
   /// ESV is the active passage source. TTS must not run in this mode.
@@ -63,6 +68,9 @@ class PassageAudioSituation {
   /// Timestamps include both ends of the requested range.
   final bool clipCoversRequestedRange;
 
+  /// The listener confirmed a read-aloud for this request.
+  final bool readAloudConfirmed;
+
   bool get requestsVerseRange =>
       requestedStart != null &&
       requestedEnd != null &&
@@ -82,13 +90,22 @@ class PassageAudioSituation {
 /// 1. ESV passage audio, or silence if that audio failed. Never TTS.
 /// 2. Bundled file of the curated excerpt itself.
 /// 3. A clip, when timestamps cover the requested verses.
-/// 4. Hold, when human audio exists but would be a different range.
-/// 5. TTS only when no human audio can be attempted.
+/// 4. Ask before a read-aloud when human audio cannot serve this range.
+/// 5. Speak only after the listener has confirmed that read-aloud.
+/// 6. ESV audio failure stays quiet unless that confirmation is already set.
 PassageAudioDecision decidePassageAudio(PassageAudioSituation situation) {
-  if (situation.esvMode) {
-    return situation.esvAudioFailed
-        ? PassageAudioDecision.holdUnaligned
-        : PassageAudioDecision.playEsvPassage;
+  if (situation.esvMode && !situation.esvAudioFailed) {
+    return PassageAudioDecision.playEsvPassage;
+  }
+
+  PassageAudioDecision askOrSpeak() => situation.readAloudConfirmed
+      ? PassageAudioDecision.speakWithTts
+      : PassageAudioDecision.askBeforeReadAloud;
+
+  if (situation.esvMode && situation.esvAudioFailed) {
+    return situation.readAloudConfirmed
+        ? PassageAudioDecision.speakWithTts
+        : PassageAudioDecision.holdUnaligned;
   }
 
   final humanAudio =
@@ -109,7 +126,7 @@ PassageAudioDecision decidePassageAudio(PassageAudioSituation situation) {
   if (situation.requestsVerseRange &&
       !situation.clipCoversRequestedRange &&
       humanAudio) {
-    return PassageAudioDecision.holdUnaligned;
+    return askOrSpeak();
   }
 
   if (!situation.requestsVerseRange && humanAudio) {
@@ -117,7 +134,7 @@ PassageAudioDecision decidePassageAudio(PassageAudioSituation situation) {
   }
 
   if (!situation.translationHasNarrator || !humanAudio) {
-    return PassageAudioDecision.speakWithTts;
+    return askOrSpeak();
   }
 
   return PassageAudioDecision.holdUnaligned;

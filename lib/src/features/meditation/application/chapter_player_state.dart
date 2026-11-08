@@ -28,6 +28,8 @@ class ChapterPlayerState {
   final double playbackSpeed;
   final int? sleepTimerMinutes;
   final DateTime? sleepTimerEndTime;
+  final bool readAloudPrompt;
+  final bool readAloudConfirmed;
 
   const ChapterPlayerState({
     required this.currentChapter,
@@ -54,6 +56,8 @@ class ChapterPlayerState {
     this.playbackSpeed = 1.0,
     this.sleepTimerMinutes,
     this.sleepTimerEndTime,
+    this.readAloudPrompt = false,
+    this.readAloudConfirmed = false,
   });
 
   ChapterPlayerState copyWith({
@@ -85,6 +89,8 @@ class ChapterPlayerState {
     int? sleepTimerMinutes,
     bool clearSleepTimer = false,
     DateTime? sleepTimerEndTime,
+    bool? readAloudPrompt,
+    bool? readAloudConfirmed,
   }) => ChapterPlayerState(
     currentChapter: currentChapter ?? this.currentChapter,
     isLoading: isLoading ?? this.isLoading,
@@ -110,6 +116,8 @@ class ChapterPlayerState {
     playbackSpeed: playbackSpeed ?? this.playbackSpeed,
     sleepTimerMinutes: clearSleepTimer ? null : (sleepTimerMinutes ?? this.sleepTimerMinutes),
     sleepTimerEndTime: clearSleepTimer ? null : (sleepTimerEndTime ?? this.sleepTimerEndTime),
+    readAloudPrompt: readAloudPrompt ?? this.readAloudPrompt,
+    readAloudConfirmed: readAloudConfirmed ?? this.readAloudConfirmed,
   );
 
   bool get isBundledAsset => currentChapter.audioStreamUrl.startsWith('assets/');

@@ -21,7 +21,7 @@ void main() {
       );
     });
 
-    test('ESV audio failure stays silent instead of starting TTS', () {
+    test('ESV audio failure stays silent until a read-aloud was confirmed', () {
       expect(
         decidePassageAudio(
           const PassageAudioSituation(
@@ -36,9 +36,24 @@ void main() {
         ),
         PassageAudioDecision.holdUnaligned,
       );
+      expect(
+        decidePassageAudio(
+          const PassageAudioSituation(
+            esvMode: true,
+            esvAudioFailed: true,
+            readAloudConfirmed: true,
+            translationHasNarrator: true,
+            hasBundledChapterAudio: false,
+            hasChapterStream: false,
+            requestedStart: 32,
+            requestedEnd: 33,
+          ),
+        ),
+        PassageAudioDecision.speakWithTts,
+      );
     });
 
-    test('Psalm 62:5-7 does not play the bundled 62:1-2 file or start TTS', () {
+    test('Psalm 62:5-7 asks before a read-aloud and does not play 62:1-2', () {
       expect(
         decidePassageAudio(
           const PassageAudioSituation(
@@ -53,7 +68,27 @@ void main() {
             clipCoversRequestedRange: false,
           ),
         ),
-        PassageAudioDecision.holdUnaligned,
+        PassageAudioDecision.askBeforeReadAloud,
+      );
+    });
+
+    test('Psalm 62:5-7 speaks only after the listener confirms', () {
+      expect(
+        decidePassageAudio(
+          const PassageAudioSituation(
+            esvMode: false,
+            readAloudConfirmed: true,
+            translationHasNarrator: true,
+            hasBundledChapterAudio: true,
+            hasChapterStream: false,
+            requestedStart: 5,
+            requestedEnd: 7,
+            curatedStart: 1,
+            curatedEnd: 2,
+            clipCoversRequestedRange: false,
+          ),
+        ),
+        PassageAudioDecision.speakWithTts,
       );
     });
 
@@ -112,7 +147,7 @@ void main() {
               clipCoversRequestedRange: false,
             ),
           ),
-          PassageAudioDecision.holdUnaligned,
+          PassageAudioDecision.askBeforeReadAloud,
         );
       },
     );
@@ -149,7 +184,7 @@ void main() {
             clipCoversRequestedRange: false,
           ),
         ),
-        PassageAudioDecision.holdUnaligned,
+        PassageAudioDecision.askBeforeReadAloud,
       );
     });
 
@@ -170,7 +205,7 @@ void main() {
       );
     });
 
-    test('John 16 with no human audio may use TTS as the last resort', () {
+    test('John 16 with no human audio asks before TTS', () {
       expect(
         decidePassageAudio(
           const PassageAudioSituation(
@@ -182,11 +217,11 @@ void main() {
             requestedEnd: 33,
           ),
         ),
-        PassageAudioDecision.speakWithTts,
+        PassageAudioDecision.askBeforeReadAloud,
       );
     });
 
-    test('WEB Old Testament with no human audio may use TTS', () {
+    test('WEB Old Testament asks before TTS', () {
       expect(
         decidePassageAudio(
           const PassageAudioSituation(
@@ -200,7 +235,7 @@ void main() {
             curatedEnd: 2,
           ),
         ),
-        PassageAudioDecision.speakWithTts,
+        PassageAudioDecision.askBeforeReadAloud,
       );
     });
 
@@ -235,7 +270,7 @@ void main() {
         );
         expect(decision, isNot(PassageAudioDecision.speakWithTts));
         expect(decision, isNot(PassageAudioDecision.playNarratorChapter));
-        expect(decision, PassageAudioDecision.holdUnaligned);
+        expect(decision, PassageAudioDecision.askBeforeReadAloud);
       }
     });
   });

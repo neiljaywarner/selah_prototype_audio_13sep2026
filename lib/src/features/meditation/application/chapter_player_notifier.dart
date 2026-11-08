@@ -471,6 +471,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }) async {
     await stopAllPlayback(reason: 'route_and_play');
     if (!ref.mounted) return;
+    state = state.copyWith(readAloudPrompt: false, readAloudConfirmed: false);
 
     final effectiveExcerpt = excerpt ?? PassageExcerpt.forChapter(bookCode, chapterNumber);
     final fallbackText = _fallbackChapterText(
@@ -906,6 +907,20 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       } catch (audioErr) {
         AppLogger.error('ESV human audio playback failed: $audioErr');
         if (!ref.mounted) return false;
+        if (state.readAloudConfirmed) {
+          state = state.copyWith(
+            currentChapter: state.currentChapter.copyWith(
+              textContent: verseStr,
+              displayTitle: joinedRef,
+              audioStreamUrl: '',
+            ),
+            isLoading: false,
+            isPlaying: false,
+            clearLastError: true,
+          );
+          await _playTts(verseStr, autoplay: autoplay, confirmed: true);
+          return true;
+        }
         state = state.copyWith(
           currentChapter: state.currentChapter.copyWith(
             textContent: verseStr,
@@ -915,6 +930,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
           isLoading: false,
           isPlaying: false,
           audioMode: AudioMode.narrator,
+          readAloudPrompt: false,
           clearInfoNotice: true,
           lastError: 'ESV human narrator audio for "$query" could not be played.',
         );
@@ -1031,18 +1047,24 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     return text.endsWith(suffix) ? text.substring(0, text.length - suffix.length) : text;
   }
 
-  Future<void> _playTts(String text, {bool autoplay = true}) async {
+  Future<void> _playTts(String text, {bool autoplay = true, bool confirmed = false}) async {
     await stopAllPlayback(reason: 'play_tts');
     if (!ref.mounted) return;
 
-    if (_isEsvModeActive) {
+    final allowed = confirmed || state.readAloudConfirmed;
+    if (_isEsvModeActive && !allowed) {
       state = state.copyWith(
         isLoading: false,
         isPlaying: false,
         audioMode: AudioMode.narrator,
+        readAloudPrompt: false,
         clearInfoNotice: true,
         lastError: state.lastError ?? 'ESV human narrator audio unavailable.',
       );
+      return;
+    }
+    if (!allowed) {
+      _offerReadAloud(text);
       return;
     }
 
@@ -1052,6 +1074,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       isLoading: false,
       isPlaying: autoplay,
       isPausedInGap: false,
+      audioMode: AudioMode.tts,
+      readAloudPrompt: false,
+      readAloudConfirmed: true,
       duration: Duration(seconds: (spoken.split(' ').length * 0.45).ceil()),
       position: Duration.zero,
     );
@@ -1072,26 +1097,79 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
   }
 
+  void _offerReadAloud(String text) {
+    if (!ref.mounted) return;
+    final label = state.currentChapter.displayTitle ?? state.currentChapter.reference;
+    final words = text.trim();
+    state = state.copyWith(
+      isLoading: false,
+      isPlaying: false,
+      audioMode: AudioMode.narrator,
+      hasTimestamps: false,
+      readAloudPrompt: true,
+      readAloudConfirmed: false,
+      currentChapter: state.currentChapter.copyWith(
+        audioStreamUrl: '',
+        textContent: words.isEmpty ? state.currentChapter.textContent : words,
+      ),
+      infoNotice:
+          'Verse timing for $label is not aligned, so Selah did not start a synthetic voice or a different passage.',
+      clearLastError: true,
+    );
+  }
+
+  /// Speaks the words already on screen. No-op unless the listener just agreed.
+  Future<void> confirmReadAloud() async {
+    if (!ref.mounted) return;
+    state = state.copyWith(readAloudPrompt: false, readAloudConfirmed: true);
+    await _playTts(state.currentChapter.textContent, confirmed: true);
+  }
+
+  /// Leaves the words on screen and does not speak.
+  void declineReadAloud() {
+    if (!ref.mounted) return;
+    final label = state.currentChapter.displayTitle ?? state.currentChapter.reference;
+    state = state.copyWith(
+      readAloudPrompt: false,
+      readAloudConfirmed: false,
+      isPlaying: false,
+      isLoading: false,
+      audioMode: AudioMode.narrator,
+      infoNotice:
+          'Verse timing for $label is not aligned, so Selah did not start a synthetic voice or a different passage.',
+    );
+  }
+
   void _switchToTtsFallback(String notice, {String? overrideText, bool autoplay = true}) {
     if (!ref.mounted) return;
-    if (_isEsvModeActive) {
+    final text = overrideText ?? state.currentChapter.textContent;
+    if (_isEsvModeActive && !state.readAloudConfirmed) {
       state = state.copyWith(
         isLoading: false,
         isPlaying: false,
         audioMode: AudioMode.narrator,
+        readAloudPrompt: false,
         clearInfoNotice: true,
         lastError: state.lastError ?? 'ESV human narrator audio unavailable.',
       );
       return;
     }
-    final text = overrideText ?? state.currentChapter.textContent;
+    if (!state.readAloudConfirmed) {
+      state = state.copyWith(
+        isLoading: false,
+        currentChapter: state.currentChapter.copyWith(textContent: text),
+        infoNotice: notice,
+      );
+      _offerReadAloud(text);
+      return;
+    }
     state = state.copyWith(
       isLoading: false,
       audioMode: AudioMode.tts,
       infoNotice: notice,
       currentChapter: state.currentChapter.copyWith(textContent: text),
     );
-    _playTts(text, autoplay: autoplay);
+    _playTts(text, autoplay: autoplay, confirmed: true);
   }
 
   Future<void> loadChapter(
@@ -1145,9 +1223,11 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         curatedStart: curated?.startVerse,
         curatedEnd: curated?.endVerse,
         clipCoversRequestedRange: window != null,
+        readAloudConfirmed: state.readAloudConfirmed,
       ),
     );
     final refuseUnclipped = decision == PassageAudioDecision.holdUnaligned ||
+        decision == PassageAudioDecision.askBeforeReadAloud ||
         decision == PassageAudioDecision.speakWithTts ||
         (decision == PassageAudioDecision.playNarratorClip && window == null);
     if (chapter.audioStreamUrl.isNotEmpty && refuseUnclipped) {
@@ -1156,15 +1236,16 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       AppLogger.logEvent('custom_passage_unaligned', {
         'passage': label,
         'translation': state.activeTranslation,
-        'tts': false,
+        'tts': decision == PassageAudioDecision.speakWithTts,
       });
       final words = chapter.textContent.trim();
       final canShowRange = words.isNotEmpty && !words.startsWith('Press play to listen');
+      final shown = canShowRange ? chapter.textContent : 'Press play to listen to $label.';
       state = state.copyWith(
         currentChapter: chapter.copyWith(
           audioStreamUrl: '',
           displayTitle: chapter.displayTitle ?? label,
-          textContent: canShowRange ? chapter.textContent : 'Press play to listen to $label.',
+          textContent: shown,
         ),
         audioMode: AudioMode.narrator,
         hasTimestamps: false,
@@ -1177,6 +1258,11 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
             : 'Verse timing for $label is not aligned, and those words are not loaded. Selah will not play a different passage.',
         clearLastError: true,
       );
+      if (canShowRange && decision == PassageAudioDecision.speakWithTts) {
+        await _playTts(shown, autoplay: autoplay, confirmed: true);
+      } else if (canShowRange && decision == PassageAudioDecision.askBeforeReadAloud) {
+        _offerReadAloud(shown);
+      }
       return;
     }
 
@@ -1338,6 +1424,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       isLoading: false,
       clearLastError: true,
       clearInfoNotice: true,
+      readAloudPrompt: false,
+      readAloudConfirmed: false,
       audioMode: AudioMode.narrator,
     );
   }

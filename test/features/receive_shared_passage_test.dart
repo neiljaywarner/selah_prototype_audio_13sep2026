@@ -8,9 +8,13 @@ import './step/i_open_the_share_link_while_signed_out.dart';
 import './step/i_see_the_passage.dart';
 import './step/i_do_not_see_the_curated_wording.dart';
 import './step/i_play_the_shared_passage.dart';
+import './step/i_am_asked_before_the_passage_is_read_aloud.dart';
+import './step/text_to_speech_has_not_started.dart';
 import './step/the_onscreen_text_is_the_shared_bsb_range.dart';
 import './step/the_heading_stays.dart';
 import './step/playback_is_the_shared_range_and_not_the_full_chapter.dart';
+import './step/i_decline_read_aloud.dart';
+import './step/the_passage_is_not_read_aloud.dart';
 
 void main() {
   group('''Receive a shared passage on BSB''', () {
@@ -22,6 +26,8 @@ void main() {
       await iDoNotSeeTheCuratedWording(
           tester, 'My soul finds rest in God alone');
       await iPlayTheSharedPassage(tester);
+      await iAmAskedBeforeThePassageIsReadAloud(tester);
+      await textToSpeechHasNotStarted(tester);
       await theOnscreenTextIsTheSharedBsbRange(
           tester, 'Rest in God alone, O my soul');
       await iDoNotSeeTheCuratedWording(
@@ -29,6 +35,8 @@ void main() {
       await iDoNotSeeTheCuratedWording(tester, 'I will never be shaken');
       await theHeadingStays(tester, 'Psalm 62:5-7');
       await playbackIsTheSharedRangeAndNotTheFullChapter(tester);
+      await iDeclineReadAloud(tester);
+      await thePassageIsNotReadAloud(tester);
     });
     testWidgets(
         '''A different range on a curated chapter does not use that excerpt''',

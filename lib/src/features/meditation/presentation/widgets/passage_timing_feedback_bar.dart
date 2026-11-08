@@ -412,3 +412,71 @@ class _TimingCalibrationSheetState extends State<_TimingCalibrationSheet> {
     );
   }
 }
+
+/// Asks before a synthetic voice. Same sheet family as timing calibration.
+/// Dismissing the sheet, or Not now, leaves the passage quiet.
+class ReadAloudPromptSheet extends StatelessWidget {
+  const ReadAloudPromptSheet({super.key, required this.passageTitle});
+
+  final String passageTitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Read this passage aloud?',
+              key: Key('read_aloud_prompt'),
+              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Verse timing for $passageTitle is not aligned, so Selah did not start a synthetic voice or a different passage. Read the words on screen?',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 14, height: 1.35),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    key: const Key('read_aloud_decline'),
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('Not now'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    key: const Key('read_aloud_confirm'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF6366F1),
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text('Read aloud'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
