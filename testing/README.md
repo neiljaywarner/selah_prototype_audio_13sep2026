@@ -123,6 +123,8 @@ maestro test .maestro/tested_passages_flow.yaml
 Serve this branch locally. The flow is pinned to `http://127.0.0.1:8091`. Do not point it at selahword.web.app.
 
 ```bash
+# flutter run stays in the foreground. Wait until it prints that the app
+# is being served, then run Maestro in another terminal.
 flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8091
 maestro test --headless --screen-size 1200x2200 .maestro/share_passage_web.yaml
 ```
@@ -217,9 +219,11 @@ The scenarios cover sharing the playing passage, sharing from My Passages, openi
 
 The native iOS, Android, and web share sheets cannot open inside a widget test. `PlatformPassageShareLauncher` is that thin device boundary: it copies the link and passes the same reference-only message to `share_plus`. A unit test captures that message with a fake share platform. Widget scenarios replace the launcher and assert the payload.
 
-Maestro and Patrol cover the same behaviors on a device. Maestro web opens the real `?ref=` URL. Maestro on Android taps share and reads the share sheet. Patrol, on the emulator, asserts the player landed on `1 Cor 13:4-7`, that a bad reference stays on the player, and that the payload is the reference, URL, and short attribution.
+Maestro and Patrol cover the same behaviors on a device. Maestro web opens the real `?ref=` URL. Maestro on Android taps share and reads the share sheet. Patrol, on the emulator, asserts the player landed on `1 Cor 13:4-7`, that a bad reference stays on the player, and that the payload's reference is `1 Cor 13:4-7`, the URL contains `?ref=1+Cor+13:4-7` and starts with the GitHub Pages origin, and the message contains that reference, URL, and attribution. It also checks the message does not contain the verse fragments `love is patient` and `love is kind`. It does not compare the whole share message to one exact string.
 
 ```bash
+# flutter run stays in the foreground. Wait until it prints that the app
+# is being served, then run Maestro in another terminal.
 flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8091
 maestro test --headless --screen-size 1200x2200 .maestro/share_passage_web.yaml
 
@@ -230,7 +234,7 @@ maestro test .maestro/share_passage_android.yaml
 patrol test -t patrol_test/share_passage_test.dart -d emulator-5554
 ```
 
-The web flow's `url:` header sends it to desktop Chromium. Without that header, Maestro opens the link in the emulator's Chrome. iOS Simulator is not part of this run: this Mac has Command Line Tools only, so `simctl` is unavailable. The Android share sheet is what Maestro drives. Patrol asserts the in-app landing, the friendly error, and the exact payload.
+The web flow's `url:` header sends it to desktop Chromium. Without that header, Maestro opens the link in the emulator's Chrome. iOS Simulator is not part of this run: this Mac has Command Line Tools only, so `simctl` is unavailable. The Android share sheet is what Maestro drives. Patrol's `_expectReferenceOnly` checks those reference, URL, attribution, and verse-fragment assertions. It is not an exact match of the full share message.
 
 ---
 
