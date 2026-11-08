@@ -873,7 +873,10 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                   ),
                   const SizedBox(width: 6),
                   IconButton(
-                    onPressed: () async {
+                    key: const Key('save_current_passage'),
+                    onPressed: playerState.currentChapter.bookCode.isEmpty
+                        ? null
+                        : () async {
                       final curRef = playerState.currentChapter.reference;
                       await ref.read(userPreferencesProvider).saveChapter(curRef);
                       if (context.mounted) {

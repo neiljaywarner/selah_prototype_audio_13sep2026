@@ -31,4 +31,8 @@ Feature: Share a passage
     Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=NotABook+99:1'} while signed out
     Then I see a friendly passage error
     And the player is not blank
+    And saving the passage is unavailable
     And I am not asked to sign in
+    When I choose the {'WEB'} translation
+    Then I see a friendly passage error
+    And saving the passage is unavailable

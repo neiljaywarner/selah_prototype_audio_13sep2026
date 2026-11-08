@@ -1618,6 +1618,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       'chapter': state.currentChapter.reference,
     });
 
+    // A broken link has no chapter. Keep the friendly error on screen.
+    if (state.currentChapter.bookCode.isEmpty) return;
+
     // Keep a shared or custom range. Dropping the excerpt here would turn
     // John 16:32-33 into the whole of John 16 when the listener changes translation.
     final excerpt = state.activeExcerpt;
