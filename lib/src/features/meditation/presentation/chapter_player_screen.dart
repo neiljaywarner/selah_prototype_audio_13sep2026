@@ -138,6 +138,20 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     );
   }
 
+  bool _showsCuratedPill(dynamic playerState) {
+    final curated = PassageExcerpt.forChapter(
+      playerState.currentChapter.bookCode as String,
+      playerState.currentChapter.chapterNumber as int,
+    );
+    if (curated == null) return false;
+    final active = playerState.activeExcerpt as PassageExcerpt?;
+    if (active == null) return true;
+    return active.bookCode.toUpperCase() == curated.bookCode.toUpperCase() &&
+        active.chapterNumber == curated.chapterNumber &&
+        active.startVerse == curated.startVerse &&
+        active.endVerse == curated.endVerse;
+  }
+
   Future<void> _askBeforeReadAloud(String reference) async {
     final allow = await showDialog<bool>(
       context: context,
@@ -1264,12 +1278,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                         ),
                       ],
                     ),
-                    if (playerState.activeExcerpt != null ||
-                        PassageExcerpt.forChapter(
-                              playerState.currentChapter.bookCode,
-                              playerState.currentChapter.chapterNumber,
-                            ) !=
-                            null) ...[
+                    if (_showsCuratedPill(playerState)) ...[
                       const SizedBox(height: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
