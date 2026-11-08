@@ -155,10 +155,16 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
   Future<void> _askBeforeReadAloud(String reference) async {
     final allow = await showDialog<bool>(
       context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: const Color(0xFF1E1B4B),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: ReadAloudPromptSheet(passageTitle: reference),
+      builder: (ctx) => Semantics(
+        namesRoute: true,
+        scopesRoute: true,
+        explicitChildNodes: true,
+        label: 'Read this passage aloud?',
+        child: Dialog(
+          backgroundColor: const Color(0xFF1E1B4B),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: ReadAloudPromptSheet(passageTitle: reference),
+        ),
       ),
     );
     _readAloudSheetOpen = false;
