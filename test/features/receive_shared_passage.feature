@@ -8,6 +8,15 @@ Feature: Receive a shared passage on BSB
   When that other excerpt is the only bundled recording, Selah asks before
   reading the words aloud and does not play the other excerpt.
 
+  Scenario: A featured chapter wins over a slow range
+    Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=John+16:32-33'} in {'BSB'} while signed out
+    And public domain lookups are held
+    When I start playback without waiting
+    And I tap the featured passage {'1 Cor 13:4'}
+    And public domain lookups continue
+    Then the on-screen text includes {'Love is patient'}
+    And I do not see the curated wording {'Look, an hour is coming'}
+
   Scenario: Psalm 62:5-7 does not show the curated 62:1-2 text
     Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=Psalm+62:5-7'} while signed out
     Then I see the passage {'Psalm 62:5-7'}
@@ -27,6 +36,15 @@ Feature: Receive a shared passage on BSB
     And I do not see the curated wording {'Rest in God alone'}
     And the placeholder is not spoken
 
+  Scenario: A different range on a curated chapter does not use that excerpt
+    Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=1+Cor+13:8-13'} while signed out
+    Then I see the passage {'1 Cor 13:8-13'}
+    And I do not see the curated wording {'Love is patient, love is kind'}
+    When I play the shared passage
+    Then I see the passage {'1 Cor 13:8-13'}
+    And I do not see the curated wording {'Love is patient, love is kind'}
+    And I do not see the curated wording {'bears all things, believes all things'}
+
   Scenario: A slow passage does not replace a newer one
     Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=John+16:32-33'} in {'BSB'} while signed out
     And public domain lookups are held
@@ -36,12 +54,3 @@ Feature: Receive a shared passage on BSB
     Then the heading stays {'John 3:16'}
     And the on-screen text includes {'Press play to listen to John 3:16'}
     And I do not see the curated wording {'Look, an hour is coming'}
-
-  Scenario: A different range on a curated chapter does not use that excerpt
-    Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=1+Cor+13:8-13'} while signed out
-    Then I see the passage {'1 Cor 13:8-13'}
-    And I do not see the curated wording {'Love is patient, love is kind'}
-    When I play the shared passage
-    Then I see the passage {'1 Cor 13:8-13'}
-    And I do not see the curated wording {'Love is patient, love is kind'}
-    And I do not see the curated wording {'bears all things, believes all things'}

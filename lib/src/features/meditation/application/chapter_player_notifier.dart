@@ -618,6 +618,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         excerpt: effectiveExcerpt,
         autoplay: autoplay,
         resetIteration: resetIteration,
+        requestId: requestId,
       );
       return;
     }
@@ -747,6 +748,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         excerpt: effectiveExcerpt,
         autoplay: autoplay,
         resetIteration: resetIteration,
+        requestId: requestId,
       );
           return;
         }
@@ -1288,9 +1290,11 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     PassageExcerpt? excerpt,
     bool autoplay = true,
     bool resetIteration = true,
+    int? requestId,
   }) async {
+    final activeRequest = requestId ?? _beginPassageRequest();
     await stopAllPlayback(reason: 'load_chapter');
-    if (!ref.mounted) return;
+    if (!_passageRequestIsCurrent(activeRequest)) return;
 
     if (_isEsvModeActive) {
       final fallbackQuery = chapter.bookCode.toUpperCase() == 'VRS'
@@ -1307,6 +1311,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       bookCode: chapter.bookCode,
       chapterNumber: chapter.chapterNumber,
     );
+    if (!_passageRequestIsCurrent(activeRequest)) return;
     final hasTimestamps = _currentTimestamps != null && _currentTimestamps!.isNotEmpty;
     if (hasTimestamps) {
       AppLogger.info(
@@ -1370,13 +1375,16 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         clearLastError: true,
       );
       if (canShowRange && decision == PassageAudioDecision.speakWithTts) {
+        if (!_passageRequestIsCurrent(activeRequest)) return;
         await _playTts(shown, autoplay: autoplay, confirmed: true);
       } else if (canShowRange && decision == PassageAudioDecision.askBeforeReadAloud) {
+        if (!_passageRequestIsCurrent(activeRequest)) return;
         _offerReadAloud(shown);
       }
       return;
     }
 
+    if (!_passageRequestIsCurrent(activeRequest)) return;
     state = state.copyWith(
       currentChapter: chapter,
       audioMode: AudioMode.narrator,

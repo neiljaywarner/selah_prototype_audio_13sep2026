@@ -23,9 +23,22 @@ import './step/i_start_playback_without_waiting.dart';
 import './step/i_route_to.dart';
 import './step/public_domain_lookups_continue.dart';
 import './step/the_onscreen_text_includes.dart';
+import './step/i_tap_the_featured_passage.dart';
 
 void main() {
   group('''Receive a shared passage on BSB''', () {
+    testWidgets('''A featured chapter wins over a slow range''', (tester) async {
+      await iOpenTheShareLinkInWhileSignedOut(
+          tester,
+          'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=John+16:32-33',
+          'BSB');
+      await publicDomainLookupsAreHeld();
+      await iStartPlaybackWithoutWaiting(tester);
+      await iTapTheFeaturedPassage(tester, '1 Cor 13:4');
+      await publicDomainLookupsContinue(tester);
+      await theOnscreenTextIncludes(tester, 'Love is patient');
+      await iDoNotSeeTheCuratedWording(tester, 'Look, an hour is coming');
+    });
     testWidgets('''Psalm 62:5-7 does not show the curated 62:1-2 text''',
         (tester) async {
       await iOpenTheShareLinkWhileSignedOut(tester,
