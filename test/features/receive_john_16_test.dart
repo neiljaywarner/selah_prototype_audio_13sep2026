@@ -81,6 +81,19 @@ void main() {
       await theHeadingStays(tester, 'John 16:32-33');
       await theOnscreenTextIncludes(tester, 'Look, an hour is coming');
     });
+    testWidgets('''Declining read aloud keeps the narrator notice''', (tester) async {
+      await iOpenTheShareLinkInWhileSignedOut(
+          tester,
+          'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=John+16:32-33',
+          'BSB');
+      await iPlayTheSharedPassage(tester);
+      await iAmAskedBeforeThePassageIsReadAloud(tester);
+      await theOnscreenTextIncludes(tester, 'Narrator stream unavailable');
+      await iDeclineReadAloud(tester);
+      await thePassageIsNotReadAloud(tester);
+      await theOnscreenTextIncludes(tester, 'Narrator stream unavailable');
+      await iDoNotSeeTheCuratedWording(tester, 'Verse timing for');
+    });
     testWidgets('''ESV requests John 16:32 and John 16:33''', (tester) async {
       await iOpenTheShareLinkInWhileSignedOut(
           tester,

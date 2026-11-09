@@ -48,6 +48,16 @@ Feature: Receive John 16:32-33
     And the heading stays {'John 16:32-33'}
     And the on-screen text includes {'Look, an hour is coming'}
 
+  Scenario: Declining read aloud keeps the narrator notice
+    Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=John+16:32-33'} in {'BSB'} while signed out
+    When I play the shared passage
+    Then I am asked before the passage is read aloud
+    And the on-screen text includes {'Narrator stream unavailable'}
+    When I decline read aloud
+    Then the passage is not read aloud
+    And the on-screen text includes {'Narrator stream unavailable'}
+    And I do not see the curated wording {'Verse timing for'}
+
   Scenario: ESV requests John 16:32 and John 16:33
     Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=John+16:32-33'} in {'ESV'} while signed out
     Then I see the passage {'John 16:32-33'}

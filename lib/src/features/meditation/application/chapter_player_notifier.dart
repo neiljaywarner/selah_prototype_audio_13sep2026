@@ -1110,7 +1110,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       return;
     }
     if (!allowed) {
-      _offerReadAloud(text);
+      _offerReadAloud(text, notice: state.infoNotice);
       return;
     }
 
@@ -1144,10 +1144,11 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
   }
 
-  void _offerReadAloud(String text) {
+  void _offerReadAloud(String text, {String? notice}) {
     if (!ref.mounted) return;
     final label = state.currentChapter.displayTitle ?? state.currentChapter.reference;
     final words = text.trim();
+    final callerNotice = notice?.trim();
     state = state.copyWith(
       isLoading: false,
       isPlaying: false,
@@ -1159,8 +1160,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         audioStreamUrl: '',
         textContent: words.isEmpty ? state.currentChapter.textContent : words,
       ),
-      infoNotice:
-          'Verse timing for $label is not aligned, so Selah did not start a synthetic voice or a different passage.',
+      infoNotice: (callerNotice == null || callerNotice.isEmpty)
+          ? 'Verse timing for $label is not aligned, so Selah did not start a synthetic voice or a different passage.'
+          : callerNotice,
       clearLastError: true,
     );
   }
@@ -1173,17 +1175,16 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   /// Leaves the words on screen and does not speak.
+  /// The notice already on screen stays, so a narrator or network message is
+  /// not replaced by the verse-timing sentence.
   void declineReadAloud() {
     if (!ref.mounted) return;
-    final label = state.currentChapter.displayTitle ?? state.currentChapter.reference;
     state = state.copyWith(
       readAloudPrompt: false,
       readAloudConfirmed: false,
       isPlaying: false,
       isLoading: false,
       audioMode: AudioMode.narrator,
-      infoNotice:
-          'Verse timing for $label is not aligned, so Selah did not start a synthetic voice or a different passage.',
     );
   }
 
@@ -1207,7 +1208,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         currentChapter: state.currentChapter.copyWith(textContent: text),
         infoNotice: notice,
       );
-      _offerReadAloud(text);
+      _offerReadAloud(text, notice: notice);
       return;
     }
     state = state.copyWith(
