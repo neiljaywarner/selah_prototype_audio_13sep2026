@@ -59,6 +59,12 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   int? _shownScriptureChapter;
   int? _shownScriptureStart;
   int? _shownScriptureEnd;
+  int _passageRequestId = 0;
+
+  int _beginPassageRequest() => ++_passageRequestId;
+
+  bool _passageRequestIsCurrent(int requestId) =>
+      ref.mounted && requestId == _passageRequestId;
 
   void _rememberShownScripture(
     String bookCode,
@@ -489,9 +495,11 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     required String bookCode,
     required int chapterNumber,
     required String bookName,
+    required int requestId,
     PassageExcerpt? excerpt,
   }) async {
     final fetched = await _fetchChapterText(bookCode, chapterNumber, excerpt: excerpt);
+    if (!_passageRequestIsCurrent(requestId)) return '';
     if (fetched != null &&
         fetched.trim().isNotEmpty &&
         !_isDifferentCuratedScripture(fetched, bookCode, chapterNumber, excerpt)) {
@@ -509,8 +517,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     bool autoplay = true,
     bool resetIteration = true,
   }) async {
+    final requestId = _beginPassageRequest();
     await stopAllPlayback(reason: 'route_and_play');
-    if (!ref.mounted) return;
+    if (!_passageRequestIsCurrent(requestId)) return;
     state = state.copyWith(readAloudPrompt: false, readAloudConfirmed: false);
 
     final effectiveExcerpt = excerpt ?? PassageExcerpt.forChapter(bookCode, chapterNumber);
@@ -526,14 +535,20 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
           (bookCode.toUpperCase() == 'VRS' ? bookName : '$bookName $chapterNumber');
       final normalizedQuery = EsvPassagePolicy.normalizePassageQuery(rawQuery);
       if (await tryPlayEsvPassage(normalizedQuery, autoplay: autoplay)) {
-        if (!ref.mounted || state.activeTranslation != BibleTranslation.esv.code) return;
+        if (!_passageRequestIsCurrent(requestId) ||
+            state.activeTranslation != BibleTranslation.esv.code) {
+          return;
+        }
         state = state.copyWith(
           activeTranslation: BibleTranslation.esv.code,
           activeExcerpt: effectiveExcerpt,
         );
         return;
       }
-      if (!ref.mounted || state.activeTranslation != BibleTranslation.esv.code) return;
+      if (!_passageRequestIsCurrent(requestId) ||
+          state.activeTranslation != BibleTranslation.esv.code) {
+        return;
+      }
       state = state.copyWith(
         activeTranslation: BibleTranslation.esv.code,
         audioMode: AudioMode.narrator,
@@ -579,8 +594,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         chapterNumber: chapterNumber,
         bookName: bookName,
         excerpt: effectiveExcerpt,
+        requestId: requestId,
       );
-      if (!ref.mounted) return;
+      if (!_passageRequestIsCurrent(requestId)) return;
 
       final dynamicChapter = ChapterInfo(
         bookCode: bookCode.toUpperCase(),
@@ -634,8 +650,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         chapterNumber: chapterNumber,
         bookName: bookName,
         excerpt: effectiveExcerpt,
+        requestId: requestId,
       );
-      if (!ref.mounted) return;
+      if (!_passageRequestIsCurrent(requestId)) return;
 
       final dynamicChapter = ChapterInfo(
         bookCode: bookCode.toUpperCase(),
@@ -674,7 +691,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         chapterNumber: chapterNumber,
         bookName: bookName,
         excerpt: effectiveExcerpt,
+        requestId: requestId,
       );
+      if (!_passageRequestIsCurrent(requestId)) return;
       final noticeMessage = translation == BibleTranslation.niv
           ? 'NIV audio stream currently unavailable. Narrating with contemplative voice.'
           : 'Narrator stream unavailable — narrating ${translation.fullName} (${translation.code}) with contemplative voice.';
@@ -691,7 +710,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
     try {
       final response = await _dio.get(url);
-      if (!ref.mounted) return;
+      if (!_passageRequestIsCurrent(requestId)) return;
 
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data['data'];
@@ -704,8 +723,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
             chapterNumber: chapterNumber,
             bookName: bookName,
             excerpt: effectiveExcerpt,
+            requestId: requestId,
           );
-          if (!ref.mounted) return;
+          if (!_passageRequestIsCurrent(requestId)) return;
 
           final dynamicChapter = ChapterInfo(
             bookCode: bookCode.toUpperCase(),
@@ -746,12 +766,15 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
           'bible_id': bibleId,
         },
       );
+      if (!_passageRequestIsCurrent(requestId)) return;
       final cachedText = await _scriptureTextFor(
         bookCode: bookCode,
         chapterNumber: chapterNumber,
         bookName: bookName,
         excerpt: effectiveExcerpt,
+        requestId: requestId,
       );
+      if (!_passageRequestIsCurrent(requestId)) return;
 
       final noticeMessage = translation == BibleTranslation.niv
           ? 'NIV audio stream currently unavailable. Narrating with contemplative voice.'

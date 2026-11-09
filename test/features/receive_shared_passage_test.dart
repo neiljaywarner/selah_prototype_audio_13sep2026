@@ -17,6 +17,12 @@ import './step/i_decline_read_aloud.dart';
 import './step/the_passage_is_not_read_aloud.dart';
 import './step/i_choose_the_translation.dart';
 import './step/the_placeholder_is_not_spoken.dart';
+import './step/i_open_the_share_link_in_while_signed_out.dart';
+import './step/public_domain_lookups_are_held.dart';
+import './step/i_start_playback_without_waiting.dart';
+import './step/i_route_to.dart';
+import './step/public_domain_lookups_continue.dart';
+import './step/the_onscreen_text_includes.dart';
 
 void main() {
   group('''Receive a shared passage on BSB''', () {
@@ -56,6 +62,19 @@ void main() {
       await iDoNotSeeTheCuratedWording(tester, 'Love is patient, love is kind');
       await iDoNotSeeTheCuratedWording(
           tester, 'bears all things, believes all things');
+    });
+    testWidgets('''A slow passage does not replace a newer one''', (tester) async {
+      await iOpenTheShareLinkInWhileSignedOut(
+          tester,
+          'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=John+16:32-33',
+          'BSB');
+      await publicDomainLookupsAreHeld();
+      await iStartPlaybackWithoutWaiting(tester);
+      await iRouteTo(tester, 'John 3:16');
+      await publicDomainLookupsContinue(tester);
+      await theHeadingStays(tester, 'John 3:16');
+      await theOnscreenTextIncludes(tester, 'Press play to listen to John 3:16');
+      await iDoNotSeeTheCuratedWording(tester, 'Look, an hour is coming');
     });
   });
 }

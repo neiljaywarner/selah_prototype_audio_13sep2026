@@ -27,6 +27,16 @@ Feature: Receive a shared passage on BSB
     And I do not see the curated wording {'Rest in God alone'}
     And the placeholder is not spoken
 
+  Scenario: A slow passage does not replace a newer one
+    Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=John+16:32-33'} in {'BSB'} while signed out
+    And public domain lookups are held
+    When I start playback without waiting
+    And I route to {'John 3:16'}
+    And public domain lookups continue
+    Then the heading stays {'John 3:16'}
+    And the on-screen text includes {'Press play to listen to John 3:16'}
+    And I do not see the curated wording {'Look, an hour is coming'}
+
   Scenario: A different range on a curated chapter does not use that excerpt
     Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=1+Cor+13:8-13'} while signed out
     Then I see the passage {'1 Cor 13:8-13'}

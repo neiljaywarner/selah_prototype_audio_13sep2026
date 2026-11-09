@@ -43,10 +43,14 @@ class SharePassageWorld {
 
   /// When set, scripted ESV responses wait until [releaseEsvLookups].
   static Completer<void>? esvGate;
+  static Completer<void>? publicDomainGate;
 
   static void reset() {
     if (esvGate != null && !esvGate!.isCompleted) {
       esvGate!.complete();
+    }
+    if (publicDomainGate != null && !publicDomainGate!.isCompleted) {
+      publicDomainGate!.complete();
     }
     initialShareUrl = null;
     savedPassages = const [];
@@ -55,6 +59,7 @@ class SharePassageWorld {
     esvQueries.clear();
     shareShouldFail = false;
     esvGate = null;
+    publicDomainGate = null;
   }
 
   static void holdEsvLookups() {
@@ -63,6 +68,15 @@ class SharePassageWorld {
 
   static void releaseEsvLookups() {
     final gate = esvGate;
+    if (gate != null && !gate.isCompleted) gate.complete();
+  }
+
+  static void holdPublicDomainLookups() {
+    publicDomainGate = Completer<void>();
+  }
+
+  static void releasePublicDomainLookups() {
+    final gate = publicDomainGate;
     if (gate != null && !gate.isCompleted) gate.complete();
   }
 }
@@ -189,6 +203,8 @@ class _ScriptedPublicDomainAdapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
+    final gate = SharePassageWorld.publicDomainGate;
+    if (gate != null) await gate.future;
     if (!options.uri.path.contains('/JHN/16')) {
       return ResponseBody.fromString(
         '{}',
