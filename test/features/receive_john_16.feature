@@ -111,3 +111,13 @@ Feature: Receive John 16:32-33
     Then the placeholder is not spoken
     And the on-screen text includes {'The words for this passage are not loaded'}
     And the heading stays {'Psalm 62:5-7'}
+
+  Scenario: A confirmed read-aloud does not speak the passage that replaced it
+    Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=John+16:32-33'} in {'BSB'} while signed out
+    When I play the shared passage
+    Then I am asked before the passage is read aloud
+    When playback stops are held
+    And I confirm read aloud
+    And I load the featured passage {'1 Cor 13:4'}
+    And playback stops continue
+    Then read aloud was not confirmed

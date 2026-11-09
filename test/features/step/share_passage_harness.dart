@@ -44,6 +44,7 @@ class SharePassageWorld {
   /// When set, scripted ESV responses wait until [releaseEsvLookups].
   static Completer<void>? esvGate;
   static Completer<void>? publicDomainGate;
+  static Completer<void>? playbackStopGate;
 
   static void reset() {
     if (esvGate != null && !esvGate!.isCompleted) {
@@ -51,6 +52,9 @@ class SharePassageWorld {
     }
     if (publicDomainGate != null && !publicDomainGate!.isCompleted) {
       publicDomainGate!.complete();
+    }
+    if (playbackStopGate != null && !playbackStopGate!.isCompleted) {
+      playbackStopGate!.complete();
     }
     initialShareUrl = null;
     savedPassages = const [];
@@ -60,6 +64,7 @@ class SharePassageWorld {
     shareShouldFail = false;
     esvGate = null;
     publicDomainGate = null;
+    playbackStopGate = null;
   }
 
   static void holdEsvLookups() {
@@ -79,6 +84,15 @@ class SharePassageWorld {
     final gate = publicDomainGate;
     if (gate != null && !gate.isCompleted) gate.complete();
   }
+
+  static void holdPlaybackStops() {
+    playbackStopGate = Completer<void>();
+  }
+
+  static void releasePlaybackStops() {
+    final gate = playbackStopGate;
+    if (gate != null && !gate.isCompleted) gate.complete();
+  }
 }
 
 class _QuietRemoteConfig extends RemoteConfigNotifier {
@@ -88,7 +102,13 @@ class _QuietRemoteConfig extends RemoteConfigNotifier {
 
 void installPlaybackChannelMocks() {
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-      .setMockMethodCallHandler(const MethodChannel('flutter_tts'), (call) async => 1);
+      .setMockMethodCallHandler(const MethodChannel('flutter_tts'), (call) async {
+    if (call.method == 'stop') {
+      final gate = SharePassageWorld.playbackStopGate;
+      if (gate != null && !gate.isCompleted) await gate.future;
+    }
+    return 1;
+  });
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(const MethodChannel('com.ryanheise.just_audio.methods'), (call) async {
     if (call.method == 'init') {

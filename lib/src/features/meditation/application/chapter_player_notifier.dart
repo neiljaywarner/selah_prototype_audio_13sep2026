@@ -1148,8 +1148,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   }
 
   Future<void> _playTts(String text, {bool autoplay = true, bool confirmed = false}) async {
+    final requestId = _passageRequestId;
     await stopAllPlayback(reason: 'play_tts');
-    if (!ref.mounted) return;
+    if (!_passageRequestIsCurrent(requestId)) return;
 
     final allowed = confirmed || state.readAloudConfirmed;
     if (_isEsvModeActive && !allowed) {
@@ -1202,9 +1203,11 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
     try {
       await _flutterTts.stop();
+      if (!_passageRequestIsCurrent(requestId)) return;
       await _flutterTts.speak(spoken);
     } catch (e) {
       AppLogger.error('TTS speech failed', error: e);
+      if (!_passageRequestIsCurrent(requestId)) return;
       state = state.copyWith(isPlaying: false, lastError: 'TTS playback error: $e');
     }
   }

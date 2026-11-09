@@ -33,6 +33,9 @@ import './step/the_human_narrator_chip_is_hidden.dart';
 import './step/the_human_narrator_chip_is_shown.dart';
 import './step/i_load_the_featured_passage_while_the_question_is_open.dart';
 import './step/read_aloud_was_not_confirmed.dart';
+import './step/playback_stops_are_held.dart';
+import './step/i_load_the_featured_passage.dart';
+import './step/playback_stops_continue.dart';
 
 void main() {
   group('''Receive John 16:32-33''', () {
@@ -158,6 +161,20 @@ void main() {
       await thePlaceholderIsNotSpoken(tester);
       await theOnscreenTextIncludes(tester, 'The words for this passage are not loaded');
       await theHeadingStays(tester, 'Psalm 62:5-7');
+    });
+    testWidgets('''A confirmed read-aloud does not speak the passage that replaced it''',
+        (tester) async {
+      await iOpenTheShareLinkInWhileSignedOut(
+          tester,
+          'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=John+16:32-33',
+          'BSB');
+      await iPlayTheSharedPassage(tester);
+      await iAmAskedBeforeThePassageIsReadAloud(tester);
+      await playbackStopsAreHeld(tester);
+      await iConfirmReadAloud(tester);
+      await iLoadTheFeaturedPassage(tester, '1 Cor 13:4');
+      await playbackStopsContinue(tester);
+      await readAloudWasNotConfirmed(tester);
     });
   });
 }
