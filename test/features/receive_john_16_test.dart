@@ -31,9 +31,25 @@ import './step/esv_lookups_continue.dart';
 import './step/the_placeholder_is_not_spoken.dart';
 import './step/the_human_narrator_chip_is_hidden.dart';
 import './step/the_human_narrator_chip_is_shown.dart';
+import './step/i_load_the_featured_passage_while_the_question_is_open.dart';
+import './step/read_aloud_was_not_confirmed.dart';
 
 void main() {
   group('''Receive John 16:32-33''', () {
+    testWidgets('''An old read-aloud answer does not speak the next passage''',
+        (tester) async {
+      await iOpenTheShareLinkInWhileSignedOut(
+          tester,
+          'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=John+16:32-33',
+          'BSB');
+      await iPlayTheSharedPassage(tester);
+      await iAmAskedBeforeThePassageIsReadAloud(tester);
+      await iLoadTheFeaturedPassageWhileTheQuestionIsOpen(tester, '1 Cor 13:4');
+      await iConfirmReadAloud(tester);
+      await theOnscreenTextIncludes(tester, 'Love is patient');
+      await iDoNotSeeTheCuratedWording(tester, 'Look, an hour is coming');
+      await readAloudWasNotConfirmed(tester);
+    });
     testWidgets('''BSB reads John 16:32-33 aloud''', (tester) async {
       await iOpenTheShareLinkInWhileSignedOut(
           tester,

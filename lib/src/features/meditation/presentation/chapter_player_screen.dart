@@ -153,6 +153,9 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
   }
 
   Future<void> _askBeforeReadAloud(String reference) async {
+    _readAloudSheetOpen = true;
+    final player = ref.read(chapterPlayerProvider.notifier);
+    final requestId = player.passageRequestId;
     final allow = await showDialog<bool>(
       context: context,
       builder: (ctx) => Semantics(
@@ -169,11 +172,18 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     );
     _readAloudSheetOpen = false;
     if (!mounted) return;
-    final player = ref.read(chapterPlayerProvider.notifier);
+    if (!player.passageRequestIsCurrent(requestId)) {
+      final current = ref.read(chapterPlayerProvider);
+      if (current.readAloudPrompt) {
+        final title = current.currentChapter.displayTitle ?? current.currentChapter.reference;
+        await _askBeforeReadAloud(title);
+      }
+      return;
+    }
     if (allow == true) {
-      await player.confirmReadAloud();
+      await player.confirmReadAloud(requestId: requestId);
     } else {
-      player.declineReadAloud();
+      player.declineReadAloud(requestId: requestId);
     }
   }
 

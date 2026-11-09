@@ -8,6 +8,16 @@ Feature: Receive John 16:32-33
   A shared couple of verses stays on John 16:32-33 in each translation.
   John 16 is not a curated excerpt, so nothing else is substituted.
 
+  Scenario: An old read-aloud answer does not speak the next passage
+    Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=John+16:32-33'} in {'BSB'} while signed out
+    When I play the shared passage
+    Then I am asked before the passage is read aloud
+    When I load the featured passage {'1 Cor 13:4'} while the question is open
+    And I confirm read aloud
+    Then the on-screen text includes {'Love is patient'}
+    And I do not see the curated wording {'Look, an hour is coming'}
+    And read aloud was not confirmed
+
   Scenario: BSB reads John 16:32-33 aloud
     Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=John+16:32-33'} in {'BSB'} while signed out
     Then I see the passage {'John 16:32-33'}

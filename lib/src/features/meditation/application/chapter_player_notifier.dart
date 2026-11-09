@@ -518,9 +518,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     bool resetIteration = true,
   }) async {
     final requestId = _beginPassageRequest();
+    state = state.copyWith(readAloudPrompt: false, readAloudConfirmed: false);
     await stopAllPlayback(reason: 'route_and_play');
     if (!_passageRequestIsCurrent(requestId)) return;
-    state = state.copyWith(readAloudPrompt: false, readAloudConfirmed: false);
 
     final effectiveExcerpt = excerpt ?? PassageExcerpt.forChapter(bookCode, chapterNumber);
     final fallbackText = _fallbackChapterText(
@@ -1232,18 +1232,26 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     );
   }
 
-  /// Speaks the words already on screen. No-op unless the listener just agreed.
-  Future<void> confirmReadAloud() async {
+  int get passageRequestId => _passageRequestId;
+
+  bool passageRequestIsCurrent(int requestId) => _passageRequestIsCurrent(requestId);
+
+  /// Speaks the words already on screen. No-op unless the listener just agreed
+  /// for this passage request.
+  Future<void> confirmReadAloud({int? requestId}) async {
     if (!ref.mounted) return;
+    if (requestId != null && !_passageRequestIsCurrent(requestId)) return;
     state = state.copyWith(readAloudPrompt: false, readAloudConfirmed: true);
     await _playTts(state.currentChapter.textContent, confirmed: true);
   }
 
   /// Leaves the words on screen and does not speak.
   /// The notice already on screen stays, so a narrator or network message is
-  /// not replaced by the verse-timing sentence.
-  void declineReadAloud() {
+  /// not replaced by the verse-timing sentence. A stale dialog does not decline
+  /// the passage that replaced it.
+  void declineReadAloud({int? requestId}) {
     if (!ref.mounted) return;
+    if (requestId != null && !_passageRequestIsCurrent(requestId)) return;
     state = state.copyWith(
       readAloudPrompt: false,
       readAloudConfirmed: false,
@@ -1293,6 +1301,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     int? requestId,
   }) async {
     final activeRequest = requestId ?? _beginPassageRequest();
+    if (requestId == null) {
+      state = state.copyWith(readAloudPrompt: false, readAloudConfirmed: false);
+    }
     await stopAllPlayback(reason: 'load_chapter');
     if (!_passageRequestIsCurrent(activeRequest)) return;
 
