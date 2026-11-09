@@ -26,6 +26,8 @@ import './step/i_do_not_see_verse_timing_marked_unaligned.dart';
 import './step/the_passage_playing_is_in.dart';
 import './step/i_search_for.dart';
 import './step/i_turn_on_apibible_narrator_translations.dart';
+import './step/esv_lookups_are_held.dart';
+import './step/esv_lookups_continue.dart';
 
 void main() {
   group('''Receive John 16:32-33''', () {
@@ -102,6 +104,17 @@ void main() {
       await theHeadingStays(tester, 'John 16:32-33');
       await theOnscreenTextIncludes(tester, 'Look, an hour is coming');
       await iDoNotSeeTheCuratedWording(tester, 'Rest in God alone');
+    });
+    testWidgets('''A later translation wins over a slow ESV search''', (tester) async {
+      await thePassagePlayingIsIn(tester, 'Psalm 62:5-7', 'ESV');
+      await esvLookupsAreHeld();
+      await iSearchFor(tester, 'John 16:32-33');
+      await iTurnOnApibibleNarratorTranslations(tester);
+      await iChooseTheTranslation(tester, 'BSB');
+      await esvLookupsContinue(tester);
+      await theHeadingStays(tester, 'Psalm 62:5-7');
+      await theOnscreenTextIncludes(tester, 'Rest in God alone');
+      await iDoNotSeeTheCuratedWording(tester, 'verse thirty-two only');
     });
   });
 }

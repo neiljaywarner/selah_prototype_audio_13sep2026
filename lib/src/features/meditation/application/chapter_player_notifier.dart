@@ -486,13 +486,14 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
           (bookCode.toUpperCase() == 'VRS' ? bookName : '$bookName $chapterNumber');
       final normalizedQuery = EsvPassagePolicy.normalizePassageQuery(rawQuery);
       if (await tryPlayEsvPassage(normalizedQuery, autoplay: autoplay)) {
+        if (!ref.mounted || state.activeTranslation != BibleTranslation.esv.code) return;
         state = state.copyWith(
           activeTranslation: BibleTranslation.esv.code,
           activeExcerpt: effectiveExcerpt,
         );
         return;
       }
-      if (!ref.mounted) return;
+      if (!ref.mounted || state.activeTranslation != BibleTranslation.esv.code) return;
       state = state.copyWith(
         activeTranslation: BibleTranslation.esv.code,
         audioMode: AudioMode.narrator,
@@ -859,6 +860,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     try {
       final verses = await esv.fetchVerseByVerse(query);
       if (!ref.mounted) return false;
+      if (state.activeTranslation != BibleTranslation.esv.code) return true;
       if (verses.isEmpty) {
         state = state.copyWith(
           isLoading: false,
@@ -874,6 +876,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       final joinedRef = EsvApiClient.joinedReference(verses);
       final playedExcerpt = _excerptForPlayedQuery(query);
       if (!ref.mounted) return false;
+      if (state.activeTranslation != BibleTranslation.esv.code) return true;
       // Replace the passage as soon as the verses arrive. Waiting for the
       // player to finish loading left the previous excerpt in place, so a
       // translation change during that gap replayed the old range.
@@ -937,6 +940,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       } catch (audioErr) {
         AppLogger.error('ESV human audio playback failed: $audioErr');
         if (!ref.mounted) return false;
+        if (state.activeTranslation != BibleTranslation.esv.code) return true;
         if (state.readAloudConfirmed) {
           state = state.copyWith(
             currentChapter: state.currentChapter.copyWith(
@@ -968,7 +972,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       }
     } catch (e) {
       AppLogger.error('ESV verse fetch failed', error: e);
-      if (ref.mounted) {
+      if (ref.mounted && state.activeTranslation == BibleTranslation.esv.code) {
         state = state.copyWith(
           isLoading: false,
           isPlaying: false,
@@ -976,8 +980,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
           clearInfoNotice: true,
           lastError: 'ESV passage "$query" could not be loaded. Please check your connection.',
         );
+        return false;
       }
-      return false;
+      return ref.mounted;
     }
   }
 

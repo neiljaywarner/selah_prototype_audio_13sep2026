@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
@@ -40,13 +41,29 @@ class SharePassageWorld {
   static final List<String> esvQueries = [];
   static bool shareShouldFail = false;
 
+  /// When set, scripted ESV responses wait until [releaseEsvLookups].
+  static Completer<void>? esvGate;
+
   static void reset() {
+    if (esvGate != null && !esvGate!.isCompleted) {
+      esvGate!.complete();
+    }
     initialShareUrl = null;
     savedPassages = const [];
     launcher.last = null;
     forcedTranslation = null;
     esvQueries.clear();
     shareShouldFail = false;
+    esvGate = null;
+  }
+
+  static void holdEsvLookups() {
+    esvGate = Completer<void>();
+  }
+
+  static void releaseEsvLookups() {
+    final gate = esvGate;
+    if (gate != null && !gate.isCompleted) gate.complete();
   }
 }
 
@@ -217,6 +234,8 @@ class _ScriptedEsvAdapter implements HttpClientAdapter {
   ) async {
     final query = '${options.queryParameters['q'] ?? ''}';
     if (query.isNotEmpty) SharePassageWorld.esvQueries.add(query);
+    final gate = SharePassageWorld.esvGate;
+    if (gate != null) await gate.future;
     final payload = <String, dynamic>{
       'canonical': query,
       'passages': <String>['${verses[query] ?? ''}\n\n'],

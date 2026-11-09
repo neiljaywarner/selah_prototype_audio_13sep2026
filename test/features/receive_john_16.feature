@@ -69,3 +69,14 @@ Feature: Receive John 16:32-33
     Then the heading stays {'John 16:32-33'}
     And the on-screen text includes {'Look, an hour is coming'}
     And I do not see the curated wording {'Rest in God alone'}
+
+  Scenario: A later translation wins over a slow ESV search
+    Given the passage playing is {'Psalm 62:5-7'} in {'ESV'}
+    And ESV lookups are held
+    When I search for {'John 16:32-33'}
+    And I turn on API.Bible narrator translations
+    And I choose the {'BSB'} translation
+    And ESV lookups continue
+    Then the heading stays {'Psalm 62:5-7'}
+    And the on-screen text includes {'Rest in God alone'}
+    And I do not see the curated wording {'verse thirty-two only'}
