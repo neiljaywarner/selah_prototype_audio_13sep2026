@@ -1127,7 +1127,8 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        if (playerState.currentChapter.bookCode.isNotEmpty)
+                        if (playerState.currentChapter.bookCode.isNotEmpty &&
+                            !playerState.readAloudPrompt)
                           Flexible(
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

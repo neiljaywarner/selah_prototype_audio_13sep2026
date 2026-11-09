@@ -29,6 +29,8 @@ import './step/i_turn_on_apibible_narrator_translations.dart';
 import './step/esv_lookups_are_held.dart';
 import './step/esv_lookups_continue.dart';
 import './step/the_placeholder_is_not_spoken.dart';
+import './step/the_human_narrator_chip_is_hidden.dart';
+import './step/the_human_narrator_chip_is_shown.dart';
 
 void main() {
   group('''Receive John 16:32-33''', () {
@@ -78,8 +80,10 @@ void main() {
           'BSB');
       await iPlayTheSharedPassage(tester);
       await iAmAskedBeforeThePassageIsReadAloud(tester);
+      await theHumanNarratorChipIsHidden(tester);
       await iDeclineReadAloud(tester);
       await thePassageIsNotReadAloud(tester);
+      await theHumanNarratorChipIsShown(tester);
       await theHeadingStays(tester, 'John 16:32-33');
       await theOnscreenTextIncludes(tester, 'Look, an hour is coming');
     });
