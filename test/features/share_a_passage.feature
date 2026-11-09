@@ -31,6 +31,7 @@ Feature: Share a passage
     Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=1+Cor+13:4-7'} while signed out
     Then I see the passage {'1 Cor 13:4-7'}
     And I can start playback
+    And listening session chrome is shown
     And I am not asked to sign in
 
   Scenario: A broken share link shows a friendly error
@@ -39,7 +40,14 @@ Feature: Share a passage
     And the player is not blank
     And saving the passage is unavailable
     And playback is unavailable
+    And listening session chrome is hidden
     And I am not asked to sign in
     When I choose the {'WEB'} translation
     Then I see a friendly passage error
     And saving the passage is unavailable
+    And listening session chrome is hidden
+
+  Scenario: A broken ESV link hides listening chrome
+    Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=NotABook+99:1'} in {'ESV'} while signed out
+    Then I see a friendly passage error
+    And listening session chrome is hidden

@@ -21,6 +21,9 @@ import './step/i_see_a_friendly_passage_error.dart';
 import './step/the_player_is_not_blank.dart';
 import './step/saving_the_passage_is_unavailable.dart';
 import './step/playback_is_unavailable.dart';
+import './step/listening_session_chrome_is_hidden.dart';
+import './step/listening_session_chrome_is_shown.dart';
+import './step/i_open_the_share_link_in_while_signed_out.dart';
 import './step/i_choose_the_translation.dart';
 
 void main() {
@@ -54,6 +57,7 @@ void main() {
           'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=1+Cor+13:4-7');
       await iSeeThePassage(tester, '1 Cor 13:4-7');
       await iCanStartPlayback(tester);
+      await listeningSessionChromeIsShown(tester);
       await iAmNotAskedToSignIn(tester);
     });
     testWidgets('''A broken share link shows a friendly error''',
@@ -64,10 +68,20 @@ void main() {
       await thePlayerIsNotBlank(tester);
       await savingThePassageIsUnavailable(tester);
       await playbackIsUnavailable(tester);
+      await listeningSessionChromeIsHidden(tester);
       await iAmNotAskedToSignIn(tester);
       await iChooseTheTranslation(tester, 'WEB');
       await iSeeAFriendlyPassageError(tester);
       await savingThePassageIsUnavailable(tester);
+      await listeningSessionChromeIsHidden(tester);
+    });
+    testWidgets('''A broken ESV link hides listening chrome''', (tester) async {
+      await iOpenTheShareLinkInWhileSignedOut(
+          tester,
+          'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=NotABook+99:1',
+          'ESV');
+      await iSeeAFriendlyPassageError(tester);
+      await listeningSessionChromeIsHidden(tester);
     });
   });
 }

@@ -1127,7 +1127,8 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Flexible(
+                        if (playerState.currentChapter.bookCode.isNotEmpty)
+                          Flexible(
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
@@ -1312,6 +1313,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                       ),
                     ],
                     const SizedBox(height: 4),
+                    if (playerState.currentChapter.bookCode.isNotEmpty)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -1356,6 +1358,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                     const SizedBox(height: 10),
 
                     // Visible Attribution Badge & Licensing Modal Trigger
+                    if (playerState.currentChapter.bookCode.isNotEmpty)
                     Center(
                       child: InkWell(
                         key: const Key('player_attribution_button'),
@@ -1463,6 +1466,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                             ),
                           ),
                           const SizedBox(width: 8),
+                          if (playerState.currentChapter.bookCode.isNotEmpty)
                           GestureDetector(
                             key: const Key('cycle_repetitions_chip'),
                             onTap: () {
