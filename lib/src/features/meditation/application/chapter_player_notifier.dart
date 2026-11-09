@@ -54,6 +54,43 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   int _accumulatedSeconds = 0;
   int _sessionTotalSeconds = 0;
   bool _cycleCompletedForCurrentIteration = false;
+  String? _shownScriptureTranslation;
+  String? _shownScriptureBook;
+  int? _shownScriptureChapter;
+  int? _shownScriptureStart;
+  int? _shownScriptureEnd;
+
+  void _rememberShownScripture(
+    String bookCode,
+    int chapterNumber,
+    PassageExcerpt? excerpt,
+  ) {
+    _shownScriptureTranslation = state.activeTranslation;
+    _shownScriptureBook = bookCode.toUpperCase();
+    _shownScriptureChapter = chapterNumber;
+    _shownScriptureStart = excerpt?.startVerse;
+    _shownScriptureEnd = excerpt?.endVerse ?? excerpt?.startVerse;
+  }
+
+  /// On-screen words may be reused only for the same translation and range.
+  bool _shownScriptureMatches(
+    String bookCode,
+    int chapterNumber,
+    PassageExcerpt? excerpt,
+  ) {
+    if (_shownScriptureTranslation == null || _shownScriptureBook == null) {
+      return false;
+    }
+    if (_shownScriptureTranslation!.toUpperCase() != state.activeTranslation.toUpperCase()) {
+      return false;
+    }
+    if (_shownScriptureBook != bookCode.toUpperCase() || _shownScriptureChapter != chapterNumber) {
+      return false;
+    }
+    final start = excerpt?.startVerse;
+    final end = excerpt?.endVerse ?? excerpt?.startVerse;
+    return _shownScriptureStart == start && _shownScriptureEnd == end;
+  }
 
   void _recordListeningStart() {
     _playStartTime = DateTime.now();
@@ -402,7 +439,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     final currentMatchesChapter = current.bookCode.toUpperCase() == bookCode.toUpperCase() &&
         current.chapterNumber == chapterNumber &&
         currentText.isNotEmpty;
-    if (currentMatchesChapter && !_isDifferentCuratedScripture(currentText, bookCode, chapterNumber, excerpt)) {
+    if (currentMatchesChapter &&
+        _shownScriptureMatches(bookCode, chapterNumber, excerpt) &&
+        !_isDifferentCuratedScripture(currentText, bookCode, chapterNumber, excerpt)) {
       return current.textContent;
     }
 
@@ -456,6 +495,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     if (fetched != null &&
         fetched.trim().isNotEmpty &&
         !_isDifferentCuratedScripture(fetched, bookCode, chapterNumber, excerpt)) {
+      _rememberShownScripture(bookCode, chapterNumber, excerpt);
       return fetched;
     }
     return _fallbackChapterText(bookCode, chapterNumber, bookName, excerpt: excerpt);

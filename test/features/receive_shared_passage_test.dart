@@ -15,6 +15,8 @@ import './step/the_heading_stays.dart';
 import './step/playback_is_the_shared_range_and_not_the_full_chapter.dart';
 import './step/i_decline_read_aloud.dart';
 import './step/the_passage_is_not_read_aloud.dart';
+import './step/i_choose_the_translation.dart';
+import './step/the_placeholder_is_not_spoken.dart';
 
 void main() {
   group('''Receive a shared passage on BSB''', () {
@@ -37,6 +39,10 @@ void main() {
       await playbackIsTheSharedRangeAndNotTheFullChapter(tester);
       await iDeclineReadAloud(tester);
       await thePassageIsNotReadAloud(tester);
+      await iChooseTheTranslation(tester, 'WEB');
+      await theHeadingStays(tester, 'Psalm 62:5-7');
+      await iDoNotSeeTheCuratedWording(tester, 'Rest in God alone');
+      await thePlaceholderIsNotSpoken(tester);
     });
     testWidgets(
         '''A different range on a curated chapter does not use that excerpt''',

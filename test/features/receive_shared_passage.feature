@@ -22,6 +22,10 @@ Feature: Receive a shared passage on BSB
     And playback is the shared range and not the full chapter
     When I decline read aloud
     Then the passage is not read aloud
+    When I choose the {'WEB'} translation
+    Then the heading stays {'Psalm 62:5-7'}
+    And I do not see the curated wording {'Rest in God alone'}
+    And the placeholder is not spoken
 
   Scenario: A different range on a curated chapter does not use that excerpt
     Given I open the share link {'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=1+Cor+13:8-13'} while signed out
