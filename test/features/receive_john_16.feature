@@ -13,6 +13,8 @@ Feature: Receive John 16:32-33
     Then I see the passage {'John 16:32-33'}
     When I play the shared passage
     Then I am asked before the passage is read aloud
+    And the on-screen text includes {'Ask for verse timing'}
+    And I do not see the curated wording {'Request from devs'}
     And text to speech has not started
     And the on-screen text includes {'Look, an hour is coming'}
     And the on-screen text includes {'take courage'}

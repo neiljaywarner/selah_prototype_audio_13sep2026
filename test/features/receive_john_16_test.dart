@@ -40,6 +40,8 @@ void main() {
       await iSeeThePassage(tester, 'John 16:32-33');
       await iPlayTheSharedPassage(tester);
       await iAmAskedBeforeThePassageIsReadAloud(tester);
+      await theOnscreenTextIncludes(tester, 'Ask for verse timing');
+      await iDoNotSeeTheCuratedWording(tester, 'Request from devs');
       await textToSpeechHasNotStarted(tester);
       await theOnscreenTextIncludes(tester, 'Look, an hour is coming');
       await theOnscreenTextIncludes(tester, 'take courage');

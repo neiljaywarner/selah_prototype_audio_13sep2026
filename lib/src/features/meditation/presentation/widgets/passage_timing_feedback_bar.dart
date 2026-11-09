@@ -53,7 +53,7 @@ class _PassageTimingFeedbackBarState extends State<PassageTimingFeedbackBar> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Requested ${widget.passageTitle}! We\'ve notified the devs to align it with WhisperX. 🕊️'),
+        content: Text('Asked for verse timing on ${widget.passageTitle}.'),
         duration: const Duration(seconds: 3),
         backgroundColor: const Color(0xFF065F46),
       ),
@@ -163,7 +163,7 @@ class _PassageTimingFeedbackBarState extends State<PassageTimingFeedbackBar> {
                   const Icon(Icons.check_circle, size: 15, color: Color(0xFF10B981)),
                   const SizedBox(width: 4),
                   Text(
-                    'Requested 🕊️',
+                    'Asked 🕊️',
                     style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.8)),
                   ),
                 ] else ...[
@@ -178,7 +178,7 @@ class _PassageTimingFeedbackBarState extends State<PassageTimingFeedbackBar> {
                     ),
                     onPressed: _handleRequestFromDevs,
                     child: const Text(
-                      'Request from devs',
+                      'Ask for verse timing',
                       style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                   ),
