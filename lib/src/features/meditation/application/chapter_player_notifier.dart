@@ -819,6 +819,23 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     return null;
   }
 
+  /// The range that [query] names, so a later translation change does not
+  /// keep whatever excerpt was on screen before this ESV search.
+  PassageExcerpt? _excerptForPlayedQuery(String query) {
+    final parsed = PassageShareLink.tryParse(query);
+    if (parsed == null) return null;
+    if (parsed.startVerse == null) {
+      return PassageExcerpt.forChapter(parsed.book.code, parsed.chapter);
+    }
+    return PassageExcerpt.customExcerpt(
+      bookCode: parsed.book.code,
+      chapterNumber: parsed.chapter,
+      startVerse: parsed.startVerse!,
+      endVerse: parsed.endVerse ?? parsed.startVerse!,
+      displayTitle: parsed.canonical,
+    );
+  }
+
   /// Plays [query] from the ESV API, one HTTP call per verse in a range.
   ///
   /// Returns false when the key is unset or the request fails, without
@@ -855,12 +872,22 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
       final verseStr = '${verses.map((verse) => verse.text).join(' ')} $kEsvShortCopyright';
       final joinedRef = EsvApiClient.joinedReference(verses);
+      final playedExcerpt = _excerptForPlayedQuery(query);
       if (!ref.mounted) return false;
+      // Replace the passage as soon as the verses arrive. Waiting for the
+      // player to finish loading left the previous excerpt in place, so a
+      // translation change during that gap replayed the old range.
       state = state.copyWith(
-        currentChapter: state.currentChapter.copyWith(
-          textContent: verseStr,
+        currentChapter: ChapterInfo(
+          bookCode: 'VRS',
+          bookName: joinedRef,
+          chapterNumber: 1,
           displayTitle: joinedRef,
+          audioStreamUrl: '',
+          textContent: verseStr,
         ),
+        activeExcerpt: playedExcerpt,
+        clearActiveExcerpt: playedExcerpt == null,
       );
 
       final directAudioUrl = await esv.resolvePassageAudioUrl(query) ??
@@ -881,6 +908,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         );
         final dur = await _audioPlayer.setAudioSource(source);
         if (!ref.mounted) return false;
+        if (state.activeTranslation != BibleTranslation.esv.code) return true;
         _recordListeningStart();
         state = state.copyWith(
           isLoading: false,
@@ -897,6 +925,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
             audioStreamUrl: directAudioUrl,
             textContent: verseStr,
           ),
+          activeExcerpt: playedExcerpt,
+          clearActiveExcerpt: playedExcerpt == null,
           clearInfoNotice: true,
           clearLastError: true,
         );

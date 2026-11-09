@@ -23,6 +23,9 @@ import './step/the_esv_passage_requests_include.dart';
 import './step/the_esv_passage_requests_do_not_include.dart';
 import './step/the_heading_stays_on.dart';
 import './step/i_do_not_see_verse_timing_marked_unaligned.dart';
+import './step/the_passage_playing_is_in.dart';
+import './step/i_search_for.dart';
+import './step/i_turn_on_apibible_narrator_translations.dart';
 
 void main() {
   group('''Receive John 16:32-33''', () {
@@ -90,6 +93,15 @@ void main() {
       await theHeadingStaysOn(tester, 'John 16:32-33');
       await theAttributionIncludes(tester, 'Crossway');
       await iDoNotSeeVerseTimingMarkedUnaligned(tester);
+    });
+    testWidgets('''An ESV search replaces the previous range''', (tester) async {
+      await thePassagePlayingIsIn(tester, 'Psalm 62:5-7', 'ESV');
+      await iSearchFor(tester, 'John 16:32-33');
+      await iTurnOnApibibleNarratorTranslations(tester);
+      await iChooseTheTranslation(tester, 'BSB');
+      await theHeadingStays(tester, 'John 16:32-33');
+      await theOnscreenTextIncludes(tester, 'Look, an hour is coming');
+      await iDoNotSeeTheCuratedWording(tester, 'Rest in God alone');
     });
   });
 }

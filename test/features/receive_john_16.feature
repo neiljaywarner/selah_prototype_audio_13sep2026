@@ -60,3 +60,12 @@ Feature: Receive John 16:32-33
     And the heading stays on {'John 16:32-33'}
     And the attribution includes {'Crossway'}
     And I do not see verse timing marked unaligned
+
+  Scenario: An ESV search replaces the previous range
+    Given the passage playing is {'Psalm 62:5-7'} in {'ESV'}
+    When I search for {'John 16:32-33'}
+    And I turn on API.Bible narrator translations
+    And I choose the {'BSB'} translation
+    Then the heading stays {'John 16:32-33'}
+    And the on-screen text includes {'Look, an hour is coming'}
+    And I do not see the curated wording {'Rest in God alone'}
