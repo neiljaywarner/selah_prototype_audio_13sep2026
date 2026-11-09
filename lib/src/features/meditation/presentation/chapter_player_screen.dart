@@ -1571,7 +1571,8 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
 
                         const SizedBox(width: 24),
 
-                        // Center Play / Pause
+                        // Center Play / Pause. A broken link has no passage, so the
+                        // circle is muted instead of the gold play control.
                         playerState.isLoading
                             ? Semantics(
                                 label: 'Loading passage',
@@ -1590,18 +1591,25 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                                 child: Container(
                                   width: 68,
                                   height: 68,
-                                  decoration: const BoxDecoration(
+                                  decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    gradient: LinearGradient(
-                                      colors: [Color(0xFFFBBF24), Color(0xFFF59E0B)],
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Color(0x40FBBF24),
-                                        blurRadius: 16,
-                                        spreadRadius: 2,
-                                      ),
-                                    ],
+                                    color: playerState.currentChapter.bookCode.isEmpty
+                                        ? const Color(0xFF3A3658)
+                                        : null,
+                                    gradient: playerState.currentChapter.bookCode.isEmpty
+                                        ? null
+                                        : const LinearGradient(
+                                            colors: [Color(0xFFFBBF24), Color(0xFFF59E0B)],
+                                          ),
+                                    boxShadow: playerState.currentChapter.bookCode.isEmpty
+                                        ? null
+                                        : const [
+                                            BoxShadow(
+                                              color: Color(0x40FBBF24),
+                                              blurRadius: 16,
+                                              spreadRadius: 2,
+                                            ),
+                                          ],
                                   ),
                                   child: Icon(
                                     playerState.isPlaying
@@ -1609,7 +1617,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                                         : Icons.play_arrow_rounded,
                                     size: 38,
                                     color: playerState.currentChapter.bookCode.isEmpty
-                                        ? Colors.black38
+                                        ? Colors.white38
                                         : Colors.black,
                                   ),
                                 ),
