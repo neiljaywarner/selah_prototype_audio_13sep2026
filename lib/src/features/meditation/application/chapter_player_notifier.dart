@@ -1098,6 +1098,17 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       );
       return;
     }
+    if (text.trim().startsWith('Press play to listen')) {
+      state = state.copyWith(
+        isLoading: false,
+        isPlaying: false,
+        audioMode: AudioMode.narrator,
+        readAloudPrompt: false,
+        clearInfoNotice: true,
+        lastError: 'The words for this passage are not loaded. Check your connection and try again.',
+      );
+      return;
+    }
     if (!allowed) {
       _offerReadAloud(text);
       return;

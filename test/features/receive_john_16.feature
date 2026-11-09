@@ -80,3 +80,10 @@ Feature: Receive John 16:32-33
     Then the heading stays {'Psalm 62:5-7'}
     And the on-screen text includes {'Rest in God alone'}
     And I do not see the curated wording {'verse thirty-two only'}
+
+  Scenario: A missing passage is not read from the placeholder
+    Given the passage playing is {'Psalm 62:5-7'} in {'WEB'}
+    When I play the shared passage
+    Then the placeholder is not spoken
+    And the on-screen text includes {'The words for this passage are not loaded'}
+    And the heading stays {'Psalm 62:5-7'}

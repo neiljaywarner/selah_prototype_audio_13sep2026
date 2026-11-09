@@ -28,6 +28,7 @@ import './step/i_search_for.dart';
 import './step/i_turn_on_apibible_narrator_translations.dart';
 import './step/esv_lookups_are_held.dart';
 import './step/esv_lookups_continue.dart';
+import './step/the_placeholder_is_not_spoken.dart';
 
 void main() {
   group('''Receive John 16:32-33''', () {
@@ -115,6 +116,13 @@ void main() {
       await theHeadingStays(tester, 'Psalm 62:5-7');
       await theOnscreenTextIncludes(tester, 'Rest in God alone');
       await iDoNotSeeTheCuratedWording(tester, 'verse thirty-two only');
+    });
+    testWidgets('''A missing passage is not read from the placeholder''', (tester) async {
+      await thePassagePlayingIsIn(tester, 'Psalm 62:5-7', 'WEB');
+      await iPlayTheSharedPassage(tester);
+      await thePlaceholderIsNotSpoken(tester);
+      await theOnscreenTextIncludes(tester, 'The words for this passage are not loaded');
+      await theHeadingStays(tester, 'Psalm 62:5-7');
     });
   });
 }
