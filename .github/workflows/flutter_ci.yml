@@ -1,0 +1,73 @@
+name: Flutter analyze and test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: flutter-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  analyze-and-test:
+    name: Analyze, test, and coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Raise this one number as the suite grows. The job fails below it.
+      # Measured 2026-11-09 on origin/main plus this branch: 74.2% line coverage.
+      COVERAGE_MIN: "73"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.x"
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        id: analyze
+        run: |
+          set +e
+          flutter analyze --no-fatal-infos > analyze.txt
+          echo $? > analyze.exit
+          cat analyze.txt
+
+      - name: Test
+        id: test
+        run: |
+          set +e
+          start=$(date +%s)
+          flutter test --coverage --reporter json > test.json
+          echo $? > test.exit
+          echo $(( $(date +%s) - start )) > test.seconds
+
+      - name: Coverage gate and job summary
+        if: always()
+        run: |
+          python3 scripts/flutter_ci_summary.py \
+            --analyze analyze.txt \
+            --analyze-exit analyze.exit \
+            --test-json test.json \
+            --test-exit test.exit \
+            --lcov coverage/lcov.info \
+            --seconds "$(cat test.seconds 2>/dev/null || echo n/a)s"
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-coverage
+          path: coverage/lcov.info
+          if-no-files-found: ignore

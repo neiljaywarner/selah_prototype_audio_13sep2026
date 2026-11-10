@@ -1,0 +1,16 @@
+# Cold open of the installed app. No ESV key and no network are required.
+# Screenshots and the debug dump are written by scripts/run_maestro_smoke.sh.
+appId: com.example.selah_prototype_audio_13sep2026
+tags:
+  - smoke
+---
+- launchApp
+- startRecording: app_boots
+- waitForAnimationToEnd:
+    timeout: 20000
+- assertVisible:
+    text: "SELAH"
+- assertVisible:
+    text: ".*Love is patient.*"
+- takeScreenshot: player_open
+- stopRecording
