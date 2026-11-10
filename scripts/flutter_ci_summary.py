@@ -77,8 +77,7 @@ def test_counts(path: Path) -> dict[str, int]:
             continue
         if event.get("type") != "testDone":
             continue
-        test = event.get("test") or {}
-        if test.get("hidden") is True:
+        if event.get("hidden") is True:
             continue
         if event.get("skipped") is True:
             counts["skipped"] += 1
