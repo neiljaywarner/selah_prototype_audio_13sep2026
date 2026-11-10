@@ -57,18 +57,17 @@ class SavedShareItem {
 
 /// Builds and reads reference-only Selah links.
 ///
-/// Public web links use the GitHub Pages base path
-/// `/selah_prototype_audio_13sep2026/` unless the app is already open on
-/// another http(s) origin (a preview channel, for example). Recipients do
-/// not need an account: the `ref` query is enough to open the passage.
+/// Public web links use https://selahword.web.app unless the app is already
+/// open on another http(s) origin (a preview channel, or GitHub Pages).
+/// Recipients do not need an account: the `ref` query is enough to open
+/// the passage.
 class PassageShareLink {
   PassageShareLink._();
 
   static const String queryParameter = 'ref';
 
   /// Canonical public site for links shared from mobile and from tests.
-  static const String publicWebOrigin = 'https://neiljaywarner.github.io';
-  static const String githubPagesBasePath = '/selah_prototype_audio_13sep2026/';
+  static const String publicWebOrigin = 'https://selahword.web.app';
 
   static const int _maxVerse = 176;
 
@@ -318,7 +317,7 @@ class PassageShareLink {
       final port = page.hasPort && page.port != defaultPort ? ':${page.port}' : '';
       return '${page.scheme}://${page.host}$port${_directoryPath(page.path)}';
     }
-    return '$publicWebOrigin$githubPagesBasePath';
+    return '$publicWebOrigin/';
   }
 
   static String _directoryPath(String path) {

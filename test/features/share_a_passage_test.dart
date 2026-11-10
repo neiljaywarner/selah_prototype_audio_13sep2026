@@ -31,7 +31,8 @@ void main() {
     testWidgets('''Sharing the passage that is playing''', (tester) async {
       await thePassagePlayingIs(tester, '1 Cor 13:4-7');
       await iShareTheCurrentPassage(tester);
-      await theShareLinkContains(tester, '1+Cor+13:4-7');
+      await theShareLinkContains(
+          tester, 'https://selahword.web.app/?ref=1+Cor+13:4-7');
       await theSharePayloadContains(tester, '1 Cor 13:4-7');
       await theSharePayloadDoesNotContainTheVerse(
           tester, 'Love is patient, love is kind');
@@ -39,7 +40,8 @@ void main() {
     testWidgets('''Sharing a passage from My Passages''', (tester) async {
       await iHaveInMyPassages(tester, '1 Cor 13:4-7');
       await iShareFromMyPassages(tester, '1 Cor 13:4-7');
-      await theShareLinkContains(tester, '1+Cor+13:4-7');
+      await theShareLinkContains(
+          tester, 'https://selahword.web.app/?ref=1+Cor+13:4-7');
       await theSharePayloadContains(tester, '1 Cor 13:4-7');
       await theSharePayloadDoesNotContainTheVerse(
           tester, 'Love is patient, love is kind');

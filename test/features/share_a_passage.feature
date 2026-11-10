@@ -10,14 +10,14 @@ Feature: Share a passage
   Scenario: Sharing the passage that is playing
     Given the passage playing is {'1 Cor 13:4-7'}
     When I share the current passage
-    Then the share link contains {'1+Cor+13:4-7'}
+    Then the share link contains {'https://selahword.web.app/?ref=1+Cor+13:4-7'}
     And the share payload contains {'1 Cor 13:4-7'}
     And the share payload does not contain the verse {'Love is patient, love is kind'}
 
   Scenario: Sharing a passage from My Passages
     Given I have {'1 Cor 13:4-7'} in My Passages
     When I share {'1 Cor 13:4-7'} from My Passages
-    Then the share link contains {'1+Cor+13:4-7'}
+    Then the share link contains {'https://selahword.web.app/?ref=1+Cor+13:4-7'}
     And the share payload contains {'1 Cor 13:4-7'}
     And the share payload does not contain the verse {'Love is patient, love is kind'}
 

@@ -12,13 +12,13 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   const loveSnippet = 'Love is patient, love is kind';
-  const pagesUrl =
-      'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=1+Cor+13:4-7';
+  const hostedUrl = 'https://selahword.web.app/?ref=1+Cor+13:4-7';
 
   group('PassageShareLink', () {
-    test('encodes 1 Cor 13:4-7 as a GitHub Pages reference link', () {
-      expect(PassageShareLink.buildUrl('1 Cor 13:4-7'), pagesUrl);
-      expect(PassageShareLink.buildUrl('1 Cor 13:4–7'), pagesUrl);
+    test('encodes 1 Cor 13:4-7 as a selahword.web.app reference link', () {
+      expect(PassageShareLink.buildUrl('1 Cor 13:4-7'), hostedUrl);
+      expect(PassageShareLink.buildUrl('1 Cor 13:4–7'), hostedUrl);
+      expect(PassageShareLink.buildUrl('1 Cor 13:4-7'), isNot(contains('github.io')));
     });
 
     test('keeps the colon readable and uses plus for spaces', () {
@@ -41,7 +41,8 @@ void main() {
           'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/index.html?debug=1',
         ),
       );
-      expect(pages, pagesUrl);
+      expect(pages,
+          'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=1+Cor+13:4-7');
     });
 
     test('parses the share token, a full URL, and percent-encoding', () {
@@ -49,7 +50,8 @@ void main() {
         '1 Cor 13:4-7',
         '1+Cor+13:4-7',
         '1%20Cor%2013:4-7',
-        pagesUrl,
+        hostedUrl,
+        'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/?ref=1+Cor+13:4-7',
         '1 Corinthians 13:4-7',
       ]) {
         final parsed = PassageShareLink.tryParse(raw);
@@ -73,9 +75,9 @@ void main() {
 
       expect(payload, isNotNull);
       expect(payload!.reference, '1 Cor 13:4-7');
-      expect(payload.url, pagesUrl);
+      expect(payload.url, hostedUrl);
       expect(payload.message, contains('Listen to 1 Cor 13:4-7 in Selah'));
-      expect(payload.message, contains(pagesUrl));
+      expect(payload.message, contains(hostedUrl));
       expect(payload.message, contains(BibleTranslation.esv.shortAttribution));
       expect(payload.message, isNot(contains(loveSnippet)));
       expect(payload.message, isNot(contains(verse)));

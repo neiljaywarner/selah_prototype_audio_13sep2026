@@ -145,7 +145,7 @@ void _expectReferenceOnly(PassageSharePayload? payload, String attribution) {
   expect(
     shared.url,
     startsWith(
-      'https://neiljaywarner.github.io/selah_prototype_audio_13sep2026/',
+      'https://selahword.web.app/',
     ),
   );
   expect(shared.attribution, attribution);
