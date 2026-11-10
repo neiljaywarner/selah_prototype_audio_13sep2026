@@ -1259,6 +1259,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   bool passageRequestIsCurrent(int requestId) => _passageRequestIsCurrent(requestId);
 
   @visibleForTesting
+  static Future<void> Function()? debugOnAudioLoad;
+
+  @visibleForTesting
   List<VerseTimestamp>? get currentTimestampsForTest => _currentTimestamps;
 
   /// Speaks the words already on screen. No-op unless the listener just agreed
@@ -1492,13 +1495,17 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
               tag: mediaItem,
             );
 
+      final onAudioLoad = debugOnAudioLoad;
+      if (onAudioLoad != null) await onAudioLoad();
+      if (!_passageRequestIsCurrent(activeRequest)) return;
+
       final dur = await _audioPlayer.setAudioSource(finalSource);
       if (window != null) {
         AppLogger.info(
           'Clipped ${chapter.reference} to excerpt ${window.start.inMilliseconds}–${window.end.inMilliseconds}ms with MediaItem notification tag',
         );
       }
-      if (!ref.mounted) return;
+      if (!_passageRequestIsCurrent(activeRequest)) return;
       state = state.copyWith(
         isLoading: false,
         duration: dur ?? Duration.zero,
@@ -1508,7 +1515,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         play();
       }
     } catch (e, stack) {
-      if (!ref.mounted) return;
+      if (!_passageRequestIsCurrent(activeRequest)) return;
       AppLogger.error(
         'Failed to set audio source in player',
         error: e,
