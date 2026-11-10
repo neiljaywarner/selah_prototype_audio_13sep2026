@@ -105,6 +105,16 @@ Feature: Receive John 16:32-33
     And the on-screen text includes {'Rest in God alone'}
     And I do not see the curated wording {'verse thirty-two only'}
 
+  Scenario: An older ESV search does not replace a newer one
+    Given the passage playing is {'Psalm 62:5-7'} in {'ESV'}
+    And the next ESV lookup is held
+    When I search for {'John 16:32-33'}
+    And I search for {'John 3:16'}
+    And ESV lookups continue
+    Then the heading stays {'John 3:16'}
+    And the on-screen text includes {'Fixture text for John three verse sixteen only'}
+    And I do not see the curated wording {'verse thirty-two only'}
+
   Scenario: A missing passage is not read from the placeholder
     Given the passage playing is {'Psalm 62:5-7'} in {'WEB'}
     When I play the shared passage

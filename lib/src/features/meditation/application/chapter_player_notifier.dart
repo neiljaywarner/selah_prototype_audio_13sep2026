@@ -534,7 +534,11 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       final rawQuery = effectiveExcerpt?.toEsvPassageQuery() ??
           (bookCode.toUpperCase() == 'VRS' ? bookName : '$bookName $chapterNumber');
       final normalizedQuery = EsvPassagePolicy.normalizePassageQuery(rawQuery);
-      if (await tryPlayEsvPassage(normalizedQuery, autoplay: autoplay)) {
+      if (await tryPlayEsvPassage(
+        normalizedQuery,
+        autoplay: autoplay,
+        requestId: requestId,
+      )) {
         if (!_passageRequestIsCurrent(requestId) ||
             state.activeTranslation != BibleTranslation.esv.code) {
           return;
@@ -906,12 +910,17 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   ///
   /// Returns false when the key is unset or the request fails, without
   /// replacing a later narrator or bible-api.com attempt.
-  Future<bool> tryPlayEsvPassage(String query, {bool autoplay = true}) async {
+  Future<bool> tryPlayEsvPassage(
+    String query, {
+    bool autoplay = true,
+    int? requestId,
+  }) async {
     final esv = ref.read(esvApiClientProvider);
     if (!esv.isConfigured) return false;
 
+    final activeRequest = requestId ?? _beginPassageRequest();
     await stopAllPlayback(reason: 'play_esv');
-    if (!ref.mounted) return false;
+    if (!_passageRequestIsCurrent(activeRequest)) return true;
     state = state.copyWith(
       isLoading: true,
       clearLastError: true,
@@ -924,7 +933,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
     try {
       final verses = await esv.fetchVerseByVerse(query);
-      if (!ref.mounted) return false;
+      if (!_passageRequestIsCurrent(activeRequest)) return true;
       if (state.activeTranslation != BibleTranslation.esv.code) return true;
       if (verses.isEmpty) {
         state = state.copyWith(
@@ -940,7 +949,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       final verseStr = '${verses.map((verse) => verse.text).join(' ')} $kEsvShortCopyright';
       final joinedRef = EsvApiClient.joinedReference(verses);
       final playedExcerpt = _excerptForPlayedQuery(query);
-      if (!ref.mounted) return false;
+      if (!_passageRequestIsCurrent(activeRequest)) return true;
       if (state.activeTranslation != BibleTranslation.esv.code) return true;
       // Replace the passage as soon as the verses arrive. Waiting for the
       // player to finish loading left the previous excerpt in place, so a
@@ -960,6 +969,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
       final directAudioUrl = await esv.resolvePassageAudioUrl(query) ??
           EsvApiClient.directHwAudioUrl(query);
+      if (!_passageRequestIsCurrent(activeRequest)) return true;
       try {
         final mediaItem = MediaItem(
           id: directAudioUrl,
@@ -975,7 +985,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
           tag: mediaItem,
         );
         final dur = await _audioPlayer.setAudioSource(source);
-        if (!ref.mounted) return false;
+        if (!_passageRequestIsCurrent(activeRequest)) return true;
         if (state.activeTranslation != BibleTranslation.esv.code) return true;
         _recordListeningStart();
         state = state.copyWith(
@@ -1004,7 +1014,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
         return true;
       } catch (audioErr) {
         AppLogger.error('ESV human audio playback failed: $audioErr');
-        if (!ref.mounted) return false;
+        if (!_passageRequestIsCurrent(activeRequest)) return true;
         if (state.activeTranslation != BibleTranslation.esv.code) return true;
         if (state.readAloudConfirmed) {
           state = state.copyWith(
@@ -1037,7 +1047,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       }
     } catch (e) {
       AppLogger.error('ESV verse fetch failed', error: e);
-      if (ref.mounted && state.activeTranslation == BibleTranslation.esv.code) {
+      if (_passageRequestIsCurrent(activeRequest) &&
+          state.activeTranslation == BibleTranslation.esv.code) {
         state = state.copyWith(
           isLoading: false,
           isPlaying: false,
@@ -1316,7 +1327,11 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
           : '${chapter.bookName} ${chapter.chapterNumber}';
       final query = esvPassageQueryFor(chapter, excerpt: excerpt) ??
           EsvPassagePolicy.normalizePassageQuery(fallbackQuery);
-      await tryPlayEsvPassage(query, autoplay: autoplay);
+      await tryPlayEsvPassage(
+        query,
+        autoplay: autoplay,
+        requestId: activeRequest,
+      );
       return;
     }
 

@@ -42,7 +42,11 @@ class SharePassageWorld {
   static bool shareShouldFail = false;
 
   /// When set, scripted ESV responses wait until [releaseEsvLookups].
+  /// [holdEveryEsvLookup] holds every response. [esvHoldsRemaining] holds
+  /// only the next few responses, so a later search can finish first.
   static Completer<void>? esvGate;
+  static bool holdEveryEsvLookup = false;
+  static int esvHoldsRemaining = 0;
   static Completer<void>? publicDomainGate;
   static Completer<void>? playbackStopGate;
 
@@ -63,12 +67,22 @@ class SharePassageWorld {
     esvQueries.clear();
     shareShouldFail = false;
     esvGate = null;
+    holdEveryEsvLookup = false;
+    esvHoldsRemaining = 0;
     publicDomainGate = null;
     playbackStopGate = null;
   }
 
   static void holdEsvLookups() {
     esvGate = Completer<void>();
+    holdEveryEsvLookup = true;
+    esvHoldsRemaining = 0;
+  }
+
+  static void holdTheNextEsvLookup() {
+    esvGate = Completer<void>();
+    holdEveryEsvLookup = false;
+    esvHoldsRemaining = 1;
   }
 
   static void releaseEsvLookups() {
@@ -260,6 +274,7 @@ class _ScriptedEsvAdapter implements HttpClientAdapter {
   static const verses = <String, String>{
     'John 16:32': 'Fixture text for John sixteen verse thirty-two only.',
     'John 16:33': 'Fixture text for John sixteen verse thirty-three only.',
+    'John 3:16': 'Fixture text for John three verse sixteen only.',
   };
 
   @override
@@ -271,7 +286,14 @@ class _ScriptedEsvAdapter implements HttpClientAdapter {
     final query = '${options.queryParameters['q'] ?? ''}';
     if (query.isNotEmpty) SharePassageWorld.esvQueries.add(query);
     final gate = SharePassageWorld.esvGate;
-    if (gate != null) await gate.future;
+    if (gate != null && !gate.isCompleted) {
+      if (SharePassageWorld.holdEveryEsvLookup) {
+        await gate.future;
+      } else if (SharePassageWorld.esvHoldsRemaining > 0) {
+        SharePassageWorld.esvHoldsRemaining--;
+        await gate.future;
+      }
+    }
     final payload = <String, dynamic>{
       'canonical': query,
       'passages': <String>['${verses[query] ?? ''}\n\n'],
