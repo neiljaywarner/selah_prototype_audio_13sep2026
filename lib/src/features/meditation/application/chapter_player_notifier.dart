@@ -42,8 +42,6 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   StreamSubscription? _eventSub;
   StreamSubscription? _stateSub;
   List<VerseTimestamp>? _currentTimestamps;
-  DateTime? _playbackSessionStart;
-
   /// Start of the active clip within the full chapter stream. Player positions
   /// are clip-relative, while timestamps are chapter-absolute.
   Duration _clipOffset = Duration.zero;
@@ -1217,17 +1215,6 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     } else {
       await _flutterTts.stop();
     }
-    final secondsListened = _playbackSessionStart != null
-        ? DateTime.now().difference(_playbackSessionStart!).inSeconds.clamp(0, 86400)
-        : 0;
-    _playbackSessionStart = null;
-    AppLogger.logEvent('playback_stopped', {
-      'reference': state.currentChapter.reference,
-      'reason': 'user_paused',
-      'seconds_listened': secondsListened,
-      'iteration': state.currentIteration,
-      'translation': state.activeTranslation,
-    });
     state = state.copyWith(isPlaying: false, isPausedInGap: false);
   }
 
