@@ -27,7 +27,7 @@ class AppDeviceInfoService {
     if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) {
       context['app_version'] = '0.4.1';
       context['build_number'] = '53';
-      context['package_name'] = 'com.example.selah_prototype_audio_13sep2026';
+      context['package_name'] = 'app.selahword.audio';
       context['device_model'] = 'TestDevice';
       context['public_ip'] = '127.0.0.1';
       return context;

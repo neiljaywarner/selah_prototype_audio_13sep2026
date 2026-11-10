@@ -14,7 +14,7 @@
 
 set -euo pipefail
 
-FIREBASE_APP_ID="1:228765786696:android:edf812ba8fc701fe382e7d"
+FIREBASE_APP_ID="1:228765786696:android:b477acdfcb898d30382e7d"
 DEFAULT_GROUPS="core-testers"
 PROJECT_ID="selahwordapp"
 APK_PATH="build/app/outputs/flutter-apk/app-release.apk"

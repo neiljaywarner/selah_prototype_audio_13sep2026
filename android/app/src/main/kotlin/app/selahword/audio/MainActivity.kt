@@ -1,4 +1,4 @@
-package com.example.selah_prototype_audio_13sep2026
+package app.selahword.audio
 
 import com.ryanheise.audioservice.AudioServiceActivity
 

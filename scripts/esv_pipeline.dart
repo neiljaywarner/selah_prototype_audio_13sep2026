@@ -76,8 +76,8 @@ void main(List<String> args) async {
     print('\n--- 5. Verify ESV Human Narrator on Device ---');
     final devId = '58221JEBF20835';
     // Launch app
-    await runProcess('adb', ['-s', devId, 'shell', 'am', 'force-stop', 'com.example.selah_prototype_audio_13sep2026']);
-    await runProcess('adb', ['-s', devId, 'shell', 'am', 'start', '-n', 'com.example.selah_prototype_audio_13sep2026/.MainActivity']);
+    await runProcess('adb', ['-s', devId, 'shell', 'am', 'force-stop', 'app.selahword.audio']);
+    await runProcess('adb', ['-s', devId, 'shell', 'am', 'start', '-n', 'app.selahword.audio/.MainActivity']);
     await Future.delayed(const Duration(seconds: 3));
 
     // Clear logcat

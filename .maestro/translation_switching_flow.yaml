@@ -1,6 +1,6 @@
 # Translation Switching & Narrator Verification Flow (BDD Gherkin Implementation)
 # Maps to: test/features/translation_switching_feature.txt
-appId: com.example.selah_prototype_audio_13sep2026
+appId: app.selahword.audio
 ---
 - launchApp:
     clearState: false

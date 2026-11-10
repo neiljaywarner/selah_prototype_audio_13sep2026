@@ -1,8 +1,8 @@
 # Maestro Flow: Background Audio & Screen Lock Resilience
-# Target: Native Android APK (appId: com.example.selah_prototype_audio_13sep2026)
+# Target: Native Android APK (appId: app.selahword.audio)
 # Note: This flow is specifically scoped to native Android APK hardware lifecycle (Power key / screen lock).
 # Web preview and PWA are validated through separate browser flows.
-appId: com.example.selah_prototype_audio_13sep2026
+appId: app.selahword.audio
 ---
 - launchApp:
     clearState: false

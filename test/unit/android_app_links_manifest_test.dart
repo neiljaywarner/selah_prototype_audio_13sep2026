@@ -11,7 +11,7 @@ void main() {
 
     expect(
       gradle,
-      contains('applicationId = "com.example.selah_prototype_audio_13sep2026"'),
+      contains('applicationId = "app.selahword.audio"'),
     );
 
     final filter = RegExp(

@@ -97,9 +97,9 @@ patrol:
   test_directory: patrol_test
   screenshot_on_failure: true
   android:
-    package_name: com.example.selah_prototype_audio_13sep2026
+    package_name: app.selahword.audio
   ios:
-    bundle_id: com.example.selahPrototypeAudio13sep2026
+    bundle_id: app.selahword.audio
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

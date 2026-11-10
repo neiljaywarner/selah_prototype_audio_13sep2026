@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  const packageName = 'com.example.selah_prototype_audio_13sep2026';
+  const packageName = 'app.selahword.audio';
   const debugSha256 =
       '86:13:09:5F:66:79:0E:0C:EA:7E:DA:C3:CA:62:D3:47:EB:F5:10:A6:55:3D:66:A1:2E:6F:D9:5A:E1:64:9E:F2';
 
