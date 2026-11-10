@@ -1,0 +1,30 @@
+# Open a shared preview link on Android without assetlinks.json.
+#
+# This branch has no https intent-filter, so Android should open the
+# browser. A system chooser, if it appears, is expected and is not a
+# product failure. Recipients stay signed out.
+
+appId: com.example.selah_prototype_audio_13sep2026
+tags:
+  - share
+  - android
+---
+- startRecording: android_open_preview_link
+- launchApp
+- openLink: "https://selahword--dev-qxri7uvh.web.app/?ref=1+Cor+13:4-7"
+- runFlow:
+    when:
+      visible: ".*Open with.*"
+    commands:
+      - takeScreenshot: android_disambiguation
+      - tapOn: ".*Chrome.*"
+- extendedWaitUntil:
+    visible: "1 Cor 13:4-7"
+    timeout: 60000
+- assertNotVisible: "Sign in"
+- extendedWaitUntil:
+    visible: "Play passage"
+    timeout: 20000
+- assertNotVisible: "Read this passage aloud?"
+- takeScreenshot: android_opened_shared_link
+- stopRecording

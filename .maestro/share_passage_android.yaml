@@ -39,7 +39,8 @@ tags:
     visible: ".*1\\+Cor\\+13:4-7.*"
     timeout: 15000
 - assertVisible: ".*Listen to 1 Cor 13:4-7 in Selah.*"
-- assertVisible: ".*Public Domain · Narrator: Barry Hays.*"
+# ESV builds attribute Crossway. BSB builds attribute Barry Hays.
+- assertVisible: ".*(Crossway|Public Domain · Narrator: Barry Hays).*"
 - assertNotVisible: "Love is patient.*"
 - back
 - extendedWaitUntil:
