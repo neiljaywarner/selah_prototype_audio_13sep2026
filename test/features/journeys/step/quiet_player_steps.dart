@@ -46,6 +46,14 @@ Future<void> speechHasNotStarted(WidgetTester tester) async {
   );
 }
 
+Future<void> textToSpeechHasNotSpoken(WidgetTester tester) async {
+  expect(
+    _ttsCalls.where((call) => call.method == 'speak'),
+    isEmpty,
+    reason: 'flutter_tts speak was invoked',
+  );
+}
+
 Future<void> iAmNotAskedToSignIn(WidgetTester tester) async {
   expect(find.textContaining('Sign in'), findsNothing);
   expect(find.textContaining('Create account'), findsNothing);
