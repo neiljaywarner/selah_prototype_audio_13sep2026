@@ -5,42 +5,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:selah_prototype_audio_13sep2026/src/core/feedback/feedback_service.dart';
 import 'package:selah_prototype_audio_13sep2026/src/core/remote_config/remote_config_service.dart';
 
-class MockAdapter implements HttpClientAdapter {
-  final List<RequestOptions> requests = [];
-  final List<dynamic> requestBodies = [];
-  int statusCode = 201;
-
-  RequestOptions get lastRequestOptions => requests.last;
-  dynamic get lastData => requestBodies.last;
-
-  @override
-  void close({bool force = false}) {}
-
-  @override
-  Future<ResponseBody> fetch(
-    RequestOptions options,
-    Stream<Uint8List>? requestStream,
-    Future<void>? cancelFuture,
-  ) async {
-    requests.add(options);
-    requestBodies.add(options.data);
-    return ResponseBody.fromString(
-      '{"id": 1, "number": 1, "title": "Test Issue", "content": {"download_url": "https://raw.github.com/test", "html_url": "https://github.com/test"}}',
-      statusCode,
-      headers: {
-        Headers.contentTypeHeader: [Headers.jsonContentType],
-      },
-    );
-  }
-}
+import '../support/fakes/recording_http_adapter.dart';
 
 void main() {
   group('GitHub Private Feedback Hub Integration Tests (neiljaywarner/selahprivatefeedback)', () {
     late Dio testDio;
-    late MockAdapter mockAdapter;
+    late RecordingHttpAdapter mockAdapter;
 
     setUp(() {
-      mockAdapter = MockAdapter();
+      mockAdapter = RecordingHttpAdapter();
       testDio = Dio()..httpClientAdapter = mockAdapter;
     });
 

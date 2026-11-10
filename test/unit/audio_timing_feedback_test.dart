@@ -1,46 +1,20 @@
-import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:selah_prototype_audio_13sep2026/src/core/feedback/feedback_service.dart';
 import 'package:selah_prototype_audio_13sep2026/src/core/karaoke/timestamp_loader.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/passage_excerpt.dart';
 
-class MockAdapter implements HttpClientAdapter {
-  final List<RequestOptions> requests = [];
-  final List<dynamic> requestBodies = [];
-  int statusCode = 201;
-
-  RequestOptions get lastRequestOptions => requests.last;
-  dynamic get lastData => requestBodies.last;
-
-  @override
-  void close({bool force = false}) {}
-
-  @override
-  Future<ResponseBody> fetch(
-    RequestOptions options,
-    Stream<Uint8List>? requestStream,
-    Future<void>? cancelFuture,
-  ) async {
-    requests.add(options);
-    requestBodies.add(options.data);
-    return ResponseBody.fromString(
-      '{"id": 99, "number": 99, "title": "Test Issue"}',
-      statusCode,
-      headers: {
-        Headers.contentTypeHeader: [Headers.jsonContentType],
-      },
-    );
-  }
-}
+import '../support/fakes/recording_http_adapter.dart';
 
 void main() {
   group('Passage Audio Timing & Alignment Feedback (Issue #95 / #119)', () {
     late Dio testDio;
-    late MockAdapter mockAdapter;
+    late RecordingHttpAdapter mockAdapter;
 
     setUp(() {
-      mockAdapter = MockAdapter();
+      mockAdapter = RecordingHttpAdapter(
+        body: '{"id": 99, "number": 99, "title": "Test Issue"}',
+      );
       testDio = Dio()..httpClientAdapter = mockAdapter;
     });
 
