@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:selah_prototype_audio_13sep2026/src/core/cache/public_domain_passage_text.dart';
 import 'package:selah_prototype_audio_13sep2026/src/core/esv/esv_api_client.dart';
 import 'package:selah_prototype_audio_13sep2026/src/core/esv/esv_passage_policy.dart';
+import 'package:selah_prototype_audio_13sep2026/src/core/karaoke/timestamp_loader.dart';
 import 'package:selah_prototype_audio_13sep2026/src/core/preferences/user_preferences.dart';
 import 'package:selah_prototype_audio_13sep2026/src/core/remote_config/remote_config_service.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/application/passage_share_launcher.dart';
@@ -60,6 +61,7 @@ class SharePassageWorld {
     if (playbackStopGate != null && !playbackStopGate!.isCompleted) {
       playbackStopGate!.complete();
     }
+    TimestampLoaderService.debugReleaseLoads();
     initialShareUrl = null;
     savedPassages = const [];
     launcher.last = null;

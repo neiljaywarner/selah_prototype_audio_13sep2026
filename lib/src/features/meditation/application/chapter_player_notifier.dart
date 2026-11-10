@@ -3,7 +3,7 @@ import 'dart:io' show Platform;
 
 import 'package:audio_session/audio_session.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -1258,6 +1258,9 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
   bool passageRequestIsCurrent(int requestId) => _passageRequestIsCurrent(requestId);
 
+  @visibleForTesting
+  List<VerseTimestamp>? get currentTimestampsForTest => _currentTimestamps;
+
   /// Speaks the words already on screen. No-op unless the listener just agreed
   /// for this passage request.
   Future<void> confirmReadAloud({int? requestId}) async {
@@ -1343,16 +1346,17 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       return;
     }
 
-    _currentTimestamps = await TimestampLoaderService.loadChapterTimestamps(
+    final loadedTimestamps = await TimestampLoaderService.loadChapterTimestamps(
       translation: state.activeTranslation,
       bookCode: chapter.bookCode,
       chapterNumber: chapter.chapterNumber,
     );
     if (!_passageRequestIsCurrent(activeRequest)) return;
-    final hasTimestamps = _currentTimestamps != null && _currentTimestamps!.isNotEmpty;
+    _currentTimestamps = loadedTimestamps;
+    final hasTimestamps = loadedTimestamps != null && loadedTimestamps.isNotEmpty;
     if (hasTimestamps) {
       AppLogger.info(
-        'WhisperX timestamps loaded for ${chapter.reference}: ${_currentTimestamps!.length} verses.',
+        'WhisperX timestamps loaded for ${chapter.reference}: ${loadedTimestamps.length} verses.',
       );
     }
 
