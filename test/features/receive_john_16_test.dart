@@ -29,6 +29,7 @@ import './step/i_turn_on_apibible_narrator_translations.dart';
 import './step/esv_lookups_are_held.dart';
 import './step/esv_lookups_continue.dart';
 import './step/the_next_esv_lookup_is_held.dart';
+import './step/i_confirm_the_current_read_aloud.dart';
 import './step/the_placeholder_is_not_spoken.dart';
 import './step/the_human_narrator_chip_is_hidden.dart';
 import './step/the_human_narrator_chip_is_shown.dart';
@@ -165,6 +166,13 @@ void main() {
       await theHeadingStays(tester, 'John 3:16');
       await theOnscreenTextIncludes(tester, 'Fixture text for John three verse sixteen only');
       await iDoNotSeeTheCuratedWording(tester, 'verse thirty-two only');
+    });
+    testWidgets('''An ESV search drops an earlier read-aloud yes''', (tester) async {
+      await thePassagePlayingIsIn(tester, 'Psalm 62:5-7', 'ESV');
+      await iConfirmTheCurrentReadAloud(tester);
+      await theNextEsvLookupIsHeld(tester);
+      await iSearchFor(tester, 'John 3:16');
+      await readAloudWasNotConfirmed(tester);
     });
     testWidgets('''A missing passage is not read from the placeholder''', (tester) async {
       await thePassagePlayingIsIn(tester, 'Psalm 62:5-7', 'WEB');

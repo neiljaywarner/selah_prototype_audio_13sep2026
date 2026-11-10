@@ -115,6 +115,13 @@ Feature: Receive John 16:32-33
     And the on-screen text includes {'Fixture text for John three verse sixteen only'}
     And I do not see the curated wording {'verse thirty-two only'}
 
+  Scenario: An ESV search drops an earlier read-aloud yes
+    Given the passage playing is {'Psalm 62:5-7'} in {'ESV'}
+    When I confirm the current read aloud
+    And the next ESV lookup is held
+    And I search for {'John 3:16'}
+    Then read aloud was not confirmed
+
   Scenario: A missing passage is not read from the placeholder
     Given the passage playing is {'Psalm 62:5-7'} in {'WEB'}
     When I play the shared passage

@@ -918,7 +918,11 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     final esv = ref.read(esvApiClientProvider);
     if (!esv.isConfigured) return false;
 
+    final ownsRequest = requestId == null;
     final activeRequest = requestId ?? _beginPassageRequest();
+    if (ownsRequest) {
+      state = state.copyWith(readAloudPrompt: false, readAloudConfirmed: false);
+    }
     await stopAllPlayback(reason: 'play_esv');
     if (!_passageRequestIsCurrent(activeRequest)) return true;
     state = state.copyWith(
@@ -1067,10 +1071,13 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     bool tryEsv = true,
     bool autoplay = true,
   }) async {
+    final requestId = _beginPassageRequest();
+    state = state.copyWith(readAloudPrompt: false, readAloudConfirmed: false);
     if ((tryEsv || _isEsvModeActive) &&
-        await tryPlayEsvPassage(query, autoplay: autoplay)) {
+        await tryPlayEsvPassage(query, autoplay: autoplay, requestId: requestId)) {
       return;
     }
+    if (!_passageRequestIsCurrent(requestId)) return;
 
     if (_isEsvModeActive) {
       state = state.copyWith(
@@ -1084,7 +1091,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     }
 
     await stopAllPlayback();
-    if (!ref.mounted) return;
+    if (!_passageRequestIsCurrent(requestId)) return;
 
     state = state.copyWith(
       isLoading: true,
@@ -1097,6 +1104,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
     try {
       final res = await Dio().get('https://bible-api.com/${Uri.encodeComponent(query.trim())}');
+      if (!_passageRequestIsCurrent(requestId)) return;
       if (res.statusCode == 200 && res.data is Map && res.data['text'] != null) {
         final refStr = res.data['reference'] ?? query;
         final verseStr = (res.data['text'] as String).replaceAll('\n', ' ').trim();
