@@ -20,6 +20,7 @@ import '../domain/chapter_info.dart';
 import '../domain/passage_excerpt.dart';
 import '../domain/passage_share.dart';
 import '../domain/scripture_topic.dart';
+import 'platform_share_link_host.dart';
 import 'widgets/chapter_picker_dialog.dart';
 import 'widgets/feature_voting_sheet.dart';
 import 'widgets/licensing_attribution_sheet.dart';
@@ -45,7 +46,8 @@ class ChapterPlayerScreen extends ConsumerStatefulWidget {
   /// Share URL or reference to open on the first frame.
   ///
   /// When null and [readPlatformLink] is true, the screen reads `?ref=` from
-  /// the page URL so a signed-out recipient can listen.
+  /// the page URL on the web, or from Flutter's initial route on Android.
+  /// A later App Link is delivered by [PlatformShareLinkHost].
   final String? initialShareUrl;
 
   /// Web builds read the page URL. Tests pass false so a harness URI is ignored.
@@ -61,6 +63,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
   bool _readAloudSheetOpen = false;
   ScriptureTopic _selectedTopic = kDefaultMeditationTopics[0];
   List<ParsedBibleReference> _searchSuggestions = [];
+  PlatformShareLinkHostState? _shareHost;
 
   @override
   void initState() {
@@ -82,7 +85,28 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     final explicit = widget.initialShareUrl?.trim();
     if (explicit != null && explicit.isNotEmpty) return explicit;
     if (!widget.readPlatformLink) return null;
-    return PassageShareLink.refFromUri(Uri.base);
+    final page = PassageShareLink.refFromUri(Uri.base);
+    if (page != null) return page;
+    return PassageShareLink.refFromUri(
+      Uri.tryParse(WidgetsBinding.instance.platformDispatcher.defaultRouteName) ?? Uri(),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!widget.readPlatformLink) return;
+    final host = PlatformShareLinkHost.maybeOf(context);
+    if (identical(host, _shareHost)) return;
+    _shareHost?.removeListener(_onPlatformShareLink);
+    _shareHost = host;
+    _shareHost?.addListener(_onPlatformShareLink);
+  }
+
+  void _onPlatformShareLink() {
+    final raw = _shareHost?.latestRef;
+    if (raw == null || !mounted) return;
+    _openIncomingShare(raw);
   }
 
   void _openIncomingShare(String raw) {
@@ -213,6 +237,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
 
   @override
   void dispose() {
+    _shareHost?.removeListener(_onPlatformShareLink);
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();

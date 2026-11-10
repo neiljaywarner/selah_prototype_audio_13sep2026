@@ -15,6 +15,7 @@ import 'package:selah_prototype_audio_13sep2026/src/core/remote_config/remote_co
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/application/passage_share_launcher.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/passage_share.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/presentation/chapter_player_screen.dart';
+import 'package:selah_prototype_audio_13sep2026/src/features/meditation/presentation/platform_share_link_host.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Last payload the share button handed to the launcher.
@@ -34,6 +35,8 @@ class RecordingPassageShareLauncher implements PassageShareLauncher {
 
 class SharePassageWorld {
   static String? initialShareUrl;
+  static bool readPlatformLink = false;
+  static int ttsSpeakCalls = 0;
   static List<String> savedPassages = const [];
   static final launcher = RecordingPassageShareLauncher();
 
@@ -63,6 +66,8 @@ class SharePassageWorld {
     }
     TimestampLoaderService.debugReleaseLoads();
     initialShareUrl = null;
+    readPlatformLink = false;
+    ttsSpeakCalls = 0;
     savedPassages = const [];
     launcher.last = null;
     forcedTranslation = null;
@@ -119,6 +124,9 @@ class _QuietRemoteConfig extends RemoteConfigNotifier {
 void installPlaybackChannelMocks() {
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(const MethodChannel('flutter_tts'), (call) async {
+    if (call.method == 'speak') {
+      SharePassageWorld.ttsSpeakCalls++;
+    }
     if (call.method == 'stop') {
       final gate = SharePassageWorld.playbackStopGate;
       if (gate != null && !gate.isCompleted) await gate.future;
@@ -198,15 +206,16 @@ Future<void> pumpSharePassageApp(WidgetTester tester) async {
     );
   }
 
+  final player = ChapterPlayerScreen(
+    initialShareUrl: SharePassageWorld.initialShareUrl,
+    readPlatformLink: SharePassageWorld.readPlatformLink,
+  );
   await tester.pumpWidget(
     ProviderScope(
       overrides: overrides,
-      child: MaterialApp(
-        home: ChapterPlayerScreen(
-          initialShareUrl: SharePassageWorld.initialShareUrl,
-          readPlatformLink: false,
-        ),
-      ),
+      child: SharePassageWorld.readPlatformLink
+          ? PlatformShareLinkHost(child: MaterialApp(home: player))
+          : MaterialApp(home: player),
     ),
   );
   await tester.pump();
