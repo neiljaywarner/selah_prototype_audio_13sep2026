@@ -9,7 +9,7 @@ flutter analyze
 flutter test
 ```
 
-`scripts/run_flutter_checks.sh` does both, writes logs to `test_artifacts/flutter/`, and prints a coverage table. Line coverage ignores `*.g.dart`, `*.freezed.dart`, and `l10n`. The GitHub job fails under `COVERAGE_MIN` in `.github/workflows/flutter_ci.yml` (73% as of this branch; the last local run was 74.2%).
+`scripts/run_flutter_checks.sh` does both, writes logs to `test_artifacts/flutter/`, and prints a coverage table. Line coverage ignores `*.g.dart`, `*.freezed.dart`, and `l10n`. The GitHub job fails under `COVERAGE_MIN` in `.github/workflows/flutter_ci.yml` (80% as of this branch; the last local run was 81.0%, 3,468 of 4,284 lines).
 
 Shared fakes live in `test/support/fakes/`. Passage strings shared by tests live in `test/support/fixtures/passage_fixtures.dart`.
 
@@ -61,7 +61,13 @@ patrol test -t integration_test/patrol_test.dart
 | Peaceful timing rating thanks the listener | | yes | | |
 | Timing problem opens calibration choices | | yes | | |
 | Missing timestamps can be requested | | yes | | |
-| Roadmap is readable and one vote is recorded | yes | yes | | |
+| Psalm 23 search uses bundled audio and does not speak | | yes | | |
+| Book browser selects Psalms 23 | | yes | | |
+| Play control loads the bundled narrator without TTS | yes | yes | | |
+| Sleep timer can be set to 15 minutes without speech | | yes | | |
+| Tested-passage list can request an unaligned passage | | yes | | |
+| Settings: 7 repetitions, 10s gap, karaoke off, prayer dialog | | yes | | |
+| Roadmap idea and direct feedback need no account | yes | yes | | |
 | Feedback issue is not sent when the token is missing | yes | | prayer dialog | older feedback flow |
 
 Maestro still does not walk the offline, bad-reference, or no-autoplay journeys on a device. Those flows are listed in https://github.com/neiljaywarner/selah_prototype_audio_13sep2026/issues/261.

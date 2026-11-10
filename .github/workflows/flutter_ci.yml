@@ -20,8 +20,8 @@ jobs:
     timeout-minutes: 30
     env:
       # Raise this one number as the suite grows. The job fails below it.
-      # Measured 2026-11-09 on origin/main plus this branch: 74.2% line coverage.
-      COVERAGE_MIN: "73"
+      # Measured 2026-11-10: 81.0% line coverage (3468/4284).
+      COVERAGE_MIN: "80"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
