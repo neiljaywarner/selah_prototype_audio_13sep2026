@@ -1,26 +1,27 @@
 import 'package:flutter/material.dart';
 
-import '../../domain/passage_share.dart';
+import '../../../../core/preferences/saved_passage.dart';
 
 /// Saved passages the listener can open again or send to a friend.
 ///
-/// Each row shares the reference, not the verse text stored nowhere in this
-/// list.
+/// Each row shows the stored reference. Sharing sends that reference, not
+/// the verse text.
 class MyPassagesSheet extends StatelessWidget {
   const MyPassagesSheet({
     super.key,
-    required this.savedReferences,
+    required this.passages,
     required this.onShare,
     required this.onOpen,
+    required this.onRemove,
   });
 
-  final List<String> savedReferences;
+  final List<SavedPassage> passages;
   final ValueChanged<String> onShare;
   final ValueChanged<String> onOpen;
+  final ValueChanged<String> onRemove;
 
   @override
   Widget build(BuildContext context) {
-    final items = PassageShareLink.itemsFromSaved(savedReferences);
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
@@ -54,7 +55,7 @@ class MyPassagesSheet extends StatelessWidget {
               style: TextStyle(color: Colors.white70, fontSize: 13),
             ),
             const SizedBox(height: 12),
-            if (items.isEmpty)
+            if (passages.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 24),
                 child: Text(
@@ -67,26 +68,50 @@ class MyPassagesSheet extends StatelessWidget {
               Flexible(
                 child: ListView.separated(
                   shrinkWrap: true,
-                  itemCount: items.length,
-                  separatorBuilder: (_, _) => const Divider(color: Colors.white12, height: 1),
+                  itemCount: passages.length,
+                  separatorBuilder: (_, _) =>
+                      const Divider(color: Colors.white12, height: 1),
                   itemBuilder: (context, index) {
-                    final item = items[index];
-                    final reference = item.passage.canonical;
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                        reference,
-                        style: const TextStyle(
-                          color: Color(0xFFFBBF24),
-                          fontWeight: FontWeight.w600,
+                    final passage = passages[index];
+                    final query = passage.query;
+                    return Semantics(
+                      identifier: 'open_my_passage_$query',
+                      button: true,
+                      label: query,
+                      child: ListTile(
+                        key: Key('my_passage_$query'),
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          query,
+                          style: const TextStyle(
+                            color: Color(0xFFFBBF24),
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      onTap: () => onOpen(reference),
-                      trailing: IconButton(
-                        key: Key('share_my_passage_$reference'),
-                        tooltip: 'Share $reference',
-                        onPressed: () => onShare(reference),
-                        icon: const Icon(Icons.ios_share_rounded, color: Color(0xFFFBBF24)),
+                        onTap: () => onOpen(query),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              key: Key('share_my_passage_$query'),
+                              tooltip: 'Share $query',
+                              onPressed: () => onShare(query),
+                              icon: const Icon(
+                                Icons.ios_share_rounded,
+                                color: Color(0xFFFBBF24),
+                              ),
+                            ),
+                            IconButton(
+                              key: Key('remove_my_passage_$query'),
+                              tooltip: 'Remove $query',
+                              onPressed: () => onRemove(query),
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.white54,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
