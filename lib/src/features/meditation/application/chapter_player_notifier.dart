@@ -1553,6 +1553,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   /// Lands on a shared reference without asking the recipient to sign in.
   /// Playback stays ready on the play control; opening a link does not autoplay.
   void presentSharedPassage(SharedPassage passage) {
+    _beginPassageRequest();
+    unawaited(stopAllPlayback(reason: 'present_passage'));
     ChapterInfo? preset;
     final sharedTitle = _normalizedReference(passage.canonical);
     for (final chapter in kFeaturedChapters) {
