@@ -29,6 +29,12 @@ tags:
     timeout: 10000
 - takeScreenshot: my_passages_saved
 
+- tapOn: "Matt 11:28.*"
+- extendedWaitUntil:
+    visible: "Come to Me.*"
+    timeout: 15000
+- takeScreenshot: my_passages_other
+
 - tapOn: "My Passages"
 - extendedWaitUntil:
     visible: "My Passages"

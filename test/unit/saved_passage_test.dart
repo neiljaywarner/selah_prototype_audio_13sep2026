@@ -127,4 +127,17 @@ void main() {
     expect(store.myPassages.single.query, '1 Cor 13:4-7');
     expect(store.myPassages.single.label, 'Love');
   });
+
+  test('a failed write is not reported as saved', () async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final store = UserPreferences(prefs, (_, _) async => false);
+
+    final result = await store.saveMyPassage(
+      const SavedPassage(query: '1 Cor 13:4-7', label: '1 Cor 13:4-7'),
+    );
+    expect(result, SavePassageResult.unavailable);
+    expect(store.myPassages, isEmpty);
+    expect(await store.renameMyPassage('1 Cor 13:4-7', 'Love'), isFalse);
+  });
 }

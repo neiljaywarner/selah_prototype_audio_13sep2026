@@ -212,6 +212,14 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     }
   }
 
+  void _showSelectedPassage(ChapterInfo chapter) {
+    _searchController.text = PassageQuery.canonicalize(
+      chapter.displayTitle ?? '${chapter.bookName} ${chapter.chapterNumber}',
+    );
+    ref.read(chapterPlayerProvider.notifier).loadChapter(chapter);
+    setState(() => _searchSuggestions = []);
+  }
+
   void _notePlayed(String raw) {
     final pending = ref.read(userPreferencesProvider).recordRecent(raw);
     pending.whenComplete(() {
@@ -1044,8 +1052,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                   activeReference: playerState.currentChapter.reference,
                   onTopicSelected: (topic) => setState(() => _selectedTopic = topic),
                   onChapterSelected: (chapter) {
-                    _searchController.text = '${chapter.bookCode}.${chapter.chapterNumber}';
-                    notifier.loadChapter(chapter);
+                    _showSelectedPassage(chapter);
                   },
                 )
               else
@@ -1119,9 +1126,14 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                             isBookmarked: item.isSaved,
                             onTap: () {
                               if (item.chapter != null) {
-                                notifier.loadChapter(item.chapter!);
+                                _showSelectedPassage(item.chapter!);
                               } else {
-                                _handleSearchSubmit(item.label);
+                                final parsed = PassageShareLink.tryParse(item.label);
+                                if (parsed != null && parsed.hasVerseRange) {
+                                  _openIncomingShare(parsed.canonical);
+                                } else {
+                                  _handleSearchSubmit(item.label);
+                                }
                               }
                             },
                           );
@@ -1664,7 +1676,22 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                                 key: const Key('play_passage_button'),
                                 onTap: playerState.currentChapter.bookCode.isEmpty
                                     ? null
-                                    : notifier.togglePlayPause,
+                                    : () {
+                                        if (!playerState.isPlaying) {
+                                          final query = resolvePassageToSave(
+                                            fieldText: _searchController.text,
+                                            chapter: playerState.currentChapter,
+                                            activeExcerpt: playerState.activeExcerpt,
+                                          );
+                                          final already = ref
+                                              .read(userPreferencesProvider)
+                                              .lastPlayedQuery;
+                                          if (already?.toLowerCase() != query.toLowerCase()) {
+                                            _notePlayed(query);
+                                          }
+                                        }
+                                        notifier.togglePlayPause();
+                                      },
                                 child: Container(
                                   width: 68,
                                   height: 68,

@@ -17,8 +17,15 @@ final sharedPreferencesProvider = Provider<SharedPreferences>(
 
 /// Typed wrapper so preference keys live in one place.
 class UserPreferences {
-  UserPreferences([this._prefs]);
+  UserPreferences([
+    this._prefs,
+    Future<bool> Function(String key, List<String> values)? writeList,
+  ]) : _writeList = writeList;
+
   final SharedPreferences? _prefs;
+
+  /// Test seam for a platform write that returns false after the cache updates.
+  final Future<bool> Function(String key, List<String> values)? _writeList;
 
   static const lastTranslationKey = 'selah.last_translation';
   static const savedChaptersKey = 'selah.saved_chapters';
@@ -105,8 +112,18 @@ class UserPreferences {
     return out;
   }
 
-  Future<void> _writePassages(String key, List<SavedPassage> passages) async {
-    await _prefs?.setStringList(key, passages.map((p) => p.encode()).toList());
+  Future<bool> _writePassages(String key, List<SavedPassage> passages) async {
+    final prefs = _prefs;
+    if (prefs == null) return false;
+    final encoded = passages.map((p) => p.encode()).toList();
+    final writeList = _writeList;
+    final wrote = writeList != null
+        ? await writeList(key, encoded)
+        : await prefs.setStringList(key, encoded);
+    if (!wrote) {
+      await prefs.reload();
+    }
+    return wrote;
   }
 
   /// Copies the old recents list into My passages once.
@@ -116,10 +133,7 @@ class UserPreferences {
     final legacy = _decodeList(
       prefs.getStringList(savedChaptersKey) ?? const [],
     );
-    await prefs.setStringList(
-      myPassagesKey,
-      legacy.map((p) => p.encode()).toList(),
-    );
+    await _writePassages(myPassagesKey, legacy);
   }
 
   Future<SavePassageResult> saveMyPassage(SavedPassage passage) async {
@@ -136,12 +150,16 @@ class UserPreferences {
     if (index >= 0) {
       final existing = list.removeAt(index);
       list.insert(0, existing);
-      await _writePassages(myPassagesKey, list);
+      if (!await _writePassages(myPassagesKey, list)) {
+        return SavePassageResult.unavailable;
+      }
       return SavePassageResult.alreadySaved;
     }
     if (list.length >= myPassagesCap) return SavePassageResult.full;
     list.insert(0, SavedPassage(query: query, label: label));
-    await _writePassages(myPassagesKey, list);
+    if (!await _writePassages(myPassagesKey, list)) {
+      return SavePassageResult.unavailable;
+    }
     return SavePassageResult.saved;
   }
 
@@ -159,18 +177,17 @@ class UserPreferences {
     );
     if (index < 0) return false;
     list[index] = SavedPassage(query: list[index].query, label: label);
-    await _writePassages(myPassagesKey, list);
-    return true;
+    return _writePassages(myPassagesKey, list);
   }
 
-  Future<void> removeMyPassage(String query) async {
+  Future<bool> removeMyPassage(String query) async {
     final prefs = _prefs;
-    if (prefs == null) return;
+    if (prefs == null) return false;
     await migrateLegacySavedChapters();
     final canonical = PassageQuery.canonicalize(query);
     final list = List<SavedPassage>.from(myPassages)
       ..removeWhere((p) => p.query.toLowerCase() == canonical.toLowerCase());
-    await _writePassages(myPassagesKey, list);
+    return _writePassages(myPassagesKey, list);
   }
 
   /// Records a play in Recent and remembers it as last-played.
