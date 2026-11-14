@@ -8,7 +8,7 @@
 PRODUCT_NAME = selah_prototype_audio_13sep2026
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.selahPrototypeAudio13sep2026
+PRODUCT_BUNDLE_IDENTIFIER = app.selahword.audio
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.

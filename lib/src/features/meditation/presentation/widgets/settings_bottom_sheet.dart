@@ -116,7 +116,10 @@ class SettingsBottomSheet extends ConsumerWidget {
           ),
           if (esvConfigured && kEnableExperimentalApiBibleDevFlag) ...[
             const SizedBox(height: 12),
-            SwitchListTile(
+            Semantics(
+              container: true,
+              label: 'Preview: API.Bible narrator translations',
+              child: SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text(
                 'Preview: API.Bible narrator translations',
@@ -138,6 +141,7 @@ class SettingsBottomSheet extends ConsumerWidget {
                       );
                 }
               },
+            ),
             ),
           ],
           const SizedBox(height: 16),

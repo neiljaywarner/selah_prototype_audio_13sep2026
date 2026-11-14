@@ -1,5 +1,5 @@
 # Maestro Flow: Tested Passages Modal (+ More 12)
-appId: com.example.selah_prototype_audio_13sep2026
+appId: app.selahword.audio
 ---
 - launchApp:
     clearState: false

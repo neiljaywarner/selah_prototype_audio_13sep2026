@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -27,6 +28,27 @@ class VerseTimestamp {
 }
 
 class TimestampLoaderService {
+  /// Test hook. When set, the next [debugHoldsRemaining] loads wait until
+  /// [debugReleaseLoads]. Production leaves both unset.
+  @visibleForTesting
+  static Completer<void>? debugGate;
+
+  @visibleForTesting
+  static int debugHoldsRemaining = 0;
+
+  @visibleForTesting
+  static void debugHoldNextLoad() {
+    debugGate = Completer<void>();
+    debugHoldsRemaining = 1;
+  }
+
+  @visibleForTesting
+  static void debugReleaseLoads() {
+    final gate = debugGate;
+    if (gate != null && !gate.isCompleted) gate.complete();
+    debugHoldsRemaining = 0;
+  }
+
   /// Map of chapters to the verse range covered in pre-compiled assets.
   /// If null, the entire chapter is covered.
   static const Map<String, ({int start, int end})?> _knownTimestampRanges = {
@@ -77,6 +99,11 @@ class TimestampLoaderService {
     required String bookCode,
     required int chapterNumber,
   }) async {
+    final gate = debugGate;
+    if (gate != null && !gate.isCompleted && debugHoldsRemaining > 0) {
+      debugHoldsRemaining--;
+      await gate.future;
+    }
     final assetPath =
         'assets/timestamps/${translation.toUpperCase()}/${bookCode.toUpperCase()}_$chapterNumber.json';
     try {

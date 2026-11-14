@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,14 +13,18 @@ import '../../../core/logging/app_logger.dart';
 import '../../../core/picker/bible_reference_parser.dart';
 import '../../../core/preferences/user_preferences.dart';
 import '../application/chapter_player_notifier.dart';
+import '../application/passage_share_launcher.dart';
 import '../domain/audio_mode.dart';
 import '../domain/bible_translation.dart';
 import '../domain/chapter_info.dart';
 import '../domain/passage_excerpt.dart';
+import '../domain/passage_share.dart';
 import '../domain/scripture_topic.dart';
+import 'platform_share_link_host.dart';
 import 'widgets/chapter_picker_dialog.dart';
 import 'widgets/feature_voting_sheet.dart';
 import 'widgets/licensing_attribution_sheet.dart';
+import 'widgets/my_passages_sheet.dart';
 import 'widgets/offline_indicator.dart';
 import 'widgets/passage_timing_feedback_bar.dart';
 import 'widgets/popular_passages_bottom_sheet.dart';
@@ -32,7 +37,21 @@ import '../../../core/karaoke/timestamp_loader.dart';
 import '../../../core/remote_config/remote_config_service.dart';
 
 class ChapterPlayerScreen extends ConsumerStatefulWidget {
-  const ChapterPlayerScreen({super.key});
+  const ChapterPlayerScreen({
+    super.key,
+    this.initialShareUrl,
+    this.readPlatformLink = true,
+  });
+
+  /// Share URL or reference to open on the first frame.
+  ///
+  /// When null and [readPlatformLink] is true, the screen reads `?ref=` from
+  /// the page URL on the web, or from Flutter's initial route on Android.
+  /// A later App Link is delivered by [PlatformShareLinkHost].
+  final String? initialShareUrl;
+
+  /// Web builds read the page URL. Tests pass false so a harness URI is ignored.
+  final bool readPlatformLink;
 
   @override
   ConsumerState<ChapterPlayerScreen> createState() => _ChapterPlayerScreenState();
@@ -41,8 +60,10 @@ class ChapterPlayerScreen extends ConsumerStatefulWidget {
 class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
   late final TextEditingController _searchController;
   bool _showDebugLogs = false;
+  bool _readAloudSheetOpen = false;
   ScriptureTopic _selectedTopic = kDefaultMeditationTopics[0];
   List<ParsedBibleReference> _searchSuggestions = [];
+  PlatformShareLinkHostState? _shareHost;
 
   @override
   void initState() {
@@ -51,10 +72,172 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
         ref.read(chapterPlayerProvider).currentChapter.reference;
     _searchController = TextEditingController(text: initialPassage);
     _searchController.addListener(_onSearchChanged);
+    final incoming = _incomingShareLink();
+    if (incoming != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _openIncomingShare(incoming);
+      });
+    }
+  }
+
+  String? _incomingShareLink() {
+    final explicit = widget.initialShareUrl?.trim();
+    if (explicit != null && explicit.isNotEmpty) return explicit;
+    if (!widget.readPlatformLink) return null;
+    final page = PassageShareLink.refFromUri(Uri.base);
+    if (page != null) return page;
+    return PassageShareLink.refFromUri(
+      Uri.tryParse(WidgetsBinding.instance.platformDispatcher.defaultRouteName) ?? Uri(),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!widget.readPlatformLink) return;
+    final host = PlatformShareLinkHost.maybeOf(context);
+    if (identical(host, _shareHost)) return;
+    _shareHost?.removeListener(_onPlatformShareLink);
+    _shareHost = host;
+    _shareHost?.addListener(_onPlatformShareLink);
+  }
+
+  void _onPlatformShareLink() {
+    final raw = _shareHost?.latestRef;
+    if (raw == null || !mounted) return;
+    _openIncomingShare(raw);
+  }
+
+  void _openIncomingShare(String raw) {
+    final parsed = PassageShareLink.tryParse(raw);
+    final notifier = ref.read(chapterPlayerProvider.notifier);
+    if (parsed == null) {
+      _searchController.text = '';
+      notifier.rejectSharedReference(raw);
+      setState(() {});
+      return;
+    }
+    notifier.presentSharedPassage(parsed);
+    _searchController.text = parsed.canonical;
+    setState(() {});
+  }
+
+  Future<void> _shareReference(String reference) async {
+    final payload = PassageShareLink.tryPayload(
+      reference: reference,
+      attribution: ref.read(chapterPlayerProvider).translation.shortAttribution,
+      page: kIsWeb ? Uri.base : null,
+    );
+    if (!mounted) return;
+    if (payload == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(PassageShareLink.friendlyError(reference))),
+      );
+      return;
+    }
+    AppLogger.logEvent('passage_shared', {
+      'reference': payload.reference,
+      'has_verse_text': false,
+    });
+    try {
+      await ref.read(passageShareLauncherProvider).share(payload);
+    } catch (error) {
+      AppLogger.warning('Passage share sheet failed: $error');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Couldn't share that passage."),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Link ready to share: ${payload.reference}'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  bool _showsCuratedPill(dynamic playerState) {
+    final curated = PassageExcerpt.forChapter(
+      playerState.currentChapter.bookCode as String,
+      playerState.currentChapter.chapterNumber as int,
+    );
+    if (curated == null) return false;
+    final active = playerState.activeExcerpt as PassageExcerpt?;
+    if (active == null) return true;
+    return active.bookCode.toUpperCase() == curated.bookCode.toUpperCase() &&
+        active.chapterNumber == curated.chapterNumber &&
+        active.startVerse == curated.startVerse &&
+        active.endVerse == curated.endVerse;
+  }
+
+  Future<void> _askBeforeReadAloud(String reference) async {
+    _readAloudSheetOpen = true;
+    final player = ref.read(chapterPlayerProvider.notifier);
+    final requestId = player.passageRequestId;
+    final allow = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Semantics(
+        namesRoute: true,
+        scopesRoute: true,
+        explicitChildNodes: true,
+        label: 'Read this passage aloud?',
+        child: Dialog(
+          backgroundColor: const Color(0xFF1E1B4B),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: ReadAloudPromptSheet(passageTitle: reference),
+        ),
+      ),
+    );
+    _readAloudSheetOpen = false;
+    if (!mounted) return;
+    if (!player.passageRequestIsCurrent(requestId)) {
+      final current = ref.read(chapterPlayerProvider);
+      if (current.readAloudPrompt) {
+        final title = current.currentChapter.displayTitle ?? current.currentChapter.reference;
+        await _askBeforeReadAloud(title);
+      }
+      return;
+    }
+    if (allow == true) {
+      await player.confirmReadAloud(requestId: requestId);
+    } else {
+      player.declineReadAloud(requestId: requestId);
+    }
+  }
+
+  void _openMyPassages() {
+    final saved = ref.read(userPreferencesProvider).savedChapters;
+    showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF1E1B4B),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => MyPassagesSheet(
+        savedReferences: saved,
+        onShare: (reference) {
+          Navigator.of(ctx).pop();
+          _shareReference(reference);
+        },
+        onOpen: (reference) {
+          Navigator.of(ctx).pop();
+          _handleSearchSubmit(reference);
+        },
+      ),
+    );
   }
 
   @override
   void dispose() {
+    _shareHost?.removeListener(_onPlatformShareLink);
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
@@ -514,6 +697,15 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
   Widget build(BuildContext context) {
     final playerState = ref.watch(chapterPlayerProvider);
     final notifier = ref.read(chapterPlayerProvider.notifier);
+    ref.listen<ChapterPlayerState>(chapterPlayerProvider, (previous, next) {
+      final opened = next.readAloudPrompt && previous?.readAloudPrompt != true;
+      if (!opened || _readAloudSheetOpen) return;
+      _readAloudSheetOpen = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _askBeforeReadAloud(next.currentChapter.reference);
+      });
+    });
     final userPrefs = ref.watch(userPreferencesProvider);
     final remoteConfig = ref.watch(remoteConfigProvider);
     final showWip = ref.watch(workInProgressFeaturesProvider);
@@ -744,7 +936,10 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                   ),
                   const SizedBox(width: 6),
                   IconButton(
-                    onPressed: () async {
+                    key: const Key('save_current_passage'),
+                    onPressed: playerState.currentChapter.bookCode.isEmpty
+                        ? null
+                        : () async {
                       final curRef = playerState.currentChapter.reference;
                       await ref.read(userPreferencesProvider).saveChapter(curRef);
                       if (context.mounted) {
@@ -802,7 +997,20 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  key: const Key('open_my_passages'),
+                  onPressed: _openMyPassages,
+                  icon: const Icon(Icons.bookmarks_outlined, size: 18, color: Color(0xFFFBBF24)),
+                  label: const Text(
+                    'My Passages',
+                    style: TextStyle(color: Color(0xFFFBBF24), fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
 
               /* Featured Presets (or Topic Tabs if enabled) - Single-row horizontal scroll */
               if (remoteConfig.enableTopicTabs)
@@ -954,7 +1162,9 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Flexible(
+                        if (playerState.currentChapter.bookCode.isNotEmpty &&
+                            !playerState.readAloudPrompt)
+                          Flexible(
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
@@ -1081,20 +1291,37 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    Text(
-                      playerState.currentChapter.reference,
-                      style: GoogleFonts.newsreader(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFFFBBF24),
-                      ),
+                    Row(
+                      children: [
+                        const SizedBox(width: 48),
+                        Expanded(
+                          child: Text(
+                            playerState.currentChapter.reference,
+                            key: const Key('current_passage_reference'),
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.newsreader(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFFFBBF24),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          key: const Key('share_current_passage'),
+                          tooltip: 'Share this passage',
+                          onPressed: playerState.currentChapter.bookCode.isEmpty
+                              ? null
+                              : () => _shareReference(playerState.currentChapter.reference),
+                          icon: Icon(
+                            Icons.ios_share_rounded,
+                            color: playerState.currentChapter.bookCode.isEmpty
+                                ? Colors.white24
+                                : const Color(0xFFFBBF24),
+                          ),
+                        ),
+                      ],
                     ),
-                    if (playerState.activeExcerpt != null ||
-                        PassageExcerpt.forChapter(
-                              playerState.currentChapter.bookCode,
-                              playerState.currentChapter.chapterNumber,
-                            ) !=
-                            null) ...[
+                    if (_showsCuratedPill(playerState)) ...[
                       const SizedBox(height: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
@@ -1122,6 +1349,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                       ),
                     ],
                     const SizedBox(height: 4),
+                    if (playerState.currentChapter.bookCode.isNotEmpty)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -1166,6 +1394,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                     const SizedBox(height: 10),
 
                     // Visible Attribution Badge & Licensing Modal Trigger
+                    if (playerState.currentChapter.bookCode.isNotEmpty)
                     Center(
                       child: InkWell(
                         key: const Key('player_attribution_button'),
@@ -1273,6 +1502,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                             ),
                           ),
                           const SizedBox(width: 8),
+                          if (playerState.currentChapter.bookCode.isNotEmpty)
                           GestureDetector(
                             key: const Key('cycle_repetitions_chip'),
                             onTap: () {
@@ -1381,36 +1611,58 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
 
                         const SizedBox(width: 24),
 
-                        // Center Play / Pause
+                        // Center Play / Pause. A broken link has no passage, so the
+                        // circle is muted instead of the gold play control.
                         playerState.isLoading
-                            ? const CircularProgressIndicator(color: Color(0xFFFBBF24))
-                            : GestureDetector(
-                                onTap: notifier.togglePlayPause,
+                            ? Semantics(
+                                label: 'Loading passage',
+                                child: const CircularProgressIndicator(color: Color(0xFFFBBF24)),
+                              )
+                            : Semantics(
+                                button: true,
+                                enabled: playerState.currentChapter.bookCode.isNotEmpty,
+                                identifier: 'play_passage_button',
+                                label: playerState.isPlaying ? 'Pause passage' : 'Play passage',
+                                child: GestureDetector(
+                                key: const Key('play_passage_button'),
+                                onTap: playerState.currentChapter.bookCode.isEmpty
+                                    ? null
+                                    : notifier.togglePlayPause,
                                 child: Container(
                                   width: 68,
                                   height: 68,
-                                  decoration: const BoxDecoration(
+                                  decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    gradient: LinearGradient(
-                                      colors: [Color(0xFFFBBF24), Color(0xFFF59E0B)],
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Color(0x40FBBF24),
-                                        blurRadius: 16,
-                                        spreadRadius: 2,
-                                      ),
-                                    ],
+                                    color: playerState.currentChapter.bookCode.isEmpty
+                                        ? const Color(0xFF3A3658)
+                                        : null,
+                                    gradient: playerState.currentChapter.bookCode.isEmpty
+                                        ? null
+                                        : const LinearGradient(
+                                            colors: [Color(0xFFFBBF24), Color(0xFFF59E0B)],
+                                          ),
+                                    boxShadow: playerState.currentChapter.bookCode.isEmpty
+                                        ? null
+                                        : const [
+                                            BoxShadow(
+                                              color: Color(0x40FBBF24),
+                                              blurRadius: 16,
+                                              spreadRadius: 2,
+                                            ),
+                                          ],
                                   ),
                                   child: Icon(
                                     playerState.isPlaying
                                         ? Icons.pause_rounded
                                         : Icons.play_arrow_rounded,
                                     size: 38,
-                                    color: Colors.black,
+                                    color: playerState.currentChapter.bookCode.isEmpty
+                                        ? Colors.white38
+                                        : Colors.black,
                                   ),
                                 ),
                               ),
+                            ),
 
                         const SizedBox(width: 24),
 

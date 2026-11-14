@@ -21,7 +21,7 @@ Selah uses **Firebase App Distribution** for rapid, secure Android beta distribu
   - `neilwarner@gmail.com`
   - `twinsflora1@gmail.com`
 - **Firebase Project ID**: `selahwordapp`
-- **Android App ID**: `1:228765786696:android:edf812ba8fc701fe382e7d`
+- **Android App ID**: `1:228765786696:android:b477acdfcb898d30382e7d`
 
 ---
 
@@ -78,7 +78,7 @@ platform :android do
     sh("flutter build apk --release")
 
     firebase_app_distribution(
-      app: "1:228765786696:android:edf812ba8fc701fe382e7d",
+      app: "1:228765786696:android:b477acdfcb898d30382e7d",
       apk_path: "build/app/outputs/flutter-apk/app-release.apk",
       groups: options[:groups] || "core-testers",
       release_notes: options[:notes] || "Automated build via Fastlane"

@@ -1,6 +1,8 @@
 import 'dart:io' show Platform;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:marionette_flutter/marionette_flutter.dart';
@@ -16,11 +18,22 @@ import 'src/core/logging/app_logger.dart';
 import 'src/core/preferences/user_preferences.dart';
 import 'src/core/remote_config/remote_config_service.dart';
 
+/// Held for the life of the page. Dropping it lets web semantics turn back off.
+SemanticsHandle? _webSemanticsHandle;
+
 void main() async {
-  if (kDebugMode) {
+  if (kDebugMode && BindingBase.debugBindingType() == null) {
     MarionetteBinding.ensureInitialized();
   } else {
+    // Patrol installs its own binding before main(). Marionette cannot replace it.
     WidgetsFlutterBinding.ensureInitialized();
+  }
+
+  if (kIsWeb) {
+    // Flutter web hides the accessibility tree until a screen reader asks.
+    // Maestro reads that tree, and so do browsers.
+    _webSemanticsHandle = SemanticsBinding.instance.ensureSemantics();
+    assert(_webSemanticsHandle != null);
   }
 
   if (!kIsWeb && !Platform.environment.containsKey('FLUTTER_TEST')) {
@@ -65,7 +78,9 @@ void main() async {
   AppLogger.info(
     'Aptabase Key status: ${kAptabaseAppKey == "REDACTED" ? "REDACTED (Set via --dart-define)" : "CONFIGURED (length: ${kAptabaseAppKey.length})"}',
   );
-  AppLogger.info('Firebase Installations ID: ${firebaseProvider.installationId}');
+  AppLogger.info(
+    'Firebase Installations ID: ${firebaseProvider.installationId}',
+  );
 
   runApp(
     ProviderScope(

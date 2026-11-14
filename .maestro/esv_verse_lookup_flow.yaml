@@ -7,7 +7,7 @@
 # Record a video with: maestro record .maestro/esv_verse_lookup_flow.yaml
 # See lesser_llm_esv_playback_videos.md for the full device steps.
 
-appId: com.example.selah_prototype_audio_13sep2026
+appId: app.selahword.audio
 ---
 - launchApp:
     clearState: false

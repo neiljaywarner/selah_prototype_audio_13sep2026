@@ -103,6 +103,8 @@ export PATH="$PATH":"$HOME/.maestro/bin"
 | [`.maestro/feedback_streamlined_flow.yaml`](../.maestro/feedback_streamlined_flow.yaml) | Streamlined feedback | More Options menu, "Prayer & Feedback" tap, sentiment selection, reflection entry. |
 | [`.maestro/tested_passages_flow.yaml`](../.maestro/tested_passages_flow.yaml) | Tested passages modal | "+ More (12)" sheet tap, Psalm 23 / Rom 8 selection, passage playback load. |
 | [`.maestro/pixel9a_smoke.yaml`](../.maestro/pixel9a_smoke.yaml) | Fast physical device smoke | Rapid healthcheck and screenshot verification for Google Pixel 9a. |
+| [`.maestro/share_passage_web.yaml`](../.maestro/share_passage_web.yaml) | Share link on local Flutter web | `?ref=1+Cor+13:4-7` lands and can play. `NotABook 99:1` shows a friendly error on the player. |
+| [`.maestro/share_passage_android.yaml`](../.maestro/share_passage_android.yaml) | Share sheet on Android | Player and My Passages share `1 Cor 13:4-7`. The sheet shows the reference link, not the verse. |
 
 ### 3. Running Maestro Flows
 ```bash
@@ -115,6 +117,27 @@ maestro test .maestro/feedback_streamlined_flow.yaml
 # Run the tested passages sheet flow
 maestro test .maestro/tested_passages_flow.yaml
 ```
+
+### Share a passage (web + Android)
+
+Serve this branch locally. The flow is pinned to `http://127.0.0.1:8091`. Do not point it at selahword.web.app.
+
+```bash
+# flutter run stays in the foreground. Wait until it prints that the app
+# is being served, then run Maestro in another terminal.
+flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8091
+maestro test --headless --screen-size 1200x2200 .maestro/share_passage_web.yaml
+```
+
+The Android flow drives the real share sheet. Install the normal debug app (not the Patrol test bundle):
+
+```bash
+flutter build apk --debug
+adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-debug.apk
+maestro test .maestro/share_passage_android.yaml
+```
+
+`flutter install` can select an older `app-release.apk`. Install the debug apk from the build you just made. Maestro uses the booted emulator (on this machine, AVD `maestro` / `emulator-5554`).
 
 ---
 
@@ -131,11 +154,15 @@ dart pub global activate patrol_cli
 ### 2. Available Patrol Integration Tests
 * [`integration_test/patrol_test.dart`](../integration_test/patrol_test.dart): End-to-end test using `patrolTest` verifying header branding, passage chip selection, scripture excerpt rendering, translation switching (BSB/WEB), and Prayer & Feedback dialog interaction.
 * [`integration_test/app_test.dart`](../integration_test/app_test.dart): Standard Flutter integration test verifying search autocomplete, settings modals, 1 Cor 13 timing feedback bar, and AppBar options.
+* [`patrol_test/share_passage_test.dart`](../patrol_test/share_passage_test.dart): Share-link landing, friendly error for a bad `?ref=`, and the reference-only payload from the player and from My Passages. Android instrumentation is `MainActivityTest` with `PatrolJUnitRunner`.
 
 ### 3. Running Patrol Tests
 ```bash
 # Run on connected Android device via Patrol CLI
 patrol test -t integration_test/patrol_test.dart
+
+# Share a passage (issue #240). Requires a booted Android emulator.
+patrol test -t patrol_test/share_passage_test.dart -d emulator-5554
 
 # Or run via standard Flutter test runner
 flutter test integration_test/app_test.dart -d 58221JEBF20835
@@ -175,6 +202,39 @@ flutter test test/unit/corinthians_13_verse_4_test.dart
 ```
 
 All 96 tests pass with 100% coverage across core audio playback, verse timestamps, karaoke highlighting, feedback routing, and copyright attributions.
+
+### Share a passage (issue #240) — `bdd_widget_test`
+
+Gherkin lives in `test/features/share_a_passage.feature`. Step definitions live in `test/features/step/`. `bdd_widget_test` generates `test/features/share_a_passage_test.dart`, which `flutter test` runs in CI.
+
+```bash
+# Regenerate the widget test from the feature file after editing Gherkin
+dart run build_runner build --delete-conflicting-outputs
+
+# Run the share scenarios and the URL/payload unit tests
+flutter test test/features/share_a_passage_test.dart test/unit/passage_share_link_test.dart
+```
+
+The scenarios cover sharing the playing passage, sharing from My Passages, opening a valid link while signed out, and a friendly error for a broken reference. They assert the payload contains `?ref=1+Cor+13:4-7` and does not contain the verse body. `test/features/receive_shared_passage.feature` covers opening `?ref=Psalm+62:5-7` on the BSB path so the curated 62:1–2 wording is not substituted.
+
+The native iOS, Android, and web share sheets cannot open inside a widget test. `PlatformPassageShareLauncher` is that thin device boundary: it copies the link and passes the same reference-only message to `share_plus`. A unit test captures that message with a fake share platform. Widget scenarios replace the launcher and assert the payload.
+
+Maestro and Patrol cover the same behaviors on a device. Maestro web opens the real `?ref=` URL. Maestro on Android taps share and reads the share sheet. Patrol, on the emulator, asserts the player landed on `1 Cor 13:4-7`, that a bad reference stays on the player, and that the payload's reference is `1 Cor 13:4-7`, the URL contains `?ref=1+Cor+13:4-7` and starts with the GitHub Pages origin, and the message contains that reference, URL, and attribution. It also checks the message does not contain the verse fragments `love is patient` and `love is kind`. It does not compare the whole share message to one exact string.
+
+```bash
+# flutter run stays in the foreground. Wait until it prints that the app
+# is being served, then run Maestro in another terminal.
+flutter run -d web-server --web-hostname 127.0.0.1 --web-port 8091
+maestro test --headless --screen-size 1200x2200 .maestro/share_passage_web.yaml
+
+flutter build apk --debug
+adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-debug.apk
+maestro test .maestro/share_passage_android.yaml
+
+patrol test -t patrol_test/share_passage_test.dart -d emulator-5554
+```
+
+The web flow's `url:` header sends it to desktop Chromium. Without that header, Maestro opens the link in the emulator's Chrome. iOS Simulator is not part of this run: this Mac has Command Line Tools only, so `simctl` is unavailable. The Android share sheet is what Maestro drives. Patrol's `_expectReferenceOnly` checks those reference, URL, attribution, and verse-fragment assertions. It is not an exact match of the full share message.
 
 ---
 
