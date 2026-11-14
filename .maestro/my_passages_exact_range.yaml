@@ -1,0 +1,60 @@
+# Save 1 Cor 13:4-7, reopen that exact range, and play the narrator.
+#
+#   flutter build apk --debug
+#   adb -s emulator-5554 install -r build/app/outputs/flutter-apk/app-debug.apk
+#   maestro test --device emulator-5554 .maestro/my_passages_exact_range.yaml
+
+appId: app.selahword.audio
+tags:
+  - my-passages
+  - android
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: ".*SELAH.*"
+    timeout: 30000
+- extendedWaitUntil:
+    visible: "1 Cor 13:4.*"
+    timeout: 20000
+
+- scrollUntilVisible:
+    element: "Save to My passages"
+    direction: DOWN
+    timeout: 20000
+    visibilityPercentage: 50
+- tapOn: "Save to My passages"
+- extendedWaitUntil:
+    visible: "Saved.*1 Cor 13:4-7.*to My passages"
+    timeout: 10000
+- takeScreenshot: my_passages_saved
+
+- tapOn: "My Passages"
+- extendedWaitUntil:
+    visible: "My Passages"
+    timeout: 10000
+- assertVisible: "1 Cor 13:4-7"
+- assertNotVisible: "1 Corinthians 13"
+- takeScreenshot: my_passages_list
+
+- tapOn:
+    id: "open_my_passage_1 Cor 13:4-7"
+- extendedWaitUntil:
+    visible: "1 Cor 13:4-7"
+    timeout: 10000
+- takeScreenshot: my_passages_reopened
+
+- scrollUntilVisible:
+    element: "Play passage"
+    direction: DOWN
+    timeout: 20000
+    visibilityPercentage: 50
+- tapOn: "Play passage"
+- extendedWaitUntil:
+    visible: "Meditating.*"
+    timeout: 30000
+- assertVisible: "Pause passage"
+- assertVisible: "1 Cor 13:4-7"
+- assertNotVisible: ".*Text-to-Speech.*"
+- assertNotVisible: ".*Switched to Text-to-Speech.*"
+- takeScreenshot: my_passages_narrator

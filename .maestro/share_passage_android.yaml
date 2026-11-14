@@ -48,13 +48,13 @@ tags:
 - takeScreenshot: maestro_share_from_player
 
 - scrollUntilVisible:
-    element: "Save Current Chapter to Recents"
+    element: "Save to My passages"
     direction: UP
     timeout: 20000
     visibilityPercentage: 50
-- tapOn: "Save Current Chapter to Recents"
+- tapOn: "Save to My passages"
 - extendedWaitUntil:
-    visible: "Saved.*1 Cor 13:4.*to recents"
+    visible: "Saved.*1 Cor 13:4.*to My passages"
     timeout: 10000
 
 - tapOn: "My Passages"

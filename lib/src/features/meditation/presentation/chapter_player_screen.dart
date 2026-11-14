@@ -11,6 +11,7 @@ import '../../../core/constants/bible_canon.dart';
 import '../../../core/esv/esv_passage_policy.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/picker/bible_reference_parser.dart';
+import '../../../core/preferences/saved_passage.dart';
 import '../../../core/preferences/user_preferences.dart';
 import '../application/chapter_player_notifier.dart';
 import '../application/passage_share_launcher.dart';
@@ -211,8 +212,38 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     }
   }
 
+  void _notePlayed(String raw) {
+    final pending = ref.read(userPreferencesProvider).recordRecent(raw);
+    pending.whenComplete(() {
+      if (mounted) setState(() {});
+    });
+  }
+
+  Future<void> _saveCurrentToMyPassages() async {
+    final playerState = ref.read(chapterPlayerProvider);
+    final query = resolvePassageToSave(
+      fieldText: _searchController.text,
+      chapter: playerState.currentChapter,
+      activeExcerpt: playerState.activeExcerpt,
+    );
+    final result = await ref.read(userPreferencesProvider).saveMyPassage(
+          SavedPassage(query: query, label: query),
+        );
+    if (!mounted) return;
+    setState(() {});
+    final message = switch (result) {
+      SavePassageResult.saved => 'Saved "$query" to My passages',
+      SavePassageResult.alreadySaved => '"$query" is already in My passages',
+      SavePassageResult.full => 'My passages is full. Remove one to save another.',
+      SavePassageResult.unavailable => "Couldn't save that passage.",
+    };
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+    );
+  }
+
   void _openMyPassages() {
-    final saved = ref.read(userPreferencesProvider).savedChapters;
+    final saved = ref.read(userPreferencesProvider).myPassages;
     showModalBottomSheet<void>(
       context: context,
       useSafeArea: true,
@@ -222,14 +253,19 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => MyPassagesSheet(
-        savedReferences: saved,
-        onShare: (reference) {
+        passages: saved,
+        onShare: (query) {
           Navigator.of(ctx).pop();
-          _shareReference(reference);
+          _shareReference(query);
         },
-        onOpen: (reference) {
+        onOpen: (query) {
           Navigator.of(ctx).pop();
-          _handleSearchSubmit(reference);
+          _openIncomingShare(query);
+        },
+        onRemove: (query) async {
+          await ref.read(userPreferencesProvider).removeMyPassage(query);
+          if (ctx.mounted) Navigator.of(ctx).pop();
+          if (mounted) setState(() {});
         },
       ),
     );
@@ -275,7 +311,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     final played = await ref.read(chapterPlayerProvider.notifier).tryPlayEsvPassage(raw);
     if (!mounted) return;
     if (played) {
-      ref.read(userPreferencesProvider).saveChapter(raw);
+      _notePlayed(raw);
       setState(() {});
       return;
     }
@@ -318,7 +354,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
 
             // If timestamps exist for this chapter, play the custom excerpt immediately!
             if (hasTimestamps && customExcerpt != null) {
-              ref.read(userPreferencesProvider).saveChapter(displayTitle);
+              _notePlayed(displayTitle);
               ref.read(chapterPlayerProvider.notifier).routeAndPlayChapter(
                 bookCode: match.book.code,
                 chapterNumber: match.chapter,
@@ -358,7 +394,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
         final excerpt = PassageExcerpt.forChapter(match.book.code, match.chapter);
         if (excerpt != null) {
           final refStr = excerpt.displayTitle ?? '${match.book.name} ${match.chapter}:${excerpt.startVerse}-${excerpt.endVerse}';
-          ref.read(userPreferencesProvider).saveChapter(refStr);
+          _notePlayed(refStr);
           ref
               .read(chapterPlayerProvider.notifier)
               .routeAndPlayChapter(
@@ -372,7 +408,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
       }
 
       AppLogger.logEvent('request_single_verse', {'query': raw});
-      ref.read(userPreferencesProvider).saveChapter(raw);
+      _notePlayed(raw);
       ref.read(chapterPlayerProvider.notifier).fetchAndPlaySingleVerse(raw, tryEsv: false);
       setState(() {});
   }
@@ -382,7 +418,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     if (parsedList.isNotEmpty) {
       final match = parsedList.first;
       final refStr = '${match.book.name} ${match.chapter}';
-      ref.read(userPreferencesProvider).saveChapter(refStr);
+      _notePlayed(refStr);
       ref
           .read(chapterPlayerProvider.notifier)
           .routeAndPlayChapter(
@@ -420,7 +456,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     }
 
     final refStr = '$bookName $chapterNum';
-    ref.read(userPreferencesProvider).saveChapter(refStr);
+    _notePlayed(refStr);
     ref
         .read(chapterPlayerProvider.notifier)
         .routeAndPlayChapter(bookCode: bookCode, chapterNumber: chapterNum, bookName: bookName);
@@ -551,7 +587,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
         final refStr = '$name $chapter';
         _searchController.text = refStr;
         setState(() => _searchSuggestions = []);
-        ref.read(userPreferencesProvider).saveChapter(refStr);
+        _notePlayed(refStr);
         ref
             .read(chapterPlayerProvider.notifier)
             .routeAndPlayChapter(bookCode: code, chapterNumber: chapter, bookName: name);
@@ -939,21 +975,9 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                     key: const Key('save_current_passage'),
                     onPressed: playerState.currentChapter.bookCode.isEmpty
                         ? null
-                        : () async {
-                      final curRef = playerState.currentChapter.reference;
-                      await ref.read(userPreferencesProvider).saveChapter(curRef);
-                      if (context.mounted) {
-                        setState(() {});
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Saved "$curRef" to recents'),
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
-                      }
-                    },
+                        : _saveCurrentToMyPassages,
                     icon: const Icon(Icons.bookmark_add_outlined, color: Color(0xFFFBBF24)),
-                    tooltip: 'Save Current Chapter to Recents',
+                    tooltip: 'Save to My passages',
                     style: IconButton.styleFrom(
                       backgroundColor: const Color(0xFF1E1B4B),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -1029,22 +1053,35 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                   height: 38,
                   child: Builder(
                     builder: (context) {
-                      final savedList = userPrefs.savedChapters;
-                      final savedSet = savedList.map((s) => s.toLowerCase().trim()).toSet();
+                      final bookmarked = userPrefs.myPassages.map((p) => p.query).toList();
+                      final recent = userPrefs.recentPassages.map((p) => p.query).toList();
+                      final savedList = <String>[
+                        ...bookmarked,
+                        ...recent.where(
+                          (query) => !bookmarked.any(
+                            (saved) => saved.toLowerCase() == query.toLowerCase(),
+                          ),
+                        ),
+                      ];
+                      final savedSet = bookmarked.map((s) => PassageQuery.canonicalize(s).toLowerCase()).toSet();
+                      String canon(String value) => PassageQuery.canonicalize(value).toLowerCase();
                       final allChips = <({String label, ChapterInfo? chapter, bool isSaved})>[
                         ...kFeaturedChapters.map((c) => (
                               label: c.displayTitle ?? c.reference,
                               chapter: c as ChapterInfo?,
-                              isSaved: savedSet.contains(c.reference.toLowerCase().trim()),
+                              isSaved: savedSet.contains(canon(c.reference)) ||
+                                  savedSet.contains(canon(c.displayTitle ?? '')),
                             )),
                         ...savedList
                             .where((s) => !kFeaturedChapters.any((c) =>
-                                c.reference.toLowerCase().trim() == s.toLowerCase().trim() ||
-                                (c.displayTitle ?? '').toLowerCase().trim() == s.toLowerCase().trim()))
+                                canon(c.reference) == canon(s) ||
+                                canon(c.displayTitle ?? '') == canon(s)))
                             .map((s) => (
                                   label: s,
                                   chapter: null as ChapterInfo?,
-                                  isSaved: true,
+                                  isSaved: bookmarked.any(
+                                    (saved) => saved.toLowerCase() == s.toLowerCase(),
+                                  ),
                                 )),
                       ];
 
