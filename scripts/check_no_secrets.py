@@ -136,7 +136,8 @@ def self_test() -> None:
     cases = [
         (f"--dart-define=API_BIBLE_KEY={literal}", True),
         ("--dart-define=API_BIBLE_KEY=$API_BIBLE_KEY", False),
-        ("--dart-define=API_BIBLE_KEY=${env:API_BIBLE_KEY}", False),
+        # Fake env interpolation. Do not copy a value from launch.json.
+        ("--dart-define=API_BIBLE_KEY=${env:FAKE_KEY_XXXX}", False),
         ('"API_BIBLE_KEY": "YOUR_API_BIBLE_KEY"', False),
         ('"ESV_API_KEY": "' + ("cd" * 8) + '"', True),
         ("export ESV_API_KEY=...", False),
