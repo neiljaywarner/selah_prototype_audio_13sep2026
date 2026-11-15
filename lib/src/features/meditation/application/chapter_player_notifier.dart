@@ -1136,7 +1136,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     );
   }
 
-  Future<void> stopAllPlayback({String reason = 'user_action'}) async {
+  Future<void> stopAllPlayback({String reason = 'user_action', int? requestId}) async {
     _gapTimer?.cancel();
     final secondsListened = _pauseSecondsListened();
     if (state.isPlaying) {
@@ -1152,9 +1152,11 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     try {
       await _flutterTts.stop();
     } catch (_) {}
+    if (requestId != null && !_passageRequestIsCurrent(requestId)) return;
     try {
       await _audioPlayer.stop();
     } catch (_) {}
+    if (requestId != null && !_passageRequestIsCurrent(requestId)) return;
     if (!ref.mounted) return;
     state = state.copyWith(isPlaying: false, isPausedInGap: false);
   }
@@ -1553,6 +1555,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   /// Lands on a shared reference without asking the recipient to sign in.
   /// Playback stays ready on the play control; opening a link does not autoplay.
   void presentSharedPassage(SharedPassage passage) {
+    final requestId = _beginPassageRequest();
+    unawaited(stopAllPlayback(reason: 'present_passage', requestId: requestId));
     ChapterInfo? preset;
     final sharedTitle = _normalizedReference(passage.canonical);
     for (final chapter in kFeaturedChapters) {

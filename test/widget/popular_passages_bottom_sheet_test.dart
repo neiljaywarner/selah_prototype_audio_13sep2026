@@ -10,13 +10,11 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
-      String? selectedPassage;
-
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: PopularPassagesBottomSheet(
-              onSelectPassage: (ref) => selectedPassage = ref,
+              onSelectPassage: (_) {},
             ),
           ),
         ),

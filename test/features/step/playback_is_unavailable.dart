@@ -1,5 +1,6 @@
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Usage: playback is unavailable
@@ -7,8 +8,8 @@ Future<void> playbackIsUnavailable(WidgetTester tester) async {
   final play = find.byKey(const Key('play_passage_button'));
   final handle = tester.ensureSemantics();
   final node = tester.getSemantics(play);
-  expect(node.hasFlag(SemanticsFlag.isButton), isTrue);
-  expect(node.hasFlag(SemanticsFlag.isEnabled), isFalse);
+  expect(node.flagsCollection.isButton, isTrue);
+  expect(node.flagsCollection.isEnabled, Tristate.isFalse);
   handle.dispose();
 
   final gesture = tester.widget<GestureDetector>(play);

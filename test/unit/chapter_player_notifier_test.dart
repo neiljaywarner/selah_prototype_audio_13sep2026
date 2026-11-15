@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,7 @@ import 'package:selah_prototype_audio_13sep2026/src/core/preferences/user_prefer
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/application/chapter_player_notifier.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/audio_mode.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/bible_translation.dart';
+import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/passage_share.dart';
 
 class _MockTestAnalytics implements AnalyticsService {
   final void Function(String event, Map<String, dynamic>? properties) onLog;
@@ -259,6 +262,92 @@ void main() {
       expect(stopEvents.length, greaterThanOrEqualTo(2));
       expect(stopEvents.last['reason'], equals('user_action'));
     });
+
+    test('a present_passage stop does not clear playback that started while it was pending', () async {
+      final gate = _TtsStopGate()..install();
+      addTearDown(gate.restore);
+
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final notifier = container.read(chapterPlayerProvider.notifier);
+      await pumpEventQueue();
+
+      final passage = PassageShareLink.tryParse('1 Cor 13:4-7');
+      expect(passage, isNotNull);
+      final stopsBeforeOpen = gate.stops.length;
+      notifier.presentSharedPassage(passage!);
+      await gate.waitForCount(stopsBeforeOpen + 1);
+
+      final openedRequest = notifier.passageRequestId;
+      final playback = notifier.play();
+      await gate.waitForCount(stopsBeforeOpen + 2);
+      expect(notifier.passageRequestId, greaterThan(openedRequest));
+
+      await gate.releaseExcept(stopsBeforeOpen, until: () => container.read(chapterPlayerProvider).isPlaying);
+      expect(container.read(chapterPlayerProvider).isPlaying, isTrue);
+
+      gate.complete(stopsBeforeOpen);
+      await pumpEventQueue();
+      await playback;
+      expect(container.read(chapterPlayerProvider).isPlaying, isTrue);
+    });
   });
+}
+
+/// Holds `flutter_tts` stop calls so a newer passage request can start
+/// before an older native stop returns.
+class _TtsStopGate {
+  final stops = <Completer<dynamic>>[];
+  var _passThrough = false;
+
+  void install() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(const MethodChannel('flutter_tts'), (call) async {
+      if (call.method == 'stop' && !_passThrough) {
+        final pending = Completer<dynamic>();
+        stops.add(pending);
+        return pending.future;
+      }
+      return 1;
+    });
+  }
+
+  Future<void> waitForCount(int count) async {
+    final deadline = DateTime.now().add(const Duration(seconds: 2));
+    while (stops.length < count) {
+      if (DateTime.now().isAfter(deadline)) {
+        fail('timed out waiting for $count TTS stop calls, saw ${stops.length}');
+      }
+      await pumpEventQueue();
+    }
+  }
+
+  /// Completes every held stop except [kept], until [until] is true.
+  Future<void> releaseExcept(int kept, {required bool Function() until}) async {
+    final deadline = DateTime.now().add(const Duration(seconds: 8));
+    while (!until()) {
+      if (DateTime.now().isAfter(deadline)) {
+        fail('newer playback did not start (${stops.length} TTS stops held)');
+      }
+      for (var i = 0; i < stops.length; i++) {
+        if (i == kept || stops[i].isCompleted) continue;
+        stops[i].complete(1);
+      }
+      await pumpEventQueue();
+    }
+  }
+
+  void complete(int index) {
+    if (!stops[index].isCompleted) stops[index].complete(1);
+  }
+
+  void restore() {
+    _passThrough = true;
+    for (final pending in stops) {
+      if (!pending.isCompleted) pending.complete(1);
+    }
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(const MethodChannel('flutter_tts'), (call) async => 1);
+  }
 }
 
