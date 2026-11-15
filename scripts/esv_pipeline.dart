@@ -22,8 +22,19 @@ String getEsvKey() {
   return '';
 }
 
+String _redactToolArgs(List<String> args) {
+  return args.map((arg) {
+    const prefix = '--dart-define=';
+    if (!arg.startsWith(prefix)) return arg;
+    final body = arg.substring(prefix.length);
+    final eq = body.indexOf('=');
+    if (eq <= 0) return arg;
+    return '$prefix${body.substring(0, eq)}=(hidden)';
+  }).join(' ');
+}
+
 Future<int> runProcess(String executable, List<String> args, {String? cwd}) async {
-  print('▶ Running: $executable ${args.join(" ")}');
+  print('▶ Running: $executable ${_redactToolArgs(args)}');
   final p = await Process.start(executable, args, workingDirectory: cwd, mode: ProcessStartMode.inheritStdio);
   return await p.exitCode;
 }
@@ -35,7 +46,7 @@ void main(List<String> args) async {
     stderr.writeln('❌ ESV_API_KEY could not be found in environment or ~/.zshrc');
     exit(1);
   }
-  print('🔑 ESV_API_KEY loaded successfully (${key.substring(0, 4)}...${key.substring(key.length - 4)})');
+  print('ESV_API_KEY loaded (value hidden).');
 
   final projectDir = Directory.current.path;
 

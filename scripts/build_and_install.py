@@ -22,7 +22,7 @@ def main():
     if not key:
         print('❌ ESV_API_KEY not found!')
         sys.exit(1)
-    print(f'🔑 Loaded ESV_API_KEY ({key[:4]}...{key[-4:]})')
+    print('ESV_API_KEY loaded (value hidden).')
     
     project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     print(f'Building APK in {project_dir}...')
