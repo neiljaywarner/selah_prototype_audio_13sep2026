@@ -23,6 +23,16 @@ jobs:
         with:
           persist-credentials: false
 
+      # Preview builds take keys from Actions secrets below, never from a
+      # checked-in defines file. dart_defines.local.json is gitignored.
+      - name: Refuse local defines file
+        run: |
+          if [ -e dart_defines.local.json ]; then
+            echo "dart_defines.local.json must not be present in CI."
+            echo "Preview builds take keys from Actions secrets only."
+            exit 1
+          fi
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:

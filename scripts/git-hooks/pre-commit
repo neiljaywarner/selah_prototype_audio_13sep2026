@@ -1,0 +1,5 @@
+#!/bin/sh
+# Optional. Enable with: git config core.hooksPath scripts/git-hooks
+set -eu
+root=$(git rev-parse --show-toplevel)
+exec python3 "$root/scripts/check_no_secrets.py"
