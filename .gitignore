@@ -55,6 +55,8 @@ app.*.map.json
 # Security & Credentials
 *.env
 *.env.*
+# Local compile-time keys. Copy dart_defines.example.json and fill it in.
+dart_defines.local.json
 *.jks
 *.keystore
 key.properties

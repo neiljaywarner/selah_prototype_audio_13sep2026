@@ -22,13 +22,20 @@
 
 ## 🔑 Environment Variables & API Keys
 
-Selah requires API keys injected at compile-time via `--dart-define`:
+Selah reads compile-time keys from a gitignored JSON file. Copy the example and replace only the placeholders you use. Delete a line to leave that key unset (`REDACTED`). Never commit `dart_defines.local.json` or any real key value.
+
+```bash
+cp dart_defines.example.json dart_defines.local.json
+```
 
 - `API_BIBLE_KEY`: API.Bible access key for fetching REST audio streams and text passages.
 - `APTABASE_KEY`: App analytics key for Aptabase telemetry.
-- `ESV_API_KEY`: Crossway ESV API token for single-verse and verse-range lookup. Chapter audio stays on API.Bible. Export it from `~/.zshrc` or a GitHub Actions secret named `ESV_API_KEY`. Never commit the value.
+- `ESV_API_KEY`: Crossway ESV API token for single-verse and verse-range lookup. Chapter audio stays on API.Bible.
+- `POSTHOG_KEY`: PostHog project key. Optional for local runs.
 
 Crossway's free tier allows 5,000 queries/day, 1,000/hour, and 60/minute, with at most 500 verses per request. A range such as `1 Cor 13:4-7` is one request per verse. Ranges longer than 60 verses are not split, so a pasted chapter cannot spend the whole minute budget.
+
+GitHub Actions preview builds do not read the local file. `.github/workflows/pr_preview_channel.yml` passes `API_BIBLE_KEY`, `APTABASE_KEY`, `POSTHOG_KEY`, and `ESV_API_KEY` from repository Actions secrets only.
 
 ---
 
@@ -36,26 +43,17 @@ Crossway's free tier allows 5,000 queries/day, 1,000/hour, and 60/minute, with a
 
 ### 1. Web (Local Development & Chrome)
 ```bash
-flutter run -d chrome \
-  --dart-define=API_BIBLE_KEY=$API_BIBLE_KEY \
-  --dart-define=APTABASE_KEY=$APTABASE_KEY \
-  --dart-define=ESV_API_KEY=$ESV_API_KEY
+flutter run -d chrome --dart-define-from-file=dart_defines.local.json
 ```
 
 ### 2. Android (Physical Device or Emulator)
 ```bash
-flutter run -d <android-device-id> \
-  --dart-define=API_BIBLE_KEY=$API_BIBLE_KEY \
-  --dart-define=APTABASE_KEY=$APTABASE_KEY \
-  --dart-define=ESV_API_KEY=$ESV_API_KEY
+flutter run -d <android-device-id> --dart-define-from-file=dart_defines.local.json
 ```
 
 ### 3. iOS (Simulator or Physical iPhone)
 ```bash
-flutter run -d <ios-device-id> \
-  --dart-define=API_BIBLE_KEY=$API_BIBLE_KEY \
-  --dart-define=APTABASE_KEY=$APTABASE_KEY \
-  --dart-define=ESV_API_KEY=$ESV_API_KEY
+flutter run -d <ios-device-id> --dart-define-from-file=dart_defines.local.json
 ```
 
 ---
@@ -64,10 +62,7 @@ flutter run -d <ios-device-id> \
 
 ### Web Release Build
 ```bash
-flutter build web --release \
-  --dart-define=API_BIBLE_KEY=$API_BIBLE_KEY \
-  --dart-define=APTABASE_KEY=$APTABASE_KEY \
-  --dart-define=ESV_API_KEY=$ESV_API_KEY
+flutter build web --release --dart-define-from-file=dart_defines.local.json
 ```
 *Output: `build/web/`*
 
@@ -91,19 +86,13 @@ Automated Web PWA and Android APK deployment pipelines are documented in the [Co
 
 ### Android App Bundle (Google Play)
 ```bash
-flutter build appbundle --release \
-  --dart-define=API_BIBLE_KEY=$API_BIBLE_KEY \
-  --dart-define=APTABASE_KEY=$APTABASE_KEY \
-  --dart-define=ESV_API_KEY=$ESV_API_KEY
+flutter build appbundle --release --dart-define-from-file=dart_defines.local.json
 ```
 *Output: `build/app/outputs/bundle/release/app-release.aab`*
 
 ### iOS Archive / IPA (App Store & TestFlight)
 ```bash
-flutter build ipa --release \
-  --dart-define=API_BIBLE_KEY=$API_BIBLE_KEY \
-  --dart-define=APTABASE_KEY=$APTABASE_KEY \
-  --dart-define=ESV_API_KEY=$ESV_API_KEY
+flutter build ipa --release --dart-define-from-file=dart_defines.local.json
 ```
 *Output: `build/ios/archive/Runner.xcarchive` and `build/ios/ipa/selah.ipa`*
 
@@ -112,10 +101,16 @@ flutter build ipa --release \
 ## 🛠️ IDE Run Configurations
 
 ### VS Code
-A launch configuration is pre-configured in `.vscode/launch.json`. Ensure `API_BIBLE_KEY`, `APTABASE_KEY`, and `ESV_API_KEY` are exported in your terminal environment or `.zshrc`. GitHub Actions preview builds read the same names from repository secrets.
+`.vscode/launch.json` passes `--dart-define-from-file=dart_defines.local.json`. Create that file from `dart_defines.example.json` before launching. It is gitignored.
 
 ### Android Studio / IntelliJ
-Add `--dart-define=API_BIBLE_KEY=$API_BIBLE_KEY --dart-define=APTABASE_KEY=$APTABASE_KEY --dart-define=ESV_API_KEY=$ESV_API_KEY` to your Run/Debug Configuration's **Additional run args**.
+Add `--dart-define-from-file=dart_defines.local.json` to the Run/Debug Configuration's **Additional run args**.
+
+### Optional pre-commit check
+```bash
+git config core.hooksPath scripts/git-hooks
+```
+That runs `scripts/check_no_secrets.py` before each commit. Pull requests run the same check in CI.
 
 ---
 

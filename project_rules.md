@@ -7,17 +7,9 @@
 
 ## 1. Zero Secrets & Key Safety Policy
 - **NEVER commit API keys, tokens, or credentials to any public or private repository commit.**
-- All API keys, tokens, and endpoints must be injected at build or runtime using `--dart-define`:
-  ```bash
-  --dart-define=API_BIBLE_KEY="YOUR_KEY"
-  --dart-define=APTABASE_KEY="YOUR_KEY"
-  --dart-define=ESV_API_KEY="YOUR_KEY"
-  --dart-define=USERORIENT_KEY="YOUR_KEY"
-  --dart-define=DOORBELL_APP_ID="YOUR_APP_ID"
-  --dart-define=DOORBELL_API_KEY="YOUR_API_KEY"
-  ```
+- Put local compile-time keys in gitignored `dart_defines.local.json` (copy `dart_defines.example.json`). Pass them with `--dart-define-from-file=dart_defines.local.json`. CI reads GitHub Actions secrets and must not read that file.
 - In Dart source code, fallback values must always default to `'REDACTED'` or empty string `''`.
-- Never check in `.env`, keystore files (`*.jks`, `*.keystore`), `key.properties`, `google-services.json`, or `GoogleService-Info.plist`.
+- Never check in `.env`, `dart_defines.local.json`, keystore files (`*.jks`, `*.keystore`), `key.properties`, `google-services.json`, or `GoogleService-Info.plist`.
 
 ---
 

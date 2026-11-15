@@ -24,8 +24,9 @@ const String kBsbTextBibleId = 'bba9f40183526463-01';
 const String kWebTextBibleId = '9879dbb7cfe39e4d-01';
 
 // Crossway ESV API v3 (https://api.esv.org/docs/).
-// Inject at build time with --dart-define=ESV_API_KEY=...
-// Never commit a real key. The default sentinel matches the other keys.
+// Inject at build time from the gitignored dart_defines.local.json file
+// (`--dart-define-from-file=dart_defines.local.json`). Never commit a real key.
+// The default sentinel matches the other keys.
 const String kEsvBaseUrl = 'https://api.esv.org/v3';
 const String kEsvApiKey = String.fromEnvironment('ESV_API_KEY', defaultValue: 'REDACTED');
 
