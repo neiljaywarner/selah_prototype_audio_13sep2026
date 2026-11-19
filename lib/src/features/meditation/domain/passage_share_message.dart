@@ -60,6 +60,11 @@ class PassageShareMessage {
     final cleaned = _normalize(onScreenText);
     if (cleaned == null || _isPlaceholder(cleaned)) return null;
     if (translation == BibleTranslation.niv) return null;
+    // setTranslation updates the label before the chapter text is replaced.
+    // Wording that still ends with the ESV mark is not BSB or WEB.
+    if (translation != BibleTranslation.esv && cleaned.endsWith(kEsvShortCopyright)) {
+      return null;
+    }
     if (translation == BibleTranslation.esv) {
       if (!cleaned.endsWith(kEsvShortCopyright)) return null;
       return cleaned;
@@ -90,6 +95,9 @@ class PassageShareMessage {
     final cleaned = _normalize(verseText);
     if (cleaned == null || _isPlaceholder(cleaned)) return null;
     if (translation == BibleTranslation.niv) return null;
+    if (translation != BibleTranslation.esv && cleaned.endsWith(kEsvShortCopyright)) {
+      return null;
+    }
 
     if (translation == BibleTranslation.esv) {
       final words = _stripTrailingEsvMark(cleaned);

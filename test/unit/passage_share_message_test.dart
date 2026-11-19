@@ -351,6 +351,31 @@ void main() {
         isNull,
       );
     });
+
+    test('BSB and WEB do not adopt wording marked as ESV', () {
+      const esvMarked = '$_fixture (ESV)';
+      for (final translation in [BibleTranslation.bsb, BibleTranslation.web]) {
+        expect(
+          PassageShareMessage.textReadyToShare(
+            translation: translation,
+            onScreenText: esvMarked,
+            samePassage: true,
+          ),
+          isNull,
+          reason: translation.code,
+        );
+        final payload = PassageShareLink.tryPayload(
+          reference: 'John 16:32-33',
+          translation: translation,
+          verseText: esvMarked,
+          attribution: translation.shortAttribution,
+        );
+        expect(payload!.includesVerseText, isFalse, reason: translation.code);
+        expect(payload.message, isNot(contains(_fixture)), reason: translation.code);
+        expect(payload.message, isNot(contains('(ESV)')), reason: translation.code);
+        expect(payload.message, contains(payload.url));
+      }
+    });
   });
 
   group('Share sheet receives the built message', () {
