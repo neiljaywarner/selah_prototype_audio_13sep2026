@@ -54,6 +54,10 @@ class SharePassageWorld {
   static Completer<void>? publicDomainGate;
   static Completer<void>? playbackStopGate;
 
+  /// Length reported by the narrator player for the next `load`, in microseconds.
+  /// 12 seconds matches the historical test double.
+  static int narratorDurationMicros = 12 * 1000000;
+
   static void reset() {
     if (esvGate != null && !esvGate!.isCompleted) {
       esvGate!.complete();
@@ -78,6 +82,7 @@ class SharePassageWorld {
     esvHoldsRemaining = 0;
     publicDomainGate = null;
     playbackStopGate = null;
+    narratorDurationMicros = 12 * 1000000;
   }
 
   static void holdEsvLookups() {
@@ -143,6 +148,7 @@ void installPlaybackChannelMocks() {
           if (playerCall.method == 'load') {
             final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
             const codec = StandardMethodCodec();
+            final duration = SharePassageWorld.narratorDurationMicros;
             messenger.handlePlatformMessage(
               'com.ryanheise.just_audio.events.$id',
               codec.encodeSuccessEnvelope(<String, dynamic>{
@@ -150,14 +156,14 @@ void installPlaybackChannelMocks() {
                 'updateTime': DateTime.now().millisecondsSinceEpoch,
                 'updatePosition': 0,
                 'bufferedPosition': 0,
-                'duration': 12000000,
+                'duration': duration,
                 'icyMetadata': null,
                 'currentIndex': 0,
                 'androidAudioSessionId': null,
               }),
               (_) {},
             );
-            return {'duration': 12000000};
+            return {'duration': duration};
           }
           return <String, dynamic>{};
         },

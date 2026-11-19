@@ -235,7 +235,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
   void _initAudioListeners() {
     _posSub = _audioPlayer.positionStream.listen((pos) {
-      if (state.audioMode == AudioMode.narrator) {
+      if (state.audioMode == AudioMode.narrator &&
+          state.currentChapter.audioStreamUrl.isNotEmpty) {
         int hStart = 0;
         int hEnd = 0;
         if (_currentTimestamps != null && _currentTimestamps!.isNotEmpty) {
@@ -264,7 +265,11 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     });
 
     _durSub = _audioPlayer.durationStream.listen((dur) {
-      if (dur != null && state.audioMode == AudioMode.narrator) {
+      // A stopped player can still emit the previous clip's length. Ignore it
+      // until this passage has its own source.
+      if (dur != null &&
+          state.audioMode == AudioMode.narrator &&
+          state.currentChapter.audioStreamUrl.isNotEmpty) {
         state = state.copyWith(duration: dur);
       }
     });
@@ -1593,6 +1598,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       clearActiveExcerpt: excerpt == null,
       isPlaying: false,
       isLoading: false,
+      position: Duration.zero,
+      duration: Duration.zero,
       clearLastError: true,
       clearInfoNotice: true,
       readAloudPrompt: false,
