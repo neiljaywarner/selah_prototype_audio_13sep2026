@@ -6,6 +6,7 @@ import 'package:selah_prototype_audio_13sep2026/src/core/preferences/user_prefer
 import 'package:selah_prototype_audio_13sep2026/src/core/remote_config/remote_config_service.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/application/chapter_player_notifier.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/application/passage_share_launcher.dart';
+import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/bible_translation.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/passage_share.dart';
 import 'package:selah_prototype_audio_13sep2026/src/features/meditation/presentation/chapter_player_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,8 +14,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Captures the message the share button would hand to the platform.
 ///
 /// The Android share sheet is covered by `.maestro/share_passage_android.yaml`.
-/// This recorder keeps the device test on the payload: reference, URL, and
-/// short attribution, never the verse body.
+/// This recorder keeps the device test on the payload: loaded words when
+/// Selah has them, plus the reference, URL, and attribution.
 class _RecordingLauncher implements PassageShareLauncher {
   PassageSharePayload? last;
 
@@ -104,17 +105,25 @@ void main() {
   );
 
   patrolTest(
-    'sharing from the player and from My Passages sends the reference only',
+    'sharing from the player and from My Passages includes loaded words',
     ($) async {
       final launcher = await _pump($, saved: const ['1 Cor 13:4-7']);
       final attribution = _playerState($).translation.shortAttribution;
 
       expect($(RegExp(r'1 Cor 13:4')), findsWidgets);
+      final onScreen = _playerState($).currentChapter.textContent;
+      final quoteLoadedWords =
+          _playerState($).translation == BibleTranslation.bsb &&
+          onScreen.contains('Love is patient');
       await $(#share_current_passage).scrollTo();
       await $(#share_current_passage).tap();
       await $.pump(const Duration(milliseconds: 300));
 
-      _expectReferenceOnly(launcher.last, attribution);
+      _expectShare(
+        launcher.last,
+        attribution,
+        quoteLoadedWords: quoteLoadedWords,
+      );
       expect($(RegExp('Link ready to share: 1 Cor 13:4-7')), findsOneWidget);
 
       await $(#open_my_passages).scrollTo();
@@ -125,7 +134,11 @@ void main() {
 
       await $(const Key('share_my_passage_1 Cor 13:4-7')).tap();
       await $.pump(const Duration(milliseconds: 300));
-      _expectReferenceOnly(launcher.last, attribution);
+      _expectShare(
+        launcher.last,
+        attribution,
+        quoteLoadedWords: quoteLoadedWords,
+      );
       expect($(RegExp('Link ready to share: 1 Cor 13:4-7')), findsOneWidget);
     },
     timeout: const Timeout(Duration(minutes: 3)),
@@ -137,23 +150,28 @@ ChapterPlayerState _playerState(PatrolIntegrationTester $) {
   return ProviderScope.containerOf(element).read(chapterPlayerProvider);
 }
 
-void _expectReferenceOnly(PassageSharePayload? payload, String attribution) {
+void _expectShare(
+  PassageSharePayload? payload,
+  String attribution, {
+  required bool quoteLoadedWords,
+}) {
   expect(payload, isNotNull);
   final shared = payload!;
   expect(shared.reference, '1 Cor 13:4-7');
   expect(shared.url, contains('?ref=1+Cor+13:4-7'));
-  expect(
-    shared.url,
-    startsWith(
-      'https://selahword.web.app/',
-    ),
-  );
+  expect(shared.url, startsWith('https://selahword.web.app/'));
   expect(shared.attribution, attribution);
   expect(shared.message, contains(shared.reference));
   expect(shared.message, contains(shared.url));
   expect(shared.message, contains(attribution));
-  expect(shared.message.toLowerCase(), isNot(contains('love is patient')));
-  expect(shared.message.toLowerCase(), isNot(contains('love is kind')));
+  if (quoteLoadedWords) {
+    expect(shared.includesVerseText, isTrue);
+    expect(shared.message, contains('Love is patient'));
+    expect(shared.message, contains('(BSB)'));
+  } else {
+    expect(shared.includesVerseText, isFalse);
+    expect(shared.message.toLowerCase(), isNot(contains('love is patient')));
+  }
 }
 
 Future<_RecordingLauncher> _pump(

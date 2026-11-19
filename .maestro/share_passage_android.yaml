@@ -11,9 +11,8 @@
 # you just built. The connected emulator on this machine is `emulator-5554`
 # (AVD name `maestro`).
 #
-# The share sheet receives the reference, the GitHub Pages link, and the
-# short attribution. The verse body is not the shared text. Dismissing the
-# sheet shows "Link ready to share: 1 Cor 13:4-7".
+# The share sheet receives the loaded words, the reference, the BSB credit,
+# and the link. Dismissing the sheet shows "Link ready to share: 1 Cor 13:4-7".
 
 appId: app.selahword.audio
 tags:
@@ -40,7 +39,7 @@ tags:
     timeout: 15000
 - assertVisible: ".*Listen to 1 Cor 13:4-7 in Selah.*"
 - assertVisible: ".*Public Domain · Narrator: Barry Hays.*"
-- assertNotVisible: "Love is patient.*"
+- assertVisible: "Love is patient.*"
 - back
 - extendedWaitUntil:
     visible: ".*Link ready to share: 1 Cor 13:4-7.*"
@@ -59,7 +58,7 @@ tags:
 
 - tapOn: "My Passages"
 - extendedWaitUntil:
-    visible: "Share a reference.*"
+    visible: ".*without an account.*"
     timeout: 10000
 - assertVisible: "1 Cor 13:4-7"
 - tapOn: "Share 1 Cor 13:4-7"
@@ -68,7 +67,7 @@ tags:
     timeout: 15000
 - assertVisible: ".*Listen to 1 Cor 13:4-7 in Selah.*"
 - assertVisible: ".*ref=1\\+Cor\\+13:4-7.*"
-- assertNotVisible: "Love is patient.*"
+- assertVisible: "Love is patient.*"
 - back
 - extendedWaitUntil:
     visible: ".*Link ready to share: 1 Cor 13:4-7.*"

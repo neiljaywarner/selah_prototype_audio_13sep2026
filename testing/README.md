@@ -154,7 +154,7 @@ dart pub global activate patrol_cli
 ### 2. Available Patrol Integration Tests
 * [`integration_test/patrol_test.dart`](../integration_test/patrol_test.dart): End-to-end test using `patrolTest` verifying header branding, passage chip selection, scripture excerpt rendering, translation switching (BSB/WEB), and Prayer & Feedback dialog interaction.
 * [`integration_test/app_test.dart`](../integration_test/app_test.dart): Standard Flutter integration test verifying search autocomplete, settings modals, 1 Cor 13 timing feedback bar, and AppBar options.
-* [`patrol_test/share_passage_test.dart`](../patrol_test/share_passage_test.dart): Share-link landing, friendly error for a bad `?ref=`, and the reference-only payload from the player and from My Passages. Android instrumentation is `MainActivityTest` with `PatrolJUnitRunner`.
+* [`patrol_test/share_passage_test.dart`](../patrol_test/share_passage_test.dart): Share-link landing, friendly error for a bad `?ref=`, and the share payload (loaded words when Selah has them) from the player and from My Passages. Android instrumentation is `MainActivityTest` with `PatrolJUnitRunner`.
 
 ### 3. Running Patrol Tests
 ```bash
@@ -215,11 +215,11 @@ dart run build_runner build --delete-conflicting-outputs
 flutter test test/features/share_a_passage_test.dart test/unit/passage_share_link_test.dart
 ```
 
-The scenarios cover sharing the playing passage, sharing from My Passages, opening a valid link while signed out, and a friendly error for a broken reference. They assert the payload contains `?ref=1+Cor+13:4-7` and does not contain the verse body. `test/features/receive_shared_passage.feature` covers opening `?ref=Psalm+62:5-7` on the BSB path so the curated 62:1–2 wording is not substituted.
+The scenarios cover sharing the playing passage (including the loaded words and the translation credit), a long ESV range that stays reference-plus-link, a passage whose words are not loaded, sharing from My Passages, opening a valid link while signed out, and a friendly error for a broken reference. They assert the payload contains `?ref=1+Cor+13:4-7`. `test/features/receive_shared_passage.feature` covers opening `?ref=Psalm+62:5-7` on the BSB path so the curated 62:1–2 wording is not substituted.
 
-The native iOS, Android, and web share sheets cannot open inside a widget test. `PlatformPassageShareLauncher` is that thin device boundary: it copies the link and passes the same reference-only message to `share_plus`. A unit test captures that message with a fake share platform. Widget scenarios replace the launcher and assert the payload.
+The native iOS, Android, and web share sheets cannot open inside a widget test. `PlatformPassageShareLauncher` copies the link and passes the share message to `share_plus`. A unit test captures that message with a fake share platform. Widget scenarios replace the launcher and assert the payload.
 
-Maestro and Patrol cover the same behaviors on a device. Maestro web opens the real `?ref=` URL. Maestro on Android taps share and reads the share sheet. Patrol, on the emulator, asserts the player landed on `1 Cor 13:4-7`, that a bad reference stays on the player, and that the payload's reference is `1 Cor 13:4-7`, the URL contains `?ref=1+Cor+13:4-7` and starts with the GitHub Pages origin, and the message contains that reference, URL, and attribution. It also checks the message does not contain the verse fragments `love is patient` and `love is kind`. It does not compare the whole share message to one exact string.
+Maestro and Patrol cover the same behaviors on a device. Maestro web opens the real `?ref=` URL. Maestro on Android taps share and reads the share sheet, including the loaded BSB words. Patrol, on the emulator, asserts the player landed on `1 Cor 13:4-7`, that a bad reference stays on the player, and that the payload's reference is `1 Cor 13:4-7`, the URL contains `?ref=1+Cor+13:4-7` and starts with `https://selahword.web.app/`, and the message contains that reference, URL, and attribution. When the on-screen words are the BSB passage, the message also contains them.
 
 ```bash
 # flutter run stays in the foreground. Wait until it prints that the app

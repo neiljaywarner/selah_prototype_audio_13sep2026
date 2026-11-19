@@ -45,6 +45,10 @@ class SharePassageWorld {
   static final List<String> esvQueries = [];
   static bool shareShouldFail = false;
 
+  /// Short stand-in returned for an ESV query the script does not already know.
+  /// Null keeps unknown queries empty. Never a real ESV verse.
+  static String? esvFallbackText;
+
   /// When set, scripted ESV responses wait until [releaseEsvLookups].
   /// [holdEveryEsvLookup] holds every response. [esvHoldsRemaining] holds
   /// only the next few responses, so a later search can finish first.
@@ -73,6 +77,7 @@ class SharePassageWorld {
     forcedTranslation = null;
     esvQueries.clear();
     shareShouldFail = false;
+    esvFallbackText = null;
     esvGate = null;
     holdEveryEsvLookup = false;
     esvHoldsRemaining = 0;
@@ -179,8 +184,8 @@ Future<void> pumpSharePassageApp(WidgetTester tester) async {
     UserPreferences.savedChaptersKey: List<String>.from(SharePassageWorld.savedPassages),
   };
   final forced = SharePassageWorld.forcedTranslation;
-  if (forced == 'WEB' || forced == 'BSB') {
-    initialPrefs[UserPreferences.lastTranslationKey] = forced!;
+  if (forced != null && forced != 'ESV') {
+    initialPrefs[UserPreferences.lastTranslationKey] = forced;
   }
   SharedPreferences.setMockInitialValues(initialPrefs);
   final prefs = await SharedPreferences.getInstance();
@@ -296,6 +301,8 @@ class _ScriptedEsvAdapter implements HttpClientAdapter {
   ) async {
     final query = '${options.queryParameters['q'] ?? ''}';
     if (query.isNotEmpty) SharePassageWorld.esvQueries.add(query);
+    final known = verses[query];
+    final line = (known != null && known.isNotEmpty) ? known : SharePassageWorld.esvFallbackText;
     final gate = SharePassageWorld.esvGate;
     if (gate != null && !gate.isCompleted) {
       if (SharePassageWorld.holdEveryEsvLookup) {
@@ -307,7 +314,7 @@ class _ScriptedEsvAdapter implements HttpClientAdapter {
     }
     final payload = <String, dynamic>{
       'canonical': query,
-      'passages': <String>['${verses[query] ?? ''}\n\n'],
+      'passages': <String>['${line ?? ''}\n\n'],
     };
     return ResponseBody.fromString(
       jsonEncode(payload),
