@@ -1268,6 +1268,12 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   @visibleForTesting
   static Future<void> Function()? debugOnAudioLoad;
 
+  /// Widget tests cannot finish the native asset load. When set, the load
+  /// still resolves the passage and still honors [autoplay], without calling
+  /// the platform player.
+  @visibleForTesting
+  static bool debugBypassNativeAudio = false;
+
   @visibleForTesting
   List<VerseTimestamp>? get currentTimestampsForTest => _currentTimestamps;
 
@@ -1505,6 +1511,13 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       final onAudioLoad = debugOnAudioLoad;
       if (onAudioLoad != null) await onAudioLoad();
       if (!_passageRequestIsCurrent(activeRequest)) return;
+      if (debugBypassNativeAudio) {
+        state = state.copyWith(isLoading: false);
+        if (autoplay) {
+          await play();
+        }
+        return;
+      }
 
       final dur = await _audioPlayer.setAudioSource(finalSource);
       if (window != null) {

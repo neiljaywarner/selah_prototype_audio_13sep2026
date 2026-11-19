@@ -216,7 +216,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     _searchController.text = PassageQuery.canonicalize(
       chapter.displayTitle ?? '${chapter.bookName} ${chapter.chapterNumber}',
     );
-    ref.read(chapterPlayerProvider.notifier).loadChapter(chapter);
+    ref.read(chapterPlayerProvider.notifier).loadChapter(chapter, autoplay: false);
     setState(() => _searchSuggestions = []);
   }
 
