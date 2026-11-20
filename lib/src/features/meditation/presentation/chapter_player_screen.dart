@@ -20,6 +20,7 @@ import '../domain/bible_translation.dart';
 import '../domain/chapter_info.dart';
 import '../domain/passage_excerpt.dart';
 import '../domain/passage_share.dart';
+import '../domain/passage_share_message.dart';
 import '../domain/scripture_topic.dart';
 import 'platform_share_link_host.dart';
 import 'widgets/chapter_picker_dialog.dart';
@@ -125,9 +126,12 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
   }
 
   Future<void> _shareReference(String reference) async {
+    final player = ref.read(chapterPlayerProvider);
     final payload = PassageShareLink.tryPayload(
       reference: reference,
-      attribution: ref.read(chapterPlayerProvider).translation.shortAttribution,
+      attribution: player.translation.shortAttribution,
+      translation: player.translation,
+      verseText: _loadedVerseText(reference, player),
       page: kIsWeb ? Uri.base : null,
     );
     if (!mounted) return;
@@ -137,9 +141,10 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
       );
       return;
     }
+    // The event records that words were included. It does not record them.
     AppLogger.logEvent('passage_shared', {
       'reference': payload.reference,
-      'has_verse_text': false,
+      'has_verse_text': payload.includesVerseText,
     });
     try {
       await ref.read(passageShareLauncherProvider).share(payload);
@@ -160,6 +165,38 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
         content: Text('Link ready to share: ${payload.reference}'),
         duration: const Duration(seconds: 2),
       ),
+    );
+  }
+
+  /// Scripture already on screen for this reference, or null.
+  ///
+  /// Sharing does not fetch a passage and does not start playback.
+  String? _loadedVerseText(String reference, ChapterPlayerState player) {
+    final parsed = PassageShareLink.tryParse(reference);
+    String? bundled(String code) {
+      if (parsed == null) return null;
+      final cache = ref.read(offlineScriptureCacheProvider);
+      if (parsed.startVerse == null) {
+        return cache.getOfflineText(code, parsed.book.code, parsed.chapter);
+      }
+      return cache.getOfflineText(
+        code,
+        parsed.book.code,
+        parsed.chapter,
+        startVerse: parsed.startVerse,
+        endVerse: parsed.endVerse ?? parsed.startVerse,
+      );
+    }
+
+    return PassageShareMessage.textReadyToShare(
+      translation: player.translation,
+      onScreenText: player.currentChapter.textContent,
+      samePassage: PassageShareLink.sameReference(
+        reference,
+        player.currentChapter.reference,
+      ),
+      bsbText: bundled('BSB'),
+      webText: bundled('WEB'),
     );
   }
 
