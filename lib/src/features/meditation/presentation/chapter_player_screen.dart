@@ -253,7 +253,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     _searchController.text = PassageQuery.canonicalize(
       chapter.displayTitle ?? '${chapter.bookName} ${chapter.chapterNumber}',
     );
-    ref.read(chapterPlayerProvider.notifier).loadChapter(chapter);
+    ref.read(chapterPlayerProvider.notifier).loadChapter(chapter, autoplay: false);
     setState(() => _searchSuggestions = []);
   }
 
@@ -1152,10 +1152,10 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                             );
                           }
                           final item = allChips[index];
-                          final isSelected = playerState.currentChapter.reference.toLowerCase().trim() ==
-                                  item.label.toLowerCase().trim() ||
-                              (playerState.currentChapter.displayTitle ?? '').toLowerCase().trim() ==
-                                  item.label.toLowerCase().trim();
+                          final isSelected = _passageChipIsSelected(
+                            playerState.currentChapter,
+                            item.label,
+                          );
 
                           return _PresetChip(
                             label: item.label,
@@ -1935,6 +1935,16 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     final secs = d.inSeconds.remainder(60).toString().padLeft(2, '0');
     return '$mins:$secs';
   }
+}
+
+/// One chip matches the loaded passage. En dashes on curated labels and
+/// hyphens on `?ref=` links are the same reference.
+bool _passageChipIsSelected(ChapterInfo chapter, String label) {
+  final loaded = PassageQuery.canonicalize(
+    chapter.displayTitle ?? chapter.reference,
+  ).toLowerCase();
+  final chip = PassageQuery.canonicalize(label).toLowerCase();
+  return loaded.isNotEmpty && loaded == chip;
 }
 
 class _PresetChip extends StatelessWidget {

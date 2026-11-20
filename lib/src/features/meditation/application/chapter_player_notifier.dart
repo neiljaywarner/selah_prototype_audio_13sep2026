@@ -235,7 +235,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
 
   void _initAudioListeners() {
     _posSub = _audioPlayer.positionStream.listen((pos) {
-      if (state.audioMode == AudioMode.narrator) {
+      if (state.audioMode == AudioMode.narrator &&
+          state.currentChapter.audioStreamUrl.isNotEmpty) {
         int hStart = 0;
         int hEnd = 0;
         if (_currentTimestamps != null && _currentTimestamps!.isNotEmpty) {
@@ -264,7 +265,11 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
     });
 
     _durSub = _audioPlayer.durationStream.listen((dur) {
-      if (dur != null && state.audioMode == AudioMode.narrator) {
+      // A stopped player can still emit the previous clip's length. Ignore it
+      // until this passage has its own source.
+      if (dur != null &&
+          state.audioMode == AudioMode.narrator &&
+          state.currentChapter.audioStreamUrl.isNotEmpty) {
         state = state.copyWith(duration: dur);
       }
     });
@@ -1263,6 +1268,12 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
   @visibleForTesting
   static Future<void> Function()? debugOnAudioLoad;
 
+  /// Widget tests cannot finish the native asset load. When set, the load
+  /// still resolves the passage and still honors [autoplay], without calling
+  /// the platform player.
+  @visibleForTesting
+  static bool debugBypassNativeAudio = false;
+
   @visibleForTesting
   List<VerseTimestamp>? get currentTimestampsForTest => _currentTimestamps;
 
@@ -1500,6 +1511,13 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       final onAudioLoad = debugOnAudioLoad;
       if (onAudioLoad != null) await onAudioLoad();
       if (!_passageRequestIsCurrent(activeRequest)) return;
+      if (debugBypassNativeAudio) {
+        state = state.copyWith(isLoading: false);
+        if (autoplay) {
+          play();
+        }
+        return;
+      }
 
       final dur = await _audioPlayer.setAudioSource(finalSource);
       if (window != null) {
@@ -1593,6 +1611,8 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       clearActiveExcerpt: excerpt == null,
       isPlaying: false,
       isLoading: false,
+      position: Duration.zero,
+      duration: Duration.zero,
       clearLastError: true,
       clearInfoNotice: true,
       readAloudPrompt: false,
