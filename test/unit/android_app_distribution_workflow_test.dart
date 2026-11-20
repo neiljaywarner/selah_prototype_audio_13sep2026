@@ -259,6 +259,73 @@ Signer #1 certificate SHA-256 digest: 00112233445566778899aabbccddeeff0011223344
     expect(_mode(File('${dir.path}/key.properties')) & 0x077, 0);
   });
 
+  test('signing properties round-trip through Java Properties.load', () {
+    final dir = Directory.systemTemp.createTempSync('selah-props');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    const storePassword = ' secret\twith\\slash\fand\nline';
+    const keyPassword = ' leading';
+    const alias = 'méditation';
+    final encoded = base64Encode(utf8.encode('keystore-bytes-v2'));
+    final propertiesPath = '${dir.path}/key.properties';
+    final result = _run('python3', [
+      'scripts/write_android_signing_files.py',
+      '--properties-file',
+      propertiesPath,
+      '--keystore-file',
+      '${dir.path}/ci-release.keystore',
+      '--store-file-property',
+      'ci-release.keystore',
+    ], {
+      'ANDROID_KEYSTORE_BASE64': encoded,
+      'ANDROID_KEYSTORE_PASSWORD': storePassword,
+      'ANDROID_KEY_PASSWORD': keyPassword,
+      'ANDROID_KEY_ALIAS': alias,
+    });
+    expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+    final output = '${result.stdout}${result.stderr}';
+    expect(output, isNot(contains('secret')));
+    expect(output, isNot(contains(alias)));
+    expect(output, isNot(contains(encoded)));
+
+    final javaFile = File('${dir.path}/LoadProps.java')
+      ..writeAsStringSync('''
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Properties;
+
+public class LoadProps {
+  public static void main(String[] args) throws Exception {
+    Properties props = new Properties();
+    try (var reader = Files.newBufferedReader(Path.of(args[0]), StandardCharsets.UTF_8)) {
+      props.load(reader);
+    }
+    Files.writeString(Path.of(args[1]), props.getProperty("storePassword"), StandardCharsets.UTF_8);
+    Files.writeString(Path.of(args[2]), props.getProperty("keyPassword"), StandardCharsets.UTF_8);
+    Files.writeString(Path.of(args[3]), props.getProperty("keyAlias"), StandardCharsets.UTF_8);
+  }
+}
+''');
+    final compile = Process.runSync('javac', [javaFile.path]);
+    expect(compile.exitCode, 0, reason: '${compile.stdout}${compile.stderr}');
+    final storeOut = '${dir.path}/store.txt';
+    final keyOut = '${dir.path}/key.txt';
+    final aliasOut = '${dir.path}/alias.txt';
+    final loaded = Process.runSync('java', [
+      '-cp',
+      dir.path,
+      'LoadProps',
+      propertiesPath,
+      storeOut,
+      keyOut,
+      aliasOut,
+    ]);
+    expect(loaded.exitCode, 0, reason: '${loaded.stdout}${loaded.stderr}');
+    expect(File(storeOut).readAsStringSync(), storePassword);
+    expect(File(keyOut).readAsStringSync(), keyPassword);
+    expect(File(aliasOut).readAsStringSync(), alias);
+  });
+
   test('invalid keystore base64 fails without echoing the secret', () {
     final dir = Directory.systemTemp.createTempSync('selah-sign-bad');
     addTearDown(() => dir.deleteSync(recursive: true));

@@ -24,11 +24,29 @@ def _required(name: str) -> str:
 
 
 def _property(value: str) -> str:
-    return (
-        value.replace("\\", "\\\\")
-        .replace("\r", "\\r")
-        .replace("\n", "\\n")
-    )
+    """Escape a value for java.util.Properties.load.
+
+    A leading space has to be escaped because load() discards unescaped
+    whitespace after '='. Tabs and form feeds are encoded the same way
+    Properties.store encodes them.
+    """
+    encoded: list[str] = []
+    for index, char in enumerate(value):
+        if char == "\\":
+            encoded.append("\\\\")
+        elif char == "\n":
+            encoded.append("\\n")
+        elif char == "\r":
+            encoded.append("\\r")
+        elif char == "\t":
+            encoded.append("\\t")
+        elif char == "\f":
+            encoded.append("\\f")
+        elif char == " " and index == 0:
+            encoded.append("\\ ")
+        else:
+            encoded.append(char)
+    return "".join(encoded)
 
 
 def main() -> int:
