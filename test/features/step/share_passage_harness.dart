@@ -45,6 +45,10 @@ class SharePassageWorld {
   static final List<String> esvQueries = [];
   static bool shareShouldFail = false;
 
+  /// Short stand-in returned for an ESV query the script does not already know.
+  /// Null keeps unknown queries empty. Never a real ESV verse.
+  static String? esvFallbackText;
+
   /// When set, scripted ESV responses wait until [releaseEsvLookups].
   /// [holdEveryEsvLookup] holds every response. [esvHoldsRemaining] holds
   /// only the next few responses, so a later search can finish first.
@@ -53,6 +57,16 @@ class SharePassageWorld {
   static int esvHoldsRemaining = 0;
   static Completer<void>? publicDomainGate;
   static Completer<void>? playbackStopGate;
+
+  /// Length reported by the narrator player for the next `load`, in microseconds.
+  /// 12 seconds matches the historical test double.
+  static int narratorDurationMicros = 12 * 1000000;
+
+  /// Platform player calls in order (`load`, `play`, ...).
+  static final List<String> narratorPlayerCalls = [];
+
+  /// URI or asset path from the latest `load` request, when the fake can see it.
+  static String? loadedNarratorSource;
 
   static void reset() {
     if (esvGate != null && !esvGate!.isCompleted) {
@@ -73,11 +87,15 @@ class SharePassageWorld {
     forcedTranslation = null;
     esvQueries.clear();
     shareShouldFail = false;
+    esvFallbackText = null;
     esvGate = null;
     holdEveryEsvLookup = false;
     esvHoldsRemaining = 0;
     publicDomainGate = null;
     playbackStopGate = null;
+    narratorDurationMicros = 12 * 1000000;
+    narratorPlayerCalls.clear();
+    loadedNarratorSource = null;
   }
 
   static void holdEsvLookups() {
@@ -123,6 +141,10 @@ class _QuietRemoteConfig extends RemoteConfigNotifier {
 
 void installPlaybackChannelMocks() {
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(const MethodChannel('plugins.flutter.io/path_provider'), (call) async {
+    return '/tmp';
+  });
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
       .setMockMethodCallHandler(const MethodChannel('flutter_tts'), (call) async {
     if (call.method == 'speak') {
       SharePassageWorld.ttsSpeakCalls++;
@@ -140,32 +162,74 @@ void installPlaybackChannelMocks() {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
         MethodChannel('com.ryanheise.just_audio.methods.$id'),
         (playerCall) async {
+          SharePassageWorld.narratorPlayerCalls.add(playerCall.method);
           if (playerCall.method == 'load') {
-            final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-            const codec = StandardMethodCodec();
-            messenger.handlePlatformMessage(
-              'com.ryanheise.just_audio.events.$id',
-              codec.encodeSuccessEnvelope(<String, dynamic>{
-                'processingState': 3,
-                'updateTime': DateTime.now().millisecondsSinceEpoch,
-                'updatePosition': 0,
-                'bufferedPosition': 0,
-                'duration': 12000000,
-                'icyMetadata': null,
-                'currentIndex': 0,
-                'androidAudioSessionId': null,
-              }),
-              (_) {},
-            );
-            return {'duration': 12000000};
+            SharePassageWorld.loadedNarratorSource = _narratorSourceFrom(playerCall.arguments);
+            _emitNarratorReady(id);
+            final duration = SharePassageWorld.narratorDurationMicros;
+            return {'duration': duration};
           }
           return <String, dynamic>{};
         },
       );
+      for (final channel in ['events', 'data']) {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+          MethodChannel('com.ryanheise.just_audio.$channel.$id'),
+          (call) async {
+            if (call.method == 'listen') {
+              _emitNarratorReady(id);
+            }
+            return null;
+          },
+        );
+      }
       return {'id': id};
     }
     return <String, dynamic>{};
   });
+}
+
+void _emitNarratorReady(String id) {
+  final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+  const codec = StandardMethodCodec();
+  messenger.handlePlatformMessage(
+    'com.ryanheise.just_audio.events.$id',
+    codec.encodeSuccessEnvelope(<String, dynamic>{
+      'processingState': 3,
+      'updateTime': DateTime.now().millisecondsSinceEpoch,
+      'updatePosition': 0,
+      'bufferedPosition': 0,
+      'duration': SharePassageWorld.narratorDurationMicros,
+      'icyMetadata': null,
+      'currentIndex': 0,
+      'androidAudioSessionId': null,
+    }),
+    (_) {},
+  );
+}
+
+String? _narratorSourceFrom(Object? arguments) {
+  final found = <String>[];
+  void walk(Object? value) {
+    if (value is String) {
+      if (value.contains('asset') || value.contains('MAT_') || value.contains('1CO_')) {
+        found.add(value);
+      }
+      return;
+    }
+    if (value is Map) {
+      for (final entry in value.values) {
+        walk(entry);
+      }
+    } else if (value is List) {
+      for (final entry in value) {
+        walk(entry);
+      }
+    }
+  }
+
+  walk(arguments);
+  return found.isEmpty ? null : found.first;
 }
 
 Future<void> pumpSharePassageApp(WidgetTester tester) async {
@@ -179,8 +243,8 @@ Future<void> pumpSharePassageApp(WidgetTester tester) async {
     UserPreferences.savedChaptersKey: List<String>.from(SharePassageWorld.savedPassages),
   };
   final forced = SharePassageWorld.forcedTranslation;
-  if (forced == 'WEB' || forced == 'BSB') {
-    initialPrefs[UserPreferences.lastTranslationKey] = forced!;
+  if (forced != null && forced != 'ESV') {
+    initialPrefs[UserPreferences.lastTranslationKey] = forced;
   }
   SharedPreferences.setMockInitialValues(initialPrefs);
   final prefs = await SharedPreferences.getInstance();
@@ -296,6 +360,8 @@ class _ScriptedEsvAdapter implements HttpClientAdapter {
   ) async {
     final query = '${options.queryParameters['q'] ?? ''}';
     if (query.isNotEmpty) SharePassageWorld.esvQueries.add(query);
+    final known = verses[query];
+    final line = (known != null && known.isNotEmpty) ? known : SharePassageWorld.esvFallbackText;
     final gate = SharePassageWorld.esvGate;
     if (gate != null && !gate.isCompleted) {
       if (SharePassageWorld.holdEveryEsvLookup) {
@@ -307,7 +373,7 @@ class _ScriptedEsvAdapter implements HttpClientAdapter {
     }
     final payload = <String, dynamic>{
       'canonical': query,
-      'passages': <String>['${verses[query] ?? ''}\n\n'],
+      'passages': <String>['${line ?? ''}\n\n'],
     };
     return ResponseBody.fromString(
       jsonEncode(payload),

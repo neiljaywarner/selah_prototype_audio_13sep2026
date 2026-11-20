@@ -4,8 +4,8 @@ import '../../../../core/preferences/saved_passage.dart';
 
 /// Saved passages the listener can open again or send to a friend.
 ///
-/// Each row shows the stored reference. Sharing sends that reference, not
-/// the verse text.
+/// Each row shows the stored reference. Sharing includes the words when that
+/// passage is already loaded, and otherwise sends the reference and the link.
 class MyPassagesSheet extends StatelessWidget {
   const MyPassagesSheet({
     super.key,
@@ -51,7 +51,7 @@ class MyPassagesSheet extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             const Text(
-              'Share a reference. Your friend opens it in Selah and can listen without an account.',
+              'The message includes the words when Selah has them, plus a link your friend can open without an account.',
               style: TextStyle(color: Colors.white70, fontSize: 13),
             ),
             const SizedBox(height: 12),

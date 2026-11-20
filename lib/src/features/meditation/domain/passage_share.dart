@@ -1,12 +1,14 @@
 import 'dart:convert';
 
+import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/bible_canon.dart';
+import 'bible_translation.dart';
+import 'passage_share_message.dart';
 
 /// A Bible reference a listener can send to someone else.
 ///
-/// The share URL and the share-sheet text carry this reference only.
-/// Copyrighted verse text stays in the player, where the app loads it the
-/// normal way.
+/// The share URL always carries the reference. The share-sheet text also
+/// carries the loaded verse text when the translation's terms allow it.
 class SharedPassage {
   const SharedPassage({
     required this.book,
@@ -34,6 +36,7 @@ class PassageSharePayload {
     required this.url,
     required this.message,
     this.attribution,
+    this.includesVerseText = false,
   });
 
   final String reference;
@@ -41,7 +44,10 @@ class PassageSharePayload {
   final String message;
   final String? attribution;
 
-  /// Reference, link, and optional short attribution. Never the verse body.
+  /// True when [message] includes scripture, not only the reference and link.
+  final bool includesVerseText;
+
+  /// The text handed to the platform share sheet.
   String get sharedText => message;
 }
 
@@ -185,7 +191,11 @@ class PassageShareLink {
   static String buildUrl(String reference, {Uri? page}) {
     final parsed = tryParse(reference);
     if (parsed == null) {
-      throw ArgumentError.value(reference, 'reference', 'Not a shareable passage');
+      throw ArgumentError.value(
+        reference,
+        'reference',
+        'Not a shareable passage',
+      );
     }
     return urlFor(parsed, page: page);
   }
@@ -201,26 +211,63 @@ class PassageShareLink {
     return '${_base(page)}?$queryParameter=$token';
   }
 
+  /// True when [shareReference] and [onScreenReference] are the same passage.
+  static bool sameReference(String shareReference, String onScreenReference) {
+    final share = tryParse(shareReference);
+    final onScreen = tryParse(onScreenReference);
+    if (share == null || onScreen == null) return false;
+    return share.canonical == onScreen.canonical;
+  }
+
+  /// Share-sheet text for [reference].
+  ///
+  /// [verseText] is wording already loaded for [translation]. Null, blank,
+  /// or a player placeholder keeps the reference and the link. The method
+  /// does not fetch scripture and does not speak.
   static PassageSharePayload? tryPayload({
     required String reference,
     String? attribution,
+    BibleTranslation? translation,
+    String? verseText,
     Uri? page,
   }) {
     final parsed = tryParse(reference);
     if (parsed == null) return null;
     final url = urlFor(parsed, page: page);
-    final shortAttribution = _safeAttribution(attribution);
-    final lines = <String>[
-      'Listen to ${parsed.canonical} in Selah',
-      url,
-      ?shortAttribution,
-    ];
+    final body = translation == null
+        ? null
+        : PassageShareMessage.quotation(
+            verseSpan: _verseSpan(parsed),
+            bookCode: parsed.book.code,
+            bookChapters: parsed.book.totalChapters,
+            translation: translation,
+            verseText: verseText,
+          );
+    final notice = translation == BibleTranslation.esv
+        ? kEsvCopyrightNotice
+        : (translation?.shortAttribution ?? attribution ?? '');
+    final built = PassageShareMessage.lines(
+      canonical: parsed.canonical,
+      url: url,
+      body: body,
+      markCode: translation?.code ?? '',
+      quotedNotice: notice,
+      fallbackAttribution: attribution ?? translation?.shortAttribution,
+    );
     return PassageSharePayload(
       reference: parsed.canonical,
       url: url,
-      message: lines.join('\n'),
-      attribution: shortAttribution,
+      message: built.message,
+      attribution: built.attribution,
+      includesVerseText: built.includesVerseText,
     );
+  }
+
+  static int? _verseSpan(SharedPassage passage) {
+    final start = passage.startVerse;
+    if (start == null) return null;
+    final end = passage.endVerse ?? start;
+    return end - start + 1;
   }
 
   static String friendlyError(String raw) {
@@ -300,21 +347,14 @@ class PassageShareLink {
     return '$label $chapter:$start-$end';
   }
 
-  /// Short copyright lines already shown in the player are fine.
-  /// A paragraph, a line break, or a verse-length dump is not.
-  static String? _safeAttribution(String? attribution) {
-    final trimmed = attribution?.replaceAll(RegExp(r'\s+'), ' ').trim();
-    if (trimmed == null || trimmed.isEmpty) return null;
-    if (trimmed.length > 180) return null;
-    return trimmed;
-  }
-
   static String _base(Uri? page) {
     if (page != null &&
         (page.scheme == 'http' || page.scheme == 'https') &&
         page.host.isNotEmpty) {
       final defaultPort = page.scheme == 'https' ? 443 : 80;
-      final port = page.hasPort && page.port != defaultPort ? ':${page.port}' : '';
+      final port = page.hasPort && page.port != defaultPort
+          ? ':${page.port}'
+          : '';
       return '${page.scheme}://${page.host}$port${_directoryPath(page.path)}';
     }
     return '$publicWebOrigin/';

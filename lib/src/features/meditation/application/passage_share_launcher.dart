@@ -5,7 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../core/logging/app_logger.dart';
 import '../domain/passage_share.dart';
 
-/// Hands a reference-only payload to the platform.
+/// Hands the share payload to the platform.
 ///
 /// Widget tests override this provider. The real iOS, Android, and web share
 /// sheets cannot be opened under `flutter test`; [PlatformPassageShareLauncher]
@@ -15,11 +15,12 @@ abstract class PassageShareLauncher {
   Future<void> share(PassageSharePayload payload);
 }
 
-/// Copies the link, then opens the native share sheet with the same
-/// reference-only message (link included, verse text excluded).
+/// Copies the link, then opens the native share sheet with [PassageSharePayload.message].
+/// The message includes the verse text when the payload has it. The clipboard
+/// stays the play link, so a paste still opens the passage.
 class PlatformPassageShareLauncher implements PassageShareLauncher {
   PlatformPassageShareLauncher({SharePlus? sharePlus})
-      : _sharePlus = sharePlus ?? SharePlus.instance;
+    : _sharePlus = sharePlus ?? SharePlus.instance;
 
   final SharePlus _sharePlus;
 

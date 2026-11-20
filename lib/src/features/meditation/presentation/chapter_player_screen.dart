@@ -20,6 +20,7 @@ import '../domain/bible_translation.dart';
 import '../domain/chapter_info.dart';
 import '../domain/passage_excerpt.dart';
 import '../domain/passage_share.dart';
+import '../domain/passage_share_message.dart';
 import '../domain/scripture_topic.dart';
 import 'platform_share_link_host.dart';
 import 'widgets/chapter_picker_dialog.dart';
@@ -125,9 +126,12 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
   }
 
   Future<void> _shareReference(String reference) async {
+    final player = ref.read(chapterPlayerProvider);
     final payload = PassageShareLink.tryPayload(
       reference: reference,
-      attribution: ref.read(chapterPlayerProvider).translation.shortAttribution,
+      attribution: player.translation.shortAttribution,
+      translation: player.translation,
+      verseText: _loadedVerseText(reference, player),
       page: kIsWeb ? Uri.base : null,
     );
     if (!mounted) return;
@@ -137,9 +141,10 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
       );
       return;
     }
+    // The event records that words were included. It does not record them.
     AppLogger.logEvent('passage_shared', {
       'reference': payload.reference,
-      'has_verse_text': false,
+      'has_verse_text': payload.includesVerseText,
     });
     try {
       await ref.read(passageShareLauncherProvider).share(payload);
@@ -160,6 +165,38 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
         content: Text('Link ready to share: ${payload.reference}'),
         duration: const Duration(seconds: 2),
       ),
+    );
+  }
+
+  /// Scripture already on screen for this reference, or null.
+  ///
+  /// Sharing does not fetch a passage and does not start playback.
+  String? _loadedVerseText(String reference, ChapterPlayerState player) {
+    final parsed = PassageShareLink.tryParse(reference);
+    String? bundled(String code) {
+      if (parsed == null) return null;
+      final cache = ref.read(offlineScriptureCacheProvider);
+      if (parsed.startVerse == null) {
+        return cache.getOfflineText(code, parsed.book.code, parsed.chapter);
+      }
+      return cache.getOfflineText(
+        code,
+        parsed.book.code,
+        parsed.chapter,
+        startVerse: parsed.startVerse,
+        endVerse: parsed.endVerse ?? parsed.startVerse,
+      );
+    }
+
+    return PassageShareMessage.textReadyToShare(
+      translation: player.translation,
+      onScreenText: player.currentChapter.textContent,
+      samePassage: PassageShareLink.sameReference(
+        reference,
+        player.currentChapter.reference,
+      ),
+      bsbText: bundled('BSB'),
+      webText: bundled('WEB'),
     );
   }
 
@@ -216,7 +253,7 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     _searchController.text = PassageQuery.canonicalize(
       chapter.displayTitle ?? '${chapter.bookName} ${chapter.chapterNumber}',
     );
-    ref.read(chapterPlayerProvider.notifier).loadChapter(chapter);
+    ref.read(chapterPlayerProvider.notifier).loadChapter(chapter, autoplay: false);
     setState(() => _searchSuggestions = []);
   }
 
@@ -1115,10 +1152,10 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
                             );
                           }
                           final item = allChips[index];
-                          final isSelected = playerState.currentChapter.reference.toLowerCase().trim() ==
-                                  item.label.toLowerCase().trim() ||
-                              (playerState.currentChapter.displayTitle ?? '').toLowerCase().trim() ==
-                                  item.label.toLowerCase().trim();
+                          final isSelected = _passageChipIsSelected(
+                            playerState.currentChapter,
+                            item.label,
+                          );
 
                           return _PresetChip(
                             label: item.label,
@@ -1898,6 +1935,16 @@ class _ChapterPlayerScreenState extends ConsumerState<ChapterPlayerScreen> {
     final secs = d.inSeconds.remainder(60).toString().padLeft(2, '0');
     return '$mins:$secs';
   }
+}
+
+/// One chip matches the loaded passage. En dashes on curated labels and
+/// hyphens on `?ref=` links are the same reference.
+bool _passageChipIsSelected(ChapterInfo chapter, String label) {
+  final loaded = PassageQuery.canonicalize(
+    chapter.displayTitle ?? chapter.reference,
+  ).toLowerCase();
+  final chip = PassageQuery.canonicalize(label).toLowerCase();
+  return loaded.isNotEmpty && loaded == chip;
 }
 
 class _PresetChip extends StatelessWidget {
