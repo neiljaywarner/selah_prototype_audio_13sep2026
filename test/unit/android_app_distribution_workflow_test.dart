@@ -96,6 +96,12 @@ void main() {
     expect(gradle, contains('applicationId = "app.selahword.audio"'));
     expect(gradle, contains('rootProject.file("key.properties")'));
     expect(
+      gradle,
+      contains(
+        'keystorePropertiesFile.reader(Charsets.UTF_8).use { keystoreProperties.load(it) }',
+      ),
+    );
+    expect(
       RegExp(
         r'signingConfig\s*=\s*if\s*\(\s*keystorePropertiesFile\.exists\(\)\s*\)',
       ).hasMatch(gradle),

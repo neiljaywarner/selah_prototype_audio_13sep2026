@@ -12,7 +12,9 @@ plugins {
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
-    keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
+    // The writer saves UTF-8. InputStream load() is ISO-8859-1 and would
+    // corrupt a non-ASCII alias.
+    keystorePropertiesFile.reader(Charsets.UTF_8).use { keystoreProperties.load(it) }
 }
 
 android {
