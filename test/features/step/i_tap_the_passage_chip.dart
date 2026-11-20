@@ -18,8 +18,11 @@ Future<void> iTapThePassageChip(WidgetTester tester, String label) async {
   await tester.ensureVisible(chip);
   await tester.tap(chip);
   await tester.pump();
-  for (var i = 0; i < 40; i++) {
-    await tester.pump(const Duration(milliseconds: 50));
+  for (var i = 0; i < 20; i++) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    await tester.pump();
     final state = ProviderScope.containerOf(
       tester.element(find.byType(ChapterPlayerScreen)),
     ).read(chapterPlayerProvider);

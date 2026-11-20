@@ -1,21 +1,23 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:selah_prototype_audio_13sep2026/src/features/meditation/application/chapter_player_notifier.dart';
-import 'package:selah_prototype_audio_13sep2026/src/features/meditation/domain/audio_mode.dart';
-import 'package:selah_prototype_audio_13sep2026/src/features/meditation/presentation/chapter_player_screen.dart';
 
 import 'share_passage_harness.dart';
 
 /// Usage: playback has started
 Future<void> playbackHasStarted(WidgetTester tester) async {
-  final state = ProviderScope.containerOf(
-    tester.element(find.byType(ChapterPlayerScreen)),
-  ).read(chapterPlayerProvider);
+  final calls = SharePassageWorld.narratorPlayerCalls;
+  final loadAt = calls.indexOf('load');
+  final playAt = calls.lastIndexOf('play');
+  expect(loadAt, greaterThanOrEqualTo(0), reason: 'Narrator audio should be loaded first');
   expect(
-    state.isPlaying || state.isLoading,
-    isTrue,
-    reason: 'The play control should start narrator playback',
+    playAt,
+    greaterThan(loadAt),
+    reason: 'Play should ask the loaded narrator source to start. Calls: $calls',
   );
-  expect(state.audioMode, isNot(AudioMode.tts));
+  final source = SharePassageWorld.loadedNarratorSource ?? '';
+  expect(
+    source.contains('MAT_11') || source.contains('assets/audio'),
+    isTrue,
+    reason: 'Play should follow the loaded narrator source, saw "$source"',
+  );
   expect(SharePassageWorld.ttsSpeakCalls, 0);
 }

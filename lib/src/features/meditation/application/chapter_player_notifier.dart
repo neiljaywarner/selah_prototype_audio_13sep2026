@@ -1514,7 +1514,7 @@ class ChapterPlayerNotifier extends Notifier<ChapterPlayerState> {
       if (debugBypassNativeAudio) {
         state = state.copyWith(isLoading: false);
         if (autoplay) {
-          await play();
+          play();
         }
         return;
       }

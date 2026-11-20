@@ -13,11 +13,16 @@ Future<void> playbackHasNotStarted(WidgetTester tester) async {
     tester.element(find.byType(ChapterPlayerScreen)),
   ).read(chapterPlayerProvider);
   expect(
-    state.isPlaying,
-    isFalse,
-    reason: 'A chip tap must not start the narrator',
+    SharePassageWorld.narratorPlayerCalls,
+    contains('load'),
+    reason: 'The narrator source should be loaded before the listener decides to play',
   );
-  expect(state.isLoading, isFalse);
+  expect(
+    SharePassageWorld.narratorPlayerCalls,
+    isNot(contains('play')),
+    reason: 'A chip tap must not ask the narrator player to start',
+  );
+  expect(state.isPlaying, isFalse);
   expect(state.audioMode, AudioMode.narrator);
   expect(SharePassageWorld.ttsSpeakCalls, 0);
   expect(find.byIcon(Icons.pause_rounded), findsNothing);

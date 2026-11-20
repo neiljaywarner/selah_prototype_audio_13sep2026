@@ -9,7 +9,6 @@ Feature: A passage chip loads without starting playback
 
   Scenario: Tapping Matt loads it and stays paused until play
     Given the app is open signed out
-    And narrator loads finish without the device player
     When I tap the passage chip {'Matt 11:28–30'}
     Then the heading stays {'Matt 11:28–30'}
     And the passage chip {'Matt 11:28–30'} is selected
