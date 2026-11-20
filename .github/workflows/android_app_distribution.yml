@@ -1,0 +1,219 @@
+name: Android Firebase App Distribution
+
+# Builds a release APK for app.selahword.audio and uploads it to Firebase App
+# Distribution group core-testers. Runs on every push to main, and on
+# workflow_dispatch for a manual build.
+#
+# This workflow does not deploy Firebase Hosting.
+#
+# Required GitHub Actions secrets
+# (Settings → Secrets and variables → Actions):
+#
+#   ANDROID_KEYSTORE_BASE64
+#     One-line base64 of the keystore whose SHA-256 matches
+#     web/.well-known/assetlinks.json. The current debug/FAD certificate
+#     comes from the debug keystore:
+#       base64 -w 0 ~/.android/debug.keystore
+#   ANDROID_KEYSTORE_PASSWORD
+#     Keystore store password. The standard debug keystore uses its
+#     well-known password (android).
+#   ANDROID_KEY_PASSWORD
+#     Key password. The standard debug keystore uses the same well-known
+#     password (android) unless the keystore was created with another one.
+#   ANDROID_KEY_ALIAS
+#     Key alias. The standard debug keystore alias is androiddebugkey.
+#   FIREBASE_SERVICE_ACCOUNT_SELAHWORDAPP
+#     Service account JSON. The preview workflow uses this same secret.
+#     The account needs Firebase App Distribution Admin on project
+#     selahwordapp. Do not commit the JSON.
+#
+# Optional dart-define secrets. When one is unset, the app keeps its
+# REDACTED compile-time default:
+#   API_BIBLE_KEY, APTABASE_KEY, POSTHOG_KEY, ESV_API_KEY
+#
+# A missing required secret, a failed analyze/test, a failed APK build, or
+# a certificate that does not match assetlinks stops the job before upload.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      release_notes:
+        description: Notes for testers. Empty uses the merge commit or PR title.
+        required: false
+        type: string
+
+concurrency:
+  group: android-app-distribution-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  distribute:
+    name: Build APK and upload to core-testers
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Require distribution secrets
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          FIREBASE_SERVICE_ACCOUNT_SELAHWORDAPP: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SELAHWORDAPP }}
+        run: |
+          set -euo pipefail
+          ./scripts/android_distribution_preflight.sh
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          # Match .github/workflows/pr_preview_channel.yml and pubspec SDK ^3.13.3.
+          flutter-version: '3.47.x'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Write signing files
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          python3 scripts/write_android_signing_files.py \
+            --properties-file android/key.properties \
+            --keystore-file android/app/ci-release.keystore \
+            --store-file-property ci-release.keystore
+
+      - name: Write dart defines
+        env:
+          API_BIBLE_KEY: ${{ secrets.API_BIBLE_KEY }}
+          APTABASE_KEY: ${{ secrets.APTABASE_KEY }}
+          POSTHOG_KEY: ${{ secrets.POSTHOG_KEY }}
+          ESV_API_KEY: ${{ secrets.ESV_API_KEY }}
+        run: |
+          set -euo pipefail
+          python3 scripts/write_dart_defines.py \
+            --output "$RUNNER_TEMP/dart-defines.json"
+
+      - name: Build release APK
+        run: |
+          set -euo pipefail
+          # APK rather than AAB: testers install it directly, and an AAB would
+          # be re-signed, so it would no longer match assetlinks.json.
+          flutter build apk --release \
+            --dart-define-from-file="$RUNNER_TEMP/dart-defines.json"
+
+      - name: Check the APK certificate against assetlinks
+        run: |
+          set -euo pipefail
+          python3 scripts/verify_apk_cert_fingerprint.py \
+            --apk build/app/outputs/flutter-apk/app-release.apk \
+            --assetlinks web/.well-known/assetlinks.json
+
+      - name: Compose release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTES_OVERRIDE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_notes || '' }}
+        run: |
+          set -euo pipefail
+          subject="$(git log -1 --pretty=%s)"
+          body="$(git log -1 --pretty=%b)"
+          if [[ "$subject" =~ ^Merge[[:space:]]pull[[:space:]]request[[:space:]]#([0-9]+) ]]; then
+            pr="${BASH_REMATCH[1]}"
+            # gh pr view reads the pull request title for merge commits.
+            title="$(gh pr view "$pr" --json title --jq .title 2>/dev/null || true)"
+            if [ -n "$title" ]; then
+              subject="$title"
+            fi
+          fi
+          export APP_VERSION COMMIT_SUBJECT COMMIT_BODY COMMIT_SHA
+          APP_VERSION="$(awk '/^version:/{print $2; exit}' pubspec.yaml)"
+          COMMIT_SUBJECT="$subject"
+          COMMIT_BODY="$body"
+          COMMIT_SHA="$GITHUB_SHA"
+          ./scripts/compose_android_release_notes.sh > "$RUNNER_TEMP/release-notes.txt"
+
+      - name: Write Firebase credentials
+        env:
+          FIREBASE_SERVICE_ACCOUNT_SELAHWORDAPP: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SELAHWORDAPP }}
+        run: |
+          set -euo pipefail
+          python3 scripts/write_secret_file.py \
+            --env FIREBASE_SERVICE_ACCOUNT_SELAHWORDAPP \
+            --output "$RUNNER_TEMP/firebase-sa.json"
+
+      - name: Upload APK to Firebase App Distribution
+        if: success()
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-sa.json
+        run: |
+          set -euo pipefail
+          npm install --prefix "$RUNNER_TEMP/firebase" firebase-tools@15.37.0
+          "$RUNNER_TEMP/firebase/node_modules/.bin/firebase" \
+            --non-interactive \
+            appdistribution:distribute \
+            build/app/outputs/flutter-apk/app-release.apk \
+            --project selahwordapp \
+            --app "1:228765786696:android:b477acdfcb898d30382e7d" \
+            --groups core-testers \
+            --release-notes-file "$RUNNER_TEMP/release-notes.txt" \
+            | tee "$RUNNER_TEMP/appdistribution.txt"
+
+      - name: Write the job summary
+        if: success()
+        run: |
+          set -euo pipefail
+          {
+            echo "## Android build uploaded to Firebase App Distribution"
+            echo
+            echo "- Package: \`app.selahword.audio\`"
+            echo "- Firebase app: \`1:228765786696:android:b477acdfcb898d30382e7d\`"
+            echo "- Project: \`selahwordapp\`"
+            echo "- Group: \`core-testers\`"
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Console: https://console.firebase.google.com/project/selahwordapp/appdistribution"
+            echo
+            echo "### Release notes"
+            echo
+            cat "$RUNNER_TEMP/release-notes.txt"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Delete signing material
+        if: always()
+        run: |
+          rm -f \
+            android/app/ci-release.keystore \
+            android/key.properties \
+            "$RUNNER_TEMP/firebase-sa.json" \
+            "$RUNNER_TEMP/dart-defines.json"
